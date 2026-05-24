@@ -8,13 +8,13 @@ $expert->execute([$_SESSION['user_id']]);
 $ex = $expert->fetch();
 $eid = $ex['id'] ?? 0;
 
-$total_sessions   = $pdo->prepare("SELECT COUNT(*) FROM CONSULTATION WHERE expert_id=?"); $total_sessions->execute([$eid]); $ts = $total_sessions->fetchColumn();
-$completed        = $pdo->prepare("SELECT COUNT(*) FROM CONSULTATION WHERE expert_id=? AND status='completed'"); $completed->execute([$eid]); $cs = $completed->fetchColumn();
-$pending_sessions = $pdo->prepare("SELECT COUNT(*) FROM CONSULTATION WHERE expert_id=? AND status='pending'"); $pending_sessions->execute([$eid]); $ps = $pending_sessions->fetchColumn();
-$earned           = $pdo->prepare("SELECT COALESCE(SUM(fee),0) FROM CONSULTATION WHERE expert_id=? AND status='completed'"); $earned->execute([$eid]); $earn = $earned->fetchColumn();
+$total_sessions   = $pdo->prepare("SELECT COUNT(*) FROM CONSULTATION WHERE provider_id=?"); $total_sessions->execute([$_SESSION['user_id']]); $ts = $total_sessions->fetchColumn();
+$completed        = $pdo->prepare("SELECT COUNT(*) FROM CONSULTATION WHERE provider_id=? AND status='completed'"); $completed->execute([$_SESSION['user_id']]); $cs = $completed->fetchColumn();
+$pending_sessions = $pdo->prepare("SELECT COUNT(*) FROM CONSULTATION WHERE provider_id=? AND status='pending'"); $pending_sessions->execute([$_SESSION['user_id']]); $ps = $pending_sessions->fetchColumn();
+$earned           = $pdo->prepare("SELECT COALESCE(SUM(fee),0) FROM CONSULTATION WHERE provider_id=? AND status='completed'"); $earned->execute([$_SESSION['user_id']]); $earn = $earned->fetchColumn();
 
-$upcoming = $pdo->prepare("SELECT c.*, u.name as farmer_name FROM CONSULTATION c JOIN FARMER f ON c.farmer_id=f.id JOIN USER u ON f.user_id=u.id WHERE c.expert_id=? AND c.status IN ('pending','confirmed') ORDER BY c.scheduled_date ASC LIMIT 5");
-$upcoming->execute([$eid]);
+$upcoming = $pdo->prepare("SELECT c.*, u.name as client_name, u.role as client_role FROM CONSULTATION c JOIN USER u ON c.client_id=u.id WHERE c.provider_id=? AND c.status IN ('pending','confirmed') ORDER BY c.scheduled_date ASC LIMIT 5");
+$upcoming->execute([$_SESSION['user_id']]);
 $upcoming = $upcoming->fetchAll();
 
 $page_title = 'Expert Dashboard';
@@ -57,11 +57,11 @@ $page_title = 'Expert Dashboard';
             <a href="/KrishiDisha/expert/sessions.php" class="btn-kd btn-kd-outline" style="padding:6px 14px; font-size:12px;">All Sessions</a></div>
             <div class="card-body-kd p-0">
                 <table class="table-kd">
-                    <thead><tr><th>Farmer</th><th>Topic</th><th>Date</th><th>Duration</th><th>Fee</th><th>Status</th></tr></thead>
+                    <thead><tr><th>Client</th><th>Topic</th><th>Date</th><th>Duration</th><th>Fee</th><th>Status</th></tr></thead>
                     <tbody>
                     <?php foreach ($upcoming as $s): ?>
                     <tr>
-                        <td style="font-weight:600;"><?= htmlspecialchars($s['farmer_name']) ?></td>
+                        <td style="font-weight:600;"><?= htmlspecialchars($s['client_name']) ?> <span class="badge-kd badge-muted" style="font-size:10px"><?= ucfirst($s['client_role']) ?></span></td>
                         <td style="font-size:13px;"><?= htmlspecialchars($s['topic']) ?></td>
                         <td><?= $s['scheduled_date'] ?></td>
                         <td><?= $s['duration_hours'] ?> hr</td>

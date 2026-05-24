@@ -287,8 +287,8 @@ CREATE TABLE FOOD_ORDER (
 
 CREATE TABLE CONSULTATION (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    farmer_id INT NOT NULL,
-    expert_id INT NOT NULL,
+    client_id INT NOT NULL,
+    provider_id INT NOT NULL,
     scheduled_date DATE,
     duration_hours DECIMAL(4,2),
     topic VARCHAR(255),
@@ -296,8 +296,8 @@ CREATE TABLE CONSULTATION (
     fee DECIMAL(10,2),
     status ENUM('pending','confirmed','completed','cancelled') DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (farmer_id) REFERENCES FARMER(id),
-    FOREIGN KEY (expert_id) REFERENCES EXPERT(id)
+    FOREIGN KEY (client_id) REFERENCES USER(id),
+    FOREIGN KEY (provider_id) REFERENCES USER(id)
 );
 
 CREATE TABLE PAYMENT (
@@ -468,9 +468,9 @@ INSERT INTO RECIPE_CROP (recipe_id, crop_id, quantity_grams) VALUES
 (1,1,200),(1,7,10),(3,3,300);
 
 -- CONSULTATIONS
-INSERT INTO CONSULTATION (farmer_id, expert_id, scheduled_date, duration_hours, topic, fee, status) VALUES
-(1,1,'2024-12-20',2.00,'Soil quality improvement and organic fertilizer recommendations for rice cultivation',1600.00,'completed'),
-(2,1,'2024-12-25',1.50,'Pest management for winter vegetables',1200.00,'confirmed');
+INSERT INTO CONSULTATION (client_id, provider_id, scheduled_date, duration_hours, topic, fee, status) VALUES
+(2,7,'2024-12-20',2.00,'Soil quality improvement and organic fertilizer recommendations for rice cultivation',1600.00,'completed'),
+(3,7,'2024-12-25',1.50,'Pest management for winter vegetables',1200.00,'confirmed');
 
 -- PRODUCTS
 INSERT INTO PRODUCT (farmer_id, crop_id, quantity_kg, price_per_kg, description, status) VALUES

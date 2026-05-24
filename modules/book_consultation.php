@@ -1,37 +1,46 @@
 <?php
 require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/../config/db.php';
-requireAuth(['farmer']);
-
-$farmer = $pdo->prepare("SELECT * FROM FARMER WHERE user_id=?");
-$farmer->execute([$_SESSION['user_id']]);
-$f = $farmer->fetch();
-$fid = $f['id'] ?? 0;
+requireAuth(['farmer', 'general', 'tourist']);
 
 $msg = $err = '';
 
 // Book consultation
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $expert_id = (int)$_POST['expert_id'];
+    $provider_user_id = (int)$_POST['provider_id'];
     $date      = $_POST['scheduled_date'] ?? '';
     $duration  = (float)($_POST['duration_hours'] ?? 1);
     $topic     = trim($_POST['topic'] ?? '');
-    if ($expert_id && $date && $topic) {
-        $expert = $pdo->prepare("SELECT hourly_rate FROM EXPERT WHERE id=?");
-        $expert->execute([$expert_id]);
-        $expert = $expert->fetch();
-        $fee = $expert['hourly_rate'] * $duration;
-        $pdo->prepare("INSERT INTO CONSULTATION (farmer_id,expert_id,scheduled_date,duration_hours,topic,fee) VALUES (?,?,?,?,?,?)")
-            ->execute([$fid, $expert_id, $date, $duration, $topic, $fee]);
+    if ($provider_user_id && $date && $topic) {
+        $rate = 0;
+        $expert = $pdo->prepare("SELECT hourly_rate FROM EXPERT WHERE user_id=?");
+        $expert->execute([$provider_user_id]);
+        if ($ex = $expert->fetch()) {
+            $rate = $ex['hourly_rate'];
+        } else {
+            $guide = $pdo->prepare("SELECT daily_rate FROM GUIDE WHERE user_id=?");
+            $guide->execute([$provider_user_id]);
+            if ($gu = $guide->fetch()) {
+                $rate = $gu['daily_rate'] / 8; // approx hourly rate
+            }
+        }
+        
+        $fee = $rate * $duration;
+        $pdo->prepare("INSERT INTO CONSULTATION (client_id,provider_id,scheduled_date,duration_hours,topic,fee) VALUES (?,?,?,?,?,?)")
+            ->execute([$_SESSION['user_id'], $provider_user_id, $date, $duration, $topic, $fee]);
         $msg = 'Consultation booked! Fee: ৳' . number_format($fee, 2);
     } else { $err = 'Please fill all required fields.'; }
 }
 
-$experts = $pdo->query("SELECT e.*, u.name FROM EXPERT e JOIN USER u ON e.user_id=u.id WHERE u.status='approved' AND e.availability='available'")->fetchAll();
-$pre_expert = isset($_GET['expert']) ? (int)$_GET['expert'] : 0;
+$experts = $pdo->query("SELECT e.user_id, e.hourly_rate as rate, e.specialization, u.name, 'Expert' as role FROM EXPERT e JOIN USER u ON e.user_id=u.id WHERE u.status='approved' AND e.availability='available'")->fetchAll();
+$guides = $pdo->query("SELECT g.user_id, (g.daily_rate/8) as rate, g.languages as specialization, u.name, 'Guide' as role FROM GUIDE g JOIN USER u ON g.user_id=u.id WHERE u.status='approved' AND g.availability='available'")->fetchAll();
 
-$my_consultations = $pdo->prepare("SELECT c.*, u.name as expert_name, e.specialization FROM CONSULTATION c JOIN EXPERT e ON c.expert_id=e.id JOIN USER u ON e.user_id=u.id WHERE c.farmer_id=? ORDER BY c.created_at DESC");
-$my_consultations->execute([$fid]);
+$providers = array_merge($experts, $guides);
+
+$pre_provider = isset($_GET['provider']) ? (int)$_GET['provider'] : 0;
+
+$my_consultations = $pdo->prepare("SELECT c.*, u.name as provider_name, u.role as provider_role FROM CONSULTATION c JOIN USER u ON c.provider_id=u.id WHERE c.client_id=? ORDER BY c.created_at DESC");
+$my_consultations->execute([$_SESSION['user_id']]);
 $my_consultations = $my_consultations->fetchAll();
 
 $page_title = 'Consultations';
@@ -43,7 +52,7 @@ $page_title = 'Consultations';
     <div class="topbar">
         <div class="d-flex align-items-center gap-3">
             <button id="sidebarToggle" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
-            <div class="topbar-title"><i class="fa-solid fa-user-doctor me-2" style="color:#7c3aed;"></i>Expert Consultations</div>
+            <div class="topbar-title"><i class="fa-solid fa-user-doctor me-2" style="color:#7c3aed;"></i>Book Consultation</div>
         </div>
     </div>
     <div class="page-body">
@@ -57,12 +66,12 @@ $page_title = 'Consultations';
                     <div class="card-body-kd">
                         <form method="POST" class="form-kd" data-validate>
                             <div class="form-group">
-                                <label>Select Expert <span style="color:red">*</span></label>
-                                <select name="expert_id" class="form-control" required>
-                                    <option value="">Choose an expert</option>
-                                    <?php foreach ($experts as $ex): ?>
-                                    <option value="<?= $ex['id'] ?>" <?= $pre_expert===$ex['id']?'selected':'' ?>>
-                                        <?= htmlspecialchars($ex['name']) ?> — ৳<?= $ex['hourly_rate'] ?>/hr
+                                <label>Select Provider <span style="color:red">*</span></label>
+                                <select name="provider_id" class="form-control" required>
+                                    <option value="">Choose expert or guide</option>
+                                    <?php foreach ($providers as $pr): ?>
+                                    <option value="<?= $pr['user_id'] ?>" <?= $pre_provider===$pr['user_id']?'selected':'' ?>>
+                                        <?= htmlspecialchars($pr['name']) ?> (<?= $pr['role'] ?>) — ৳<?= number_format($pr['rate']) ?>/hr
                                     </option>
                                     <?php endforeach; ?>
                                 </select>
@@ -83,13 +92,12 @@ $page_title = 'Consultations';
                     <div class="card-header-kd"><h5>My Consultations (<?= count($my_consultations) ?>)</h5></div>
                     <div class="card-body-kd p-0">
                         <table class="table-kd">
-                            <thead><tr><th>Expert</th><th>Topic</th><th>Date</th><th>Duration</th><th>Fee</th><th>Status</th></tr></thead>
+                            <thead><tr><th>Provider</th><th>Topic</th><th>Date</th><th>Duration</th><th>Fee</th><th>Status</th></tr></thead>
                             <tbody>
                             <?php foreach ($my_consultations as $c): ?>
                             <tr>
                                 <td>
-                                    <div style="font-weight:600;"><?= htmlspecialchars($c['expert_name']) ?></div>
-                                    <div style="font-size:11px;color:var(--text-muted);"><?= htmlspecialchars($c['specialization']) ?></div>
+                                    <div style="font-weight:600;"><?= htmlspecialchars($c['provider_name']) ?> <span class="badge-kd badge-muted" style="font-size:10px;"><?= ucfirst($c['provider_role']) ?></span></div>
                                 </td>
                                 <td style="font-size:13px;"><?= mb_substr(htmlspecialchars($c['topic']),0,60) ?></td>
                                 <td><?= $c['scheduled_date'] ?></td>

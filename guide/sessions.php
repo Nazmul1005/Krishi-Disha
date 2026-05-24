@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/../config/db.php';
-requireAuth(['expert']);
+requireAuth(['guide']);
 
 
 if (isset($_GET['status']) && isset($_GET['id'])) {

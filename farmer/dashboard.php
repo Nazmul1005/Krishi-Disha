@@ -10,7 +10,7 @@ $f = $farmer->fetch();
 $fid = $f['id'] ?? 0;
 $products    = $pdo->prepare("SELECT COUNT(*) FROM PRODUCT WHERE farmer_id=?"); $products->execute([$fid]); $pc = $products->fetchColumn();
 $tours       = $pdo->prepare("SELECT COUNT(*) FROM FARM_TOUR WHERE farmer_id=?"); $tours->execute([$fid]); $tc = $tours->fetchColumn();
-$consults    = $pdo->prepare("SELECT COUNT(*) FROM CONSULTATION WHERE farmer_id=?"); $consults->execute([$fid]); $cc = $consults->fetchColumn();
+$consults    = $pdo->prepare("SELECT COUNT(*) FROM CONSULTATION WHERE client_id=?"); $consults->execute([$_SESSION['user_id']]); $cc = $consults->fetchColumn();
 $revenue     = $pdo->prepare("SELECT COALESCE(SUM(price_per_kg * quantity_kg),0) FROM PRODUCT WHERE farmer_id=? AND status='sold'"); $revenue->execute([$fid]); $rev = $revenue->fetchColumn();
 
 $recent_products = $pdo->prepare("SELECT p.*, c.name as crop_name FROM PRODUCT p JOIN CROP c ON p.crop_id=c.id WHERE p.farmer_id=? ORDER BY p.created_at DESC LIMIT 5");
@@ -116,7 +116,7 @@ $page_title = 'Farmer Dashboard';
                         <div style="display:flex; flex-direction:column; gap:10px;">
                             <a href="/KrishiDisha/farmer/produce.php" class="btn-kd btn-kd-primary w-100 justify-content-center"><i class="fa-solid fa-plus"></i> List New Produce</a>
                             <a href="/KrishiDisha/farmer/farmland.php" class="btn-kd btn-kd-outline w-100 justify-content-center"><i class="fa-solid fa-tractor"></i> Manage Farm Tours</a>
-                            <a href="/KrishiDisha/farmer/consultation.php" class="btn-kd btn-kd-gold w-100 justify-content-center" style="color:#fff;"><i class="fa-solid fa-user-doctor"></i> Book Expert</a>
+                            <a href="/KrishiDisha/modules/book_consultation.php" class="btn-kd btn-kd-gold w-100 justify-content-center" style="color:#fff;"><i class="fa-solid fa-user-doctor"></i> Book Expert/Guide</a>
                             <a href="/KrishiDisha/modules/recommend.php" class="btn-kd btn-kd-outline w-100 justify-content-center"><i class="fa-solid fa-seedling"></i> Crop Recommender</a>
                             <a href="/KrishiDisha/modules/calculator.php" class="btn-kd btn-kd-outline w-100 justify-content-center"><i class="fa-solid fa-calculator"></i> Profit Calculator</a>
                         </div>

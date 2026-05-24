@@ -4,7 +4,7 @@ require_once __DIR__ . '/../config/db.php';
 
 $experts = $pdo->query("
     SELECT e.*, u.name, u.email, u.phone,
-           (SELECT COUNT(*) FROM CONSULTATION c WHERE c.expert_id=e.id AND c.status='completed') as completed_sessions
+           (SELECT COUNT(*) FROM CONSULTATION c WHERE c.provider_id=u.id AND c.status='completed') as completed_sessions
     FROM EXPERT e
     JOIN USER u ON e.user_id=u.id
     WHERE u.status='approved'
@@ -56,14 +56,14 @@ $isAuth = isLoggedIn();
                         <div style="font-size:12px;color:var(--text-muted);">per hour</div>
                     </div>
 
-                    <?php if ($isAuth && currentRole() === 'farmer'): ?>
-                    <a href="/KrishiDisha/farmer/consultation.php?expert=<?= $ex['id'] ?>" class="btn-kd w-100 justify-content-center" style="background:linear-gradient(135deg,#4c1d95,#7c3aed);color:#fff;padding:10px;">
+                    <?php if ($isAuth && in_array(currentRole(), ['farmer', 'general', 'tourist'])): ?>
+                    <a href="/KrishiDisha/modules/book_consultation.php?provider=<?= $ex['user_id'] ?>" class="btn-kd w-100 justify-content-center" style="background:linear-gradient(135deg,#4c1d95,#7c3aed);color:#fff;padding:10px;">
                         <i class="fa-solid fa-calendar-plus"></i> Book Session
                     </a>
                     <?php elseif (!$isAuth): ?>
                     <a href="/KrishiDisha/auth/login.php" class="btn-kd btn-kd-outline w-100 justify-content-center">Login to Book</a>
                     <?php else: ?>
-                    <div class="btn-kd w-100 justify-content-center" style="background:var(--surface3);color:var(--text-muted);cursor:default;">Available for Farmers</div>
+                    <div class="btn-kd w-100 justify-content-center" style="background:var(--surface3);color:var(--text-muted);cursor:default;">Available for Booking</div>
                     <?php endif; ?>
                 </div>
             </div>

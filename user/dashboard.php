@@ -57,6 +57,7 @@ $page_title = 'My Dashboard';
                     <div class="card-body-kd">
                         <div style="display:flex; flex-direction:column; gap:10px;">
                             <a href="/KrishiDisha/user/marketplace.php" class="btn-kd btn-kd-primary w-100 justify-content-center"><i class="fa-solid fa-store"></i> Marketplace</a>
+                            <a href="/KrishiDisha/modules/book_consultation.php" class="btn-kd w-100 justify-content-center" style="background:linear-gradient(135deg,#4c1d95,#7c3aed);color:#fff;"><i class="fa-solid fa-user-doctor"></i> Book Consultation</a>
                             <a href="/KrishiDisha/user/nutrition.php" class="btn-kd btn-kd-gold w-100 justify-content-center" style="color:#fff;"><i class="fa-solid fa-apple-whole"></i> Nutrition Guide</a>
                             <a href="/KrishiDisha/modules/encyclopedia.php" class="btn-kd btn-kd-outline w-100 justify-content-center"><i class="fa-solid fa-book-atlas"></i> Crop Encyclopedia</a>
                             <a href="/KrishiDisha/modules/recommend.php" class="btn-kd btn-kd-outline w-100 justify-content-center"><i class="fa-solid fa-seedling"></i> Crop Recommender</a>

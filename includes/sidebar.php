@@ -13,7 +13,7 @@ $navMap = [
         ['icon'=>'fa-gauge-high',  'label'=>'Dashboard',     'href'=>'/KrishiDisha/farmer/dashboard.php'],
         ['icon'=>'fa-basket-shopping','label'=>'My Produce',  'href'=>'/KrishiDisha/farmer/produce.php'],
         ['icon'=>'fa-tractor',     'label'=>'Farm Lands',    'href'=>'/KrishiDisha/farmer/farmland.php'],
-        ['icon'=>'fa-user-doctor', 'label'=>'Consultations', 'href'=>'/KrishiDisha/farmer/consultation.php'],
+        ['icon'=>'fa-user-doctor', 'label'=>'Consultations', 'href'=>'/KrishiDisha/modules/book_consultation.php'],
     ],
     'dealer' => [
         ['icon'=>'fa-gauge-high',  'label'=>'Dashboard',  'href'=>'/KrishiDisha/dealer/dashboard.php'],
@@ -24,6 +24,7 @@ $navMap = [
         ['icon'=>'fa-gauge-high','label'=>'Dashboard',   'href'=>'/KrishiDisha/tourist/dashboard.php'],
         ['icon'=>'fa-map',       'label'=>'Farm Tours',  'href'=>'/KrishiDisha/tourist/tours.php'],
         ['icon'=>'fa-utensils',  'label'=>'Food Orders', 'href'=>'/KrishiDisha/tourist/food_orders.php'],
+        ['icon'=>'fa-user-doctor','label'=>'Consultations','href'=>'/KrishiDisha/modules/book_consultation.php'],
     ],
     'cook' => [
         ['icon'=>'fa-gauge-high','label'=>'Dashboard', 'href'=>'/KrishiDisha/cook/dashboard.php'],
@@ -37,10 +38,12 @@ $navMap = [
     'guide' => [
         ['icon'=>'fa-gauge-high','label'=>'Dashboard', 'href'=>'/KrishiDisha/guide/dashboard.php'],
         ['icon'=>'fa-route',     'label'=>'Bookings',  'href'=>'/KrishiDisha/guide/bookings.php'],
+        ['icon'=>'fa-user-doctor','label'=>'Sessions', 'href'=>'/KrishiDisha/guide/sessions.php'],
     ],
     'general' => [
         ['icon'=>'fa-gauge-high','label'=>'Dashboard',    'href'=>'/KrishiDisha/user/dashboard.php'],
         ['icon'=>'fa-apple-whole','label'=>'Nutrition',   'href'=>'/KrishiDisha/user/nutrition.php'],
+        ['icon'=>'fa-user-doctor','label'=>'Consultations','href'=>'/KrishiDisha/modules/book_consultation.php'],
     ],
 ];
 

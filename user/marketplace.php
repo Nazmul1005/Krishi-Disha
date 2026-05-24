@@ -10,19 +10,24 @@ $category = $_GET['category'] ?? '';
 
 // Place order
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_inventory'])) {
-    $inv_id = (int)$_POST['inventory_id'];
+    $prod_id = (int)$_POST['product_id'];
     $qty    = (float)$_POST['quantity_kg'];
-    $inv    = $pdo->prepare("SELECT di.*, p.crop_id FROM DEALER_INVENTORY di JOIN PRODUCT p ON di.product_id=p.id WHERE di.id=?");
-    $inv->execute([$inv_id]);
-    $inv = $inv->fetch();
-    if ($inv && $qty > 0 && $qty <= $inv['stock_remaining']) {
-        $total = $qty * $inv['markup_price'];
+    $prod   = $pdo->prepare("SELECT p.*, c.name FROM PRODUCT p JOIN CROP c ON p.crop_id=c.id WHERE p.id=?");
+    $prod->execute([$prod_id]);
+    $prod = $prod->fetch();
+    if ($prod && $qty > 0 && $qty <= $prod['quantity_kg'] && $prod['status'] === 'available') {
+        $total = $qty * $prod['price_per_kg'];
         $pdo->beginTransaction();
         try {
-            $pdo->prepare("INSERT INTO `ORDER` (user_id,inventory_id,quantity_kg,total_price) VALUES (?,?,?,?)")
-                ->execute([$uid, $inv_id, $qty, $total]);
+            $pdo->prepare("INSERT INTO `ORDER` (user_id,product_id,quantity_kg,total_price) VALUES (?,?,?,?)")
+                ->execute([$uid, $prod_id, $qty, $total]);
             $oid = $pdo->lastInsertId();
-            $pdo->prepare("UPDATE DEALER_INVENTORY SET stock_remaining=stock_remaining-? WHERE id=?")->execute([$qty, $inv_id]);
+            
+            // Reduce quantity or mark as sold if 0
+            $new_qty = $prod['quantity_kg'] - $qty;
+            $new_status = ($new_qty <= 0) ? 'sold' : 'available';
+            $pdo->prepare("UPDATE PRODUCT SET quantity_kg=?, status=? WHERE id=?")->execute([$new_qty, $new_status, $prod_id]);
+            
             $pdo->prepare("INSERT INTO PAYMENT (payer_id,ref_type,ref_id,amount,status) VALUES (?,?,?,?,'completed')")->execute([$uid,'order',$oid,$total]);
             $pay_id = $pdo->lastInsertId();
             $commission = $total * 0.05;
@@ -34,24 +39,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_inventory'])) {
 }
 
 // Fetch inventory
-$where = ['di.stock_remaining > 0']; $params = [];
+$where = ['p.status = "available" AND p.quantity_kg > 0']; $params = [];
 if ($search)   { $where[] = "(c.name LIKE ? OR c.scientific_name LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
 if ($category) { $where[] = "c.category = ?"; $params[] = $category; }
 
 $stmt = $pdo->prepare("
-    SELECT di.*, p.description, c.name as crop_name, c.category, c.season, u.name as dealer_name
-    FROM DEALER_INVENTORY di
-    JOIN PRODUCT p ON di.product_id=p.id
+    SELECT p.*, c.name as crop_name, c.category, c.season, u.name as farmer_name
+    FROM PRODUCT p
     JOIN CROP c ON p.crop_id=c.id
-    JOIN DEALER d ON di.dealer_id=d.id
-    JOIN USER u ON d.user_id=u.id
+    JOIN FARMER f ON p.farmer_id=f.id
+    JOIN USER u ON f.user_id=u.id
     WHERE " . implode(' AND ', $where) . "
     ORDER BY c.name ASC
 ");
 $stmt->execute($params);
 $items = $stmt->fetchAll();
 
-$categories = $pdo->query("SELECT DISTINCT c.category FROM DEALER_INVENTORY di JOIN PRODUCT p ON di.product_id=p.id JOIN CROP c ON p.crop_id=c.id WHERE di.stock_remaining>0 ORDER BY c.category")->fetchAll(PDO::FETCH_COLUMN);
+$categories = $pdo->query("SELECT DISTINCT c.category FROM PRODUCT p JOIN CROP c ON p.crop_id=c.id WHERE p.status='available' AND p.quantity_kg > 0 ORDER BY c.category")->fetchAll(PDO::FETCH_COLUMN);
 
 $page_title = 'Marketplace';
 ?>
@@ -92,17 +96,17 @@ $page_title = 'Marketplace';
                             <h5 style="margin:0;"><?= htmlspecialchars($item['crop_name']) ?></h5>
                             <span class="badge-kd badge-info" style="font-size:10px;"><?= $item['category'] ?></span>
                         </div>
-                        <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Sold by: <?= htmlspecialchars($item['dealer_name']) ?></div>
+                        <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Sold by: <?= htmlspecialchars($item['farmer_name']) ?> (Farmer)</div>
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
                             <div>
-                                <div style="font-size:24px;font-weight:800;color:var(--primary);font-family:'Nunito',sans-serif;">৳<?= $item['markup_price'] ?><span style="font-size:12px;font-weight:400;color:var(--text-muted);">/kg</span></div>
-                                <div style="font-size:12px;color:var(--text-muted);"><i class="fa-solid fa-weight-hanging me-1"></i><?= $item['stock_remaining'] ?> kg in stock</div>
+                                <div style="font-size:24px;font-weight:800;color:var(--primary);font-family:'Nunito',sans-serif;">৳<?= $item['price_per_kg'] ?><span style="font-size:12px;font-weight:400;color:var(--text-muted);">/kg</span></div>
+                                <div style="font-size:12px;color:var(--text-muted);"><i class="fa-solid fa-weight-hanging me-1"></i><?= $item['quantity_kg'] ?> kg available</div>
                             </div>
                         </div>
                         <form method="POST">
-                            <input type="hidden" name="inventory_id" value="<?= $item['id'] ?>">
+                            <input type="hidden" name="product_id" value="<?= $item['id'] ?>">
                             <div style="display:flex;gap:8px;align-items:center;">
-                                <input type="number" name="quantity_kg" step="0.5" min="0.5" max="<?= $item['stock_remaining'] ?>" placeholder="kg" class="form-control" style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;outline:none;" required>
+                                <input type="number" name="quantity_kg" step="0.5" min="0.5" max="<?= $item['quantity_kg'] ?>" placeholder="kg" class="form-control" style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;outline:none;" required>
                                 <button type="submit" name="order_inventory" class="btn-kd btn-kd-primary" style="flex:1;justify-content:center;" data-confirm="Place this order?">
                                     <i class="fa-solid fa-cart-shopping"></i> Order
                                 </button>

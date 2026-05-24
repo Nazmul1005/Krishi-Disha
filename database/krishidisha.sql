@@ -179,13 +179,13 @@ CREATE TABLE DEALER_INVENTORY (
 CREATE TABLE `ORDER` (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
-    inventory_id INT NOT NULL,
+    product_id INT NOT NULL,
     quantity_kg DECIMAL(10,2) NOT NULL,
     total_price DECIMAL(10,2) NOT NULL,
     status ENUM('pending','confirmed','delivered','cancelled') DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES USER(id),
-    FOREIGN KEY (inventory_id) REFERENCES DEALER_INVENTORY(id)
+    FOREIGN KEY (product_id) REFERENCES PRODUCT(id)
 );
 
 -- ============================================================
@@ -399,7 +399,10 @@ INSERT INTO CROP (name, scientific_name, local_name, origin, history, trade_stat
 ('Mustard', 'Brassica juncea', 'Sorisha', 'Central Asia', 'Important oilseed crop grown in winter. Used for cooking oil and as a spice. Major crops in Jessore and Faridpur.', 'local', 'winter', 'Oilseed'),
 ('Lentil', 'Lens culinaris', 'Masur Dal', 'Near East', 'High protein legume, essential in Bengali diet. Grown in Rabi season. Rich in iron and folate.', 'both', 'winter', 'Legume'),
 ('Bitter Gourd', 'Momordica charantia', 'Karela', 'South Asia', 'Popular vegetable in Bangladesh with significant medicinal properties. Used in traditional medicine for diabetes management.', 'local', 'summer', 'Vegetable'),
-('Sugarcane', 'Saccharum officinarum', 'Aakh', 'New Guinea', 'Major cash crop in Bangladesh. Used for producing sugar, molasses, and jaggery. Grown in Rajshahi, Natore, and Pabna.', 'local', 'all', 'Cash Crop');
+('Sugarcane', 'Saccharum officinarum', 'Aakh', 'New Guinea', 'Major cash crop in Bangladesh. Used for producing sugar, molasses, and jaggery. Grown in Rajshahi, Natore, and Pabna.', 'local', 'all', 'Cash Crop'),
+('Eggplant', 'Solanum melongena', 'Begun', 'South Asia', 'Widely consumed vegetable in Bangladesh, available year-round. Used in various traditional dishes.', 'local', 'all', 'Vegetable'),
+('Chili', 'Capsicum annuum', 'Morich', 'Americas', 'Essential spice in Bangladeshi cuisine. Grown in both Rabi and Kharif seasons. Bogura is famous for its red chilies.', 'both', 'all', 'Vegetable'),
+('Onion', 'Allium cepa', 'Peyaj', 'Central Asia', 'Crucial ingredient in almost all Bangladeshi savory dishes. Faridpur and Pabna are major producing districts.', 'both', 'winter', 'Vegetable');
 
 -- VITAMINS
 INSERT INTO VITAMIN (name, unit) VALUES
@@ -428,11 +431,14 @@ INSERT INTO DISEASE (name, symptoms, solution, affected_part) VALUES
 ('Tomato Early Blight', 'Dark brown concentric ring lesions on older leaves, yellowing around lesions.', 'Apply Chlorothalonil or Copper-based fungicides. Remove infected plant debris.', 'Leaves, Stems'),
 ('Mango Anthracnose', 'Dark sunken spots on fruits and flowers; blossom blight reducing fruit set.', 'Apply Carbendazim or Mancozeb during flowering. Post-harvest hot water treatment.', 'Fruits, Flowers'),
 ('Jute Stem Rot', 'Water-soaked lesions on stems turning dark brown; plant collapse in waterlogged conditions.', 'Improve drainage. Apply Carbendazim. Avoid dense planting.', 'Stems'),
-('Wheat Rust', 'Orange-red (stem rust) or yellow (stripe rust) pustules on leaves and stems.', 'Apply Propiconazole or Tebuconazole. Use resistant wheat varieties.', 'Leaves, Stems');
+('Wheat Rust', 'Orange-red (stem rust) or yellow (stripe rust) pustules on leaves and stems.', 'Apply Propiconazole or Tebuconazole. Use resistant wheat varieties.', 'Leaves, Stems'),
+('Eggplant Shoot Borer', 'Wilting of young shoots; holes in fruits with excreta visible outside.', 'Use pheromone traps. Destroy infested shoots/fruits. Apply Spinosad.', 'Shoots, Fruits'),
+('Chili Leaf Curl', 'Upward curling of leaves, stunted growth, reduced leaf size. Caused by virus transmitted by whiteflies.', 'Control whiteflies with Imidacloprid. Remove infected plants. Use virus-resistant varieties.', 'Leaves'),
+('Onion Purple Blotch', 'Small water-soaked lesions turning brown with purple center and yellow halo.', 'Apply Mancozeb. Ensure proper spacing for aeration. Crop rotation.', 'Leaves');
 
 -- CROP_DISEASE links
 INSERT INTO CROP_DISEASE (crop_id, disease_id) VALUES
-(1,1),(1,2),(2,7),(3,3),(4,4),(5,5),(6,6);
+(1,1),(1,2),(2,7),(3,3),(4,4),(5,5),(6,6),(11,8),(12,9),(13,10);
 
 -- REGION CROP
 INSERT INTO REGION_CROP (crop_id, region, soil_type, season, suitability_score, notes) VALUES

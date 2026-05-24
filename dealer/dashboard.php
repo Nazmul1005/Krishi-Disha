@@ -9,11 +9,11 @@ $d = $dealer->fetch();
 $did = $d['id'] ?? 0;
 
 $inv_count = $pdo->prepare("SELECT COUNT(*) FROM DEALER_INVENTORY WHERE dealer_id=?"); $inv_count->execute([$did]); $inv = $inv_count->fetchColumn();
-$order_count = $pdo->query("SELECT COUNT(*) FROM `ORDER` o JOIN DEALER_INVENTORY di ON o.inventory_id=di.id WHERE di.dealer_id=$did")->fetchColumn();
-$revenue = $pdo->query("SELECT COALESCE(SUM(o.total_price),0) FROM `ORDER` o JOIN DEALER_INVENTORY di ON o.inventory_id=di.id WHERE di.dealer_id=$did AND o.status='delivered'")->fetchColumn();
+$order_count = 0; // Deprecated
+$revenue = 0; // Deprecated
 $stock = $pdo->prepare("SELECT COALESCE(SUM(stock_remaining),0) FROM DEALER_INVENTORY WHERE dealer_id=?"); $stock->execute([$did]); $st = $stock->fetchColumn();
 
-$recent_orders = $pdo->query("SELECT o.*, u.name as buyer, c.name as crop_name, di.markup_price FROM `ORDER` o JOIN USER u ON o.user_id=u.id JOIN DEALER_INVENTORY di ON o.inventory_id=di.id JOIN PRODUCT p ON di.product_id=p.id JOIN CROP c ON p.crop_id=c.id WHERE di.dealer_id=$did ORDER BY o.created_at DESC LIMIT 6")->fetchAll();
+$recent_orders = []; // Deprecated
 
 $page_title = 'Dealer Dashboard';
 ?>

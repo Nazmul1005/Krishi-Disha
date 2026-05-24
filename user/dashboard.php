@@ -7,7 +7,7 @@ $uid = $_SESSION['user_id'];
 $orders = $pdo->prepare("SELECT COUNT(*) FROM `ORDER` WHERE user_id=?"); $orders->execute([$uid]); $oc = $orders->fetchColumn();
 $spent  = $pdo->prepare("SELECT COALESCE(SUM(total_price),0) FROM `ORDER` WHERE user_id=? AND status='delivered'"); $spent->execute([$uid]); $sp = $spent->fetchColumn();
 
-$my_orders = $pdo->prepare("SELECT o.*, c.name as crop_name, di.markup_price FROM `ORDER` o JOIN DEALER_INVENTORY di ON o.inventory_id=di.id JOIN PRODUCT p ON di.product_id=p.id JOIN CROP c ON p.crop_id=c.id WHERE o.user_id=? ORDER BY o.created_at DESC LIMIT 6");
+$my_orders = $pdo->prepare("SELECT o.*, c.name as crop_name, p.price_per_kg FROM `ORDER` o JOIN PRODUCT p ON o.product_id=p.id JOIN CROP c ON p.crop_id=c.id WHERE o.user_id=? ORDER BY o.created_at DESC LIMIT 6");
 $my_orders->execute([$uid]);
 $my_orders = $my_orders->fetchAll();
 

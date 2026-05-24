@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: krishidisha_web
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html/KrishiDisha
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - krishidisha_net
+
+  db:
+    image: mysql:8.0
+    container_name: krishidisha_db
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ''
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+      MYSQL_DATABASE: krishidisha
+    volumes:
+      - ./database/krishidisha.sql:/docker-entrypoint-initdb.d/krishidisha.sql
+      - krishidisha_db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - krishidisha_net
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: krishidisha_pma
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: ''
+    depends_on:
+      - db
+    networks:
+      - krishidisha_net
+
+volumes:
+  krishidisha_db_data:
+
+networks:
+  krishidisha_net:
+    driver: bridge

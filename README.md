@@ -408,7 +408,7 @@ COMMIT;
 
 **🌱 KrishiDisha — Bridging the field and the future, one harvest at a time.**
 
-*Built with ❤️ for Bangladeshi agriculture using PHP · MySQL · Bootstrap · Docker*
+*Built  for Bangladeshi agriculture using PHP · MySQL · Bootstrap · Docker*
 
 ---
 

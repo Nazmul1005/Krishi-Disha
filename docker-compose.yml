@@ -11,6 +11,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    environment:
+      DB_HOST: db
     networks:
       - krishidisha_net
 

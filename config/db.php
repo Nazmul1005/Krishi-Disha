@@ -1,5 +1,5 @@
 <?php
-define('DB_HOST', getenv('DB_HOST') ?: 'db');   // 'db' for Docker, override with DB_HOST env var for XAMPP
+define('DB_HOST', getenv('DB_HOST') ?: 'localhost');   // 'localhost' for XAMPP, 'db' injected via Docker
 define('DB_USER', 'root');
 define('DB_PASS', '');
 define('DB_NAME', 'krishidisha');

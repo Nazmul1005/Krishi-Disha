@@ -144,21 +144,4 @@ The project includes a `docker-compose.yml` and `Dockerfile` that will automatic
 6. Access the platform at: `http://localhost/KrishiDisha/`
 
 ---
-
-## 🔑 Demo Credentials
-
-To test the system immediately after setup, use the following pre-seeded accounts. **The password for all accounts is `password`**.
-
-| Role | Email |
-| :--- | :--- |
-| **Admin** | `admin@krishidisha.com` |
-| **Farmer** | `karim@farmer.com` |
-| **Dealer** | `rahim@dealer.com` |
-| **Tourist** | `john@tourist.com` |
-| **Cook** | `nasrin@cook.com` |
-| **Expert** | `anwar@expert.com` |
-| **Guide** | `rony@guide.com` |
-| **General User** | `sadia@user.com` |
-
----
 *Built as a scalable, intelligence-driven platform for modern agriculture.*

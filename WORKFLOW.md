@@ -51,6 +51,27 @@ Features in KrishiDisha are deeply interconnected. An action by one role trigger
 * **Feature 3 (Guide Hire):** Tourist optionally hires a guide. The Guide's `guide/bookings.php` page fetches `TOUR_BOOKING` records assigned to them.
 * **Feature 4 (Food Order):** Cook adds recipes to `RECIPE`. Tourist orders food in `tourist/food_orders.php` -> updates `FOOD_ORDER`. Cook fulfills it in `cook/orders.php`.
 
+### D. The Intelligence Modules Workflow (Shared Features)
+These modules are accessible by all roles and provide dynamic, data-driven insights.
+
+* **Feature 1 (Crop Encyclopedia):** User visits `modules/encyclopedia.php`. The frontend presents filter dropdowns (Season, Category). Submitting the filter reloads the page with `$_GET` parameters. 
+* **Connection:** PHP queries the `CROP` table based on the GET parameters. Clicking "Nutrition Info" opens a Bootstrap modal. This triggers a backend query joining `CROP_VITAMIN` and `VITAMIN` to fetch the exact milligram (mg/mcg) values for that specific crop.
+* **Feature 2 (Disease Detection):** User visits `modules/disease.php`. The frontend has a live search bar.
+* **Connection:** As the user searches, PHP queries the `DISEASE` table joined with `CROP_DISEASE` and `CROP`. It outputs the Symptoms, Organic Solutions, and Chemical Solutions for each plant disease.
+* **Feature 3 (Crop Recommender):** User visits `modules/recommend.php`. They choose between "By Region" or "By Nutrition".
+* **Connection:** If "By Region" is selected, the frontend form sends a POST request with the region name (e.g., "Sylhet"). The backend queries `REGION_CROP` joined with `CROP`, sorts by `suitability_score DESC`, and returns the best crops. If "By Nutrition" is selected, it queries `CROP_VITAMIN` to find crops richest in the chosen vitamin.
+* **Feature 4 (Nutrition Retention):** User visits `modules/nutrition.php`. They select a crop and a cooking method.
+* **Connection:** The backend queries `NUTRIENT_RETENTION` linking the crop and method. The frontend uses JavaScript to animate progress bars visually showing the percentage of vitamins retained (e.g., Boiling retains 60% of Vitamin C).
+* **Feature 5 (Profit Calculator):** User visits `modules/calculator.php`.
+* **Connection:** PHP embeds the current market prices from the `PRODUCT` table into a hidden JavaScript array. When the user inputs their land size on the frontend, JavaScript instantly multiplies the acreage by the embedded market price, deducts standard costs, and dynamically updates the DOM to show the Estimated Net Profit without refreshing the page.
+
+### E. The Admin & Approval Workflow
+* **Feature 1 (Registration):** A user registers as an Expert, Guide, or Cook on `auth/register.php`. The backend assigns them a `status` of `'pending'`.
+* **Connection (The Block):** If they try to log in, `auth_check.php` sees their status is pending and throws an error, blocking access to the platform.
+* **Feature 2 (Admin Dashboard):** Admin logs in and visits `admin/approvals.php`. The backend queries `SELECT * FROM USER WHERE status='pending'`.
+* **Connection (The Approval):** Admin clicks the "Approve" button. This sends a GET request to the backend, which executes an `UPDATE USER SET status='approved' WHERE id=?`.
+* **Feature 3 (Access Granted):** The user can now successfully log in and access their role-specific dashboard.
+
 ---
 
 ## 🎭 4. The 8 Roles: Complete Breakdown

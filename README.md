@@ -1,6 +1,9 @@
 <div align="center">
 
-<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=32&pause=1000&color=2D9A27&center=true&vCenter=true&width=600&lines=🌱+KrishiDisha;Agricultural+Intelligence+Platform;Farm+%E2%86%92+Fork+%E2%86%92+Future" alt="Typing SVG" />
+# 🌱 KrishiDisha
+
+### Agricultural Intelligence Platform
+#### *Farm → Fork → Future*
 
 <br/>
 

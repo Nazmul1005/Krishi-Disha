@@ -1,144 +1,415 @@
-# 🌱 KrishiDisha
+<div align="center">
 
-**KrishiDisha** is a comprehensive, database-driven agricultural intelligence platform designed to connect farmers, traders, tourists, experts, and consumers in a single unified ecosystem. 
+<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=32&pause=1000&color=2D9A27&center=true&vCenter=true&width=600&lines=🌱+KrishiDisha;Agricultural+Intelligence+Platform;Farm+%E2%86%92+Fork+%E2%86%92+Future" alt="Typing SVG" />
 
-It acts as a decision support system, an agricultural marketplace, an agri-tourism booking platform, and a nutritional intelligence tool. Built using **PHP, MySQL, and Bootstrap 5**, it leverages role-based access control to provide tailored dashboards and tools for eight distinct user types.
+<br/>
+
+**An end-to-end agricultural intelligence ecosystem — connecting farmers, markets, tourists, experts, and consumers on a single platform.**
+
+<br/>
+
+![PHP](https://img.shields.io/badge/PHP-8.0+-777BB4?style=for-the-badge&logo=php&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
+![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-22C55E?style=for-the-badge)
+
+<br/>
+
+[![Live on Docker](https://img.shields.io/badge/▶%20Run%20with%20Docker%20Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)](#-quick-start-with-docker)
+[![26 DB Tables](https://img.shields.io/badge/Database-26%20Tables-FF6B35?style=for-the-badge&logo=mysql&logoColor=white)](#️-database-architecture)
+[![8 Roles](https://img.shields.io/badge/RBAC-8%20User%20Roles-8B5CF6?style=for-the-badge)](#-role-based-access-control)
+
+</div>
 
 ---
 
-## 🎯 The Ecosystem Visualized
+## 🌍 What is KrishiDisha?
+
+> **কৃষিদিশা** *(Krishi = Agriculture | Disha = Direction/Path)*
+
+KrishiDisha is a full-stack, database-driven **agricultural intelligence platform** built to empower every stakeholder in the food chain — from the farmer in the field to the consumer at the table.
+
+It is simultaneously:
+
+| 🛒 A Marketplace | 📚 An Intelligence Hub | 🌿 A Tourism Engine | 🤝 A Consultation Network |
+|:---:|:---:|:---:|:---:|
+| Direct-to-consumer produce trading with auto 5% commission tracking | Crop encyclopedia, disease detection, profit calculator & nutrition analyzer | Farm tour bookings with guide hiring & authentic rural food ordering | Live expert & guide chat consultations for all users |
+
+---
+
+## 🏗️ Platform Architecture
 
 ```mermaid
 graph TD
-    subgraph Core Agricultural Flow
-        F[Farmer] -->|Lists Produce| M[Marketplace]
-        U[General User] -->|Buys Direct from| M
-        D[Dealer] -.->|Optional Bulk Buyer| F
+    classDef user fill:#4CAF50,color:#fff,stroke:#388E3C
+    classDef system fill:#2196F3,color:#fff,stroke:#1565C0
+    classDef data fill:#FF9800,color:#fff,stroke:#E65100
+    classDef admin fill:#9C27B0,color:#fff,stroke:#6A1B9A
+
+    subgraph 👤 Users
+        F[🧑‍🌾 Farmer]:::user
+        U[👤 General User]:::user
+        D[🏬 Dealer]:::user
+        To[🧳 Tourist]:::user
+        C[🧑‍🍳 Cook]:::user
+        E[🔬 Expert]:::user
+        G[🗺️ Guide]:::user
+        A[🛡️ Admin]:::admin
     end
 
-    subgraph Agri-Tourism & Food
-        F -->|Hosts| T[Farm Tour]
-        To[Tourist] -->|Books| T
-        G[Guide] -->|Hired by Tourist for| T
-        C[Cook] -->|Cooks Authentic Food| FO[Food Orders]
-        To -->|Orders from| FO
+    subgraph 🧩 Core Platform
+        M[🛒 Marketplace]:::system
+        T[🌿 Agri-Tourism]:::system
+        FO[🍽️ Food Orders]:::system
+        CON[💬 Consultations]:::system
+        MOD[🧠 Intelligence Modules]:::system
     end
 
-    subgraph Intelligence & Support
-        AllUsers((All Users)) -.->|Use| Modules[Intelligence Modules]
-        E[Expert] -->|Consults via Chat| AllUsers
-        G -->|Consults via Chat| AllUsers
+    subgraph 🗄️ Database
+        DB[(MySQL 8.0\n26 Tables)]:::data
     end
 
-    subgraph Administration
-        A[Admin] -->|Monitors| F
-        A -->|Monitors| D
-        A -->|Collects 5% Commission| M
-        A -->|Approves Users| AllUsers
-    end
+    F -->|Lists Produce| M
+    U -->|Buys Direct| M
+    D -.->|Bulk B2B| F
+    F -->|Hosts Farm| T
+    To -->|Books Tour| T
+    G -->|Guides Tour| T
+    C -->|Cooks Food| FO
+    To -->|Orders Food| FO
+    E -->|Expert Advice| CON
+    G -->|Tour Tips| CON
+    A -->|5% Commission| M
+    A -->|Approves| E & G & C
+
+    M & T & FO & CON & MOD --> DB
 ```
 
 ---
 
-## 👥 Role-Based Access & Dashboards
+## 🎭 Role-Based Access Control
 
-The system enforces strict Role-Based Access Control (RBAC). Each role has a dedicated dashboard with specific capabilities:
+The platform enforces **strict RBAC** — each of the 8 roles gets a personalized dashboard with dedicated tools:
 
-| Role | Responsibilities & Access |
-| :--- | :--- |
-| 🛡️ **Admin** | Manages platform content, approves entity registrations (Cooks, Experts, Guides), tracks 5% marketplace commissions, and oversees system integrity. |
-| 🧑‍🌾 **Farmer** | Lists agricultural produce directly to the Marketplace (D2C), manages farmlands for tourist visits, and books consultations. |
-| 🏬 **Dealer** | Operates primarily in bulk B2B operations and manages secondary inventory. |
-| 🧳 **Tourist** | Explores and books Agri-tourism farm tours, hires local guides, orders authentic regional food, and can book expert/guide consultations. |
-| 🧑‍🍳 **Cook** | Creates and manages recipes (especially marking them as "Authentic") and fulfills food orders placed by tourists. |
-| 🔬 **Expert** | Provides agricultural consultation services to all users. Features a live discussion/chat interface for ongoing advice. |
-| 🗺️ **Guide** | Offers guiding services for farm tours and paid general consultations with users. Features live chat for sharing tips. |
-| 👤 **General User** | Browses the Marketplace to purchase crops directly from Farmers, accesses intelligence tools, and books live consultations. |
+<table>
+<tr>
+  <th>Role</th>
+  <th>Key Actions</th>
+  <th>Core Dashboard Pages</th>
+</tr>
+<tr>
+  <td>🛡️ <b>Admin</b></td>
+  <td>Approve users, track commissions, oversee platform integrity</td>
+  <td><code>admin/approvals.php</code> · <code>admin/commissions.php</code></td>
+</tr>
+<tr>
+  <td>🧑‍🌾 <b>Farmer</b></td>
+  <td>List produce for D2C sales, host farm tours, book consultations</td>
+  <td><code>farmer/produce.php</code> · <code>farmer/farmland.php</code></td>
+</tr>
+<tr>
+  <td>🏬 <b>Dealer</b></td>
+  <td>Manage bulk B2B inventory and secondary trade operations</td>
+  <td><code>dealer/inventory.php</code> · <code>dealer/sales.php</code></td>
+</tr>
+<tr>
+  <td>🧳 <b>Tourist</b></td>
+  <td>Book farm tours, hire guides, order authentic food, consult experts</td>
+  <td><code>tourist/tours.php</code> · <code>tourist/food_orders.php</code></td>
+</tr>
+<tr>
+  <td>🧑‍🍳 <b>Cook</b></td>
+  <td>Create authentic recipes, fulfill tourist food orders</td>
+  <td><code>cook/recipes.php</code> · <code>cook/orders.php</code></td>
+</tr>
+<tr>
+  <td>🔬 <b>Expert</b></td>
+  <td>Provide crop & soil consultations, engage via live chat</td>
+  <td><code>expert/sessions.php</code></td>
+</tr>
+<tr>
+  <td>🗺️ <b>Guide</b></td>
+  <td>Guide farm tours, offer tourism consultation via live chat</td>
+  <td><code>guide/bookings.php</code> · <code>guide/sessions.php</code></td>
+</tr>
+<tr>
+  <td>👤 <b>General User</b></td>
+  <td>Browse marketplace, buy from farmers, access all intelligence tools</td>
+  <td><code>user/marketplace.php</code> · <code>user/nutrition.php</code></td>
+</tr>
+</table>
 
 ---
 
-## 🧩 Core Modules
+## 🧩 Core Feature Modules
 
-KrishiDisha is packed with intelligent modules accessible to users based on their roles:
-
-### 1. 🛒 The Marketplace
-A Direct-to-Consumer (D2C) trading system. Farmers list raw produce directly to the marketplace where General Users and Tourists can buy it instantly, cutting out the middlemen. The system automatically calculates and records a **5% commission** for the Admin on all sales.
-
-### 2. 📖 Crop Encyclopedia
-A searchable, filterable database of crops (recently expanded with Eggplant, Chili, Onion, etc.). Users can filter by season (Summer, Winter, All Year) and Category (Grain, Vegetable, Fruit, etc.). It includes dynamic modal views for deep-dive nutritional data.
-
-### 3. 🦠 Disease Detection
-Farmers can search through an expanded database of known crop diseases (including Eggplant Shoot Borer, Chili Leaf Curl, etc.). The module provides symptoms, prevention methods, and recommended chemical/organic treatments.
-
-### 4. 🧠 Crop Recommender
-A dual-mode intelligence tool:
-* **Region-Based:** Suggests the best crops to plant based on the user's selected division/region using suitability scoring.
-* **Nutrition-Based:** Suggests crops based on specific vitamin deficiencies (e.g., Vitamin A, Vitamin C).
-
-### 5. 🥗 Nutrition & Cooking Retention
-An advanced tool that calculates nutrient retention. Users select a crop and a cooking method (e.g., Boiling, Frying, Steaming), and the system outputs dynamic progress bars showing the percentage of vitamins retained after cooking.
-
-### 6. 💰 Farm Profit Calculator
-A JavaScript-powered estimation tool. Farmers input their land size and crop, and the system pulls reference market prices from the database to calculate potential revenue, estimated costs, and net profit per acre.
-
-### 7. 🚜 Agri-Tourism & Consultations
-A booking engine connecting Tourists with Farmers (for farm tours) and Guides. Also features a **Unified Consultation Portal** where *any* user can book a session with an Expert or a Tour Guide. It includes a built-in **Live Discussion/Chat** feature where clients and providers can exchange ongoing tips and advice.
+### 🛒 1. Direct-to-Consumer Marketplace
+```
+Farmer lists crop ──► Marketplace shows listing ──► User places order
+                                                          │
+                          ┌───────────────────────────────┤
+                          ▼                               ▼
+                    Stock deducted               5% commission recorded
+                    from PRODUCT                 in ADMIN_COMMISSION
+```
+- Farmers publish produce with price & quantity
+- Users buy directly — no middlemen
+- Every transaction auto-calculates **5% admin commission**
+- Atomic DB transactions prevent overselling (`BEGIN TRANSACTION ... COMMIT`)
 
 ---
 
-## ⚙️ Technology Stack
+### 📖 2. Crop Encyclopedia
+- Filterable by **Season** (Summer, Winter, All Year) and **Category** (Grain, Vegetable, Fruit)
+- Dynamic Bootstrap modals for **deep-dive nutritional data** per crop
+- Expanded database includes Eggplant, Chili, Onion, and more
 
-* **Frontend:** HTML5, CSS3 (Custom Variables), Bootstrap 5, FontAwesome, JavaScript (Vanilla)
-* **Backend:** PHP 8+ (PDO for secure database interactions)
-* **Database:** MySQL 8.0 (Relational schema with 26 tables)
-* **Environment:** Docker (containerized Apache/PHP & MySQL)
+---
+
+### 🦠 3. Disease Detection Engine
+- Search by crop name or disease symptom
+- Returns **Symptoms**, **Organic Solutions**, and **Chemical Treatments**
+- Covers diseases like Eggplant Shoot Borer, Chili Leaf Curl, Rice Blast
+
+---
+
+### 🧠 4. Dual-Mode Crop Recommender
+
+```
+┌─────────────────────────────────────┐
+│          CROP RECOMMENDER           │
+├──────────────────┬──────────────────┤
+│  🗺️ By Region   │  💊 By Nutrition │
+├──────────────────┼──────────────────┤
+│  Select Division │  Select Vitamin  │
+│  e.g. "Sylhet"  │  e.g. "Vitamin A"│
+│        ▼         │        ▼         │
+│  Ranked crops by │  Crops richest   │
+│  suitability     │  in that vitamin │
+│  score DESC      │  from DB         │
+└──────────────────┴──────────────────┘
+```
+
+---
+
+### 🥗 5. Nutrition & Cooking Retention Analyzer
+- Select a **crop** + **cooking method** (Boiling, Frying, Steaming, Raw)
+- Animated **progress bars** show % of vitamins retained post-cooking
+- Backed by the `NUTRIENT_RETENTION` table
+
+---
+
+### 💰 6. Farm Profit Calculator
+- JavaScript-powered, **no page refresh**
+- Input: land size (acres) + crop type
+- Pulls live market prices from DB → outputs **Revenue**, **Cost**, **Net Profit**
+
+---
+
+### 🚜 7. Agri-Tourism & Live Consultation Portal
+```
+Tourist ──► Books Farm Tour ──► Farmer confirms
+        └──► Hires Guide ──────► Guide accepts
+        └──► Orders Food ───────► Cook fulfills
+        └──► Books Expert ───────► Live Chat begins
+                                        │
+                               CONSULTATION_MESSAGE
+                               table stores all msgs
+```
 
 ---
 
 ## 🗄️ Database Architecture
 
-The platform relies on a highly normalized MySQL database (`krishidisha.sql`). Key architectural features include:
+> **26 tables** structured around a highly normalized relational schema with strict foreign key constraints.
 
 ```mermaid
 erDiagram
     USER ||--o{ FARMER : "is a"
     USER ||--o{ DEALER : "is a"
     USER ||--o{ TOURIST : "is a"
+    USER ||--o{ EXPERT : "is a"
+    USER ||--o{ GUIDE : "is a"
+    USER ||--o{ COOK : "is a"
     FARMER ||--o{ PRODUCT : "lists"
-    PRODUCT ||--o{ ORDER : "purchased direct by user"
+    PRODUCT ||--o{ ORDER : "purchased by"
     ORDER ||--|| PAYMENT : "generates"
     PAYMENT ||--o| ADMIN_COMMISSION : "yields 5%"
-    USER ||--o{ CONSULTATION : "books (client/provider)"
-    CONSULTATION ||--o{ CONSULTATION_MESSAGE : "has live chat"
-    
+    FARMER ||--o{ FARM_TOUR : "hosts"
+    TOURIST ||--o{ TOUR_BOOKING : "books"
+    TOUR_BOOKING }o--|| GUIDE : "assigned to"
+    COOK ||--o{ RECIPE : "creates"
+    TOURIST ||--o{ FOOD_ORDER : "places"
+    FOOD_ORDER }o--|| COOK : "fulfilled by"
+    USER ||--o{ CONSULTATION : "client"
+    USER ||--o{ CONSULTATION : "provider"
+    CONSULTATION ||--o{ CONSULTATION_MESSAGE : "has chat"
     CROP ||--o{ CROP_VITAMIN : "contains"
     VITAMIN ||--o{ CROP_VITAMIN : "found in"
     CROP ||--o{ NUTRIENT_RETENTION : "retains"
     COOKING_METHOD ||--o{ NUTRIENT_RETENTION : "affects"
+    CROP ||--o{ CROP_DISEASE : "affected by"
+    DISEASE ||--o{ CROP_DISEASE : "affects"
 ```
 
-* **Data Integrity:** Strict Foreign Key constraints (e.g., cascading deletes for user profiles).
-* **Security:** All passwords are hashed using `password_hash()`. SQL Injection is prevented using PDO Prepared Statements.
-* **Transactions:** Complex operations (like ordering a product and deducting stock) use SQL `BEGIN TRANSACTION` and `COMMIT` to ensure atomic operations.
+### 🔒 Security & Data Integrity
+
+| Layer | Implementation |
+|:------|:---------------|
+| **Password Security** | `password_hash()` + `password_verify()` — no plaintext storage |
+| **SQL Injection** | PDO Prepared Statements (`prepare()` + `execute()`) across all queries |
+| **Atomic Transactions** | `BEGIN TRANSACTION … COMMIT` for multi-table operations (orders, payments) |
+| **Access Control** | `includes/auth_check.php` — every protected page verifies `$_SESSION['role']` |
+| **Approval Gate** | Experts, Guides, Cooks start with `status='pending'` — login blocked until Admin approves |
 
 ---
 
-## 🚀 How to Run Locally with Docker
+## ⚙️ Technology Stack
 
-The project includes a `docker-compose.yml` and `Dockerfile` that will automatically build the web server, install PHP extensions, spin up MySQL, and auto-import the seed data.
-
-1. Ensure **Docker** and **Docker Compose** are installed and running on your system.
-2. Open a terminal in the project directory.
-3. Run the following command to start the containers in the background:
-   ```bash
-   docker compose up -d
-   ```
-4. Access the platform at: [http://localhost:8080/KrishiDisha/](http://localhost:8080/KrishiDisha/)
-5. Access phpMyAdmin at: [http://localhost:8081/](http://localhost:8081/)
-6. To stop the application, run:
-   ```bash
-   docker compose down
-   ```
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        KrishiDisha Stack                         │
+├───────────────┬─────────────────────────────────────────────────┤
+│  Frontend     │  HTML5 · CSS3 (Custom Properties) · Bootstrap 5  │
+│               │  FontAwesome Icons · Vanilla JavaScript           │
+├───────────────┼─────────────────────────────────────────────────┤
+│  Backend      │  PHP 8.0+ · PDO · Session Management             │
+├───────────────┼─────────────────────────────────────────────────┤
+│  Database     │  MySQL 8.0 · 26 Relational Tables               │
+├───────────────┼─────────────────────────────────────────────────┤
+│  Environment  │  Docker · Docker Compose · Apache · phpMyAdmin   │
+└───────────────┴─────────────────────────────────────────────────┘
+```
 
 ---
-*Built as a scalable, intelligence-driven platform for modern agriculture.*
+
+## 🚀 Quick Start with Docker
+
+> **Prerequisites:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) must be installed and running.
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/Nazmul1005/Krishi-Disha.git
+cd Krishi-Disha
+
+# 2. Start all containers (web server + MySQL + phpMyAdmin)
+docker compose up -d
+
+# 3. Visit the platform
+open http://localhost:8080/KrishiDisha/
+```
+
+### 🌐 Access Points
+
+| Service | URL |
+|:--------|:----|
+| 🌱 **KrishiDisha App** | [http://localhost:8080/KrishiDisha/](http://localhost:8080/KrishiDisha/) |
+| 🗄️ **phpMyAdmin** | [http://localhost:8081/](http://localhost:8081/) |
+
+### 🛑 Stopping the Application
+
+```bash
+docker compose down
+```
+
+### 📦 What Docker Does Automatically
+
+```
+docker compose up
+      │
+      ├─► Builds PHP 8 + Apache web server
+      ├─► Installs PDO MySQL extension
+      ├─► Starts MySQL 8.0 container
+      ├─► Auto-imports database/krishidisha.sql seed data
+      └─► Starts phpMyAdmin on port 8081
+```
+
+---
+
+## 📁 Project Structure
+
+```
+KrishiDisha/
+│
+├── 📄 index.php               # Public landing page
+├── 🐳 Dockerfile              # PHP + Apache container config
+├── 🐳 docker-compose.yml      # Multi-container orchestration
+│
+├── 🔐 auth/                   # Login, Registration, Logout
+├── ⚙️  config/                 # Database connection (db.php)
+├── 🔧 includes/               # Shared: sidebar, auth_check, header
+│
+├── 🛡️  admin/                  # Admin dashboard & tools
+├── 🧑‍🌾 farmer/                 # Farmer dashboard & tools
+├── 🏬 dealer/                 # Dealer dashboard & tools
+├── 🧳 tourist/                # Tourist dashboard & tools
+├── 🧑‍🍳 cook/                   # Cook dashboard & tools
+├── 🔬 expert/                 # Expert dashboard & tools
+├── 🗺️  guide/                  # Guide dashboard & tools
+├── 👤 user/                   # General user dashboard & tools
+│
+├── 🧠 modules/                # Shared intelligence modules
+│   ├── encyclopedia.php       # Crop encyclopedia
+│   ├── disease.php            # Disease detection
+│   ├── recommend.php          # Crop recommender
+│   ├── nutrition.php          # Nutrition retention analyzer
+│   ├── calculator.php         # Farm profit calculator
+│   ├── book_consultation.php  # Consultation booking
+│   └── consultation_chat.php  # Live chat interface
+│
+├── 🗄️  database/
+│   └── krishidisha.sql        # Full DB schema + seed data
+│
+└── 🎨 assets/                 # CSS, JS, Images
+```
+
+---
+
+## 🔄 Key Workflow Flows
+
+### Authentication Flow
+```
+User visits index.php
+        │
+        ▼
+   auth/login.php ──[Invalid]──► Error message
+        │
+   [Valid credentials]
+        │
+        ▼
+$_SESSION['role'] = 'farmer' (or any role)
+        │
+        ▼
+header("Location: farmer/dashboard.php")
+        │
+   [Every page load]
+        │
+        ▼
+includes/auth_check.php validates session
+→ Wrong role? Redirect. No session? Redirect to login.
+```
+
+### Marketplace Transaction (Atomic)
+```sql
+BEGIN TRANSACTION;
+  INSERT INTO `ORDER` (user_id, product_id, qty, total) VALUES (?, ?, ?, ?);
+  UPDATE PRODUCT SET quantity_kg = quantity_kg - ? WHERE id = ?;
+  INSERT INTO PAYMENT (order_id, amount, method) VALUES (?, ?, ?);
+  INSERT INTO ADMIN_COMMISSION (payment_id, amount) VALUES (?, total * 0.05);
+COMMIT;
+```
+
+---
+
+<div align="center">
+
+---
+
+**🌱 KrishiDisha — Bridging the field and the future, one harvest at a time.**
+
+*Built with ❤️ for Bangladeshi agriculture using PHP · MySQL · Bootstrap · Docker*
+
+---
+
+</div>

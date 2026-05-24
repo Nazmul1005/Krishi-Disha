@@ -50,27 +50,27 @@ graph TD
     classDef data fill:#FF9800,color:#fff,stroke:#E65100
     classDef admin fill:#9C27B0,color:#fff,stroke:#6A1B9A
 
-    subgraph 👤 Users
-        F[🧑‍🌾 Farmer]:::user
-        U[👤 General User]:::user
-        D[🏬 Dealer]:::user
-        To[🧳 Tourist]:::user
-        C[🧑‍🍳 Cook]:::user
-        E[🔬 Expert]:::user
-        G[🗺️ Guide]:::user
-        A[🛡️ Admin]:::admin
+    subgraph Users
+        F[Farmer]:::user
+        U[General User]:::user
+        D[Dealer]:::user
+        To[Tourist]:::user
+        C[Cook]:::user
+        E[Expert]:::user
+        G[Guide]:::user
+        A[Admin]:::admin
     end
 
-    subgraph 🧩 Core Platform
-        M[🛒 Marketplace]:::system
-        T[🌿 Agri-Tourism]:::system
-        FO[🍽️ Food Orders]:::system
-        CON[💬 Consultations]:::system
-        MOD[🧠 Intelligence Modules]:::system
+    subgraph Core Platform
+        M[Marketplace]:::system
+        T[Agri-Tourism]:::system
+        FO[Food Orders]:::system
+        CON[Consultations]:::system
+        MOD[Intelligence Modules]:::system
     end
 
-    subgraph 🗄️ Database
-        DB[(MySQL 8.0\n26 Tables)]:::data
+    subgraph Database
+        DB[(MySQL 8.0 - 26 Tables)]:::data
     end
 
     F -->|Lists Produce| M
@@ -84,9 +84,15 @@ graph TD
     E -->|Expert Advice| CON
     G -->|Tour Tips| CON
     A -->|5% Commission| M
-    A -->|Approves| E & G & C
+    A -->|Approves E,G,C| E
+    A -->|Approves E,G,C| G
+    A -->|Approves E,G,C| C
 
-    M & T & FO & CON & MOD --> DB
+    M --> DB
+    T --> DB
+    FO --> DB
+    CON --> DB
+    MOD --> DB
 ```
 
 ---

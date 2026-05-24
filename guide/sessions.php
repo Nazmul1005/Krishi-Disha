@@ -37,6 +37,7 @@ $page_title = 'My Sessions';
                             <?php if ($s['status']==='pending'): ?><a href="?id=<?= $s['id'] ?>&status=confirmed" class="btn-kd btn-kd-primary" style="padding:4px 8px;font-size:11px;">Accept</a>
                             <?php elseif ($s['status']==='confirmed'): ?><a href="?id=<?= $s['id'] ?>&status=completed" class="btn-kd btn-kd-gold" style="padding:4px 8px;font-size:11px;color:#fff;">Complete</a>
                             <?php endif; ?>
+                            <a href="/KrishiDisha/modules/consultation_chat.php?id=<?= $s['id'] ?>" class="btn-kd btn-kd-outline" style="padding:4px 8px;font-size:11px;margin-left:4px;"><i class="fa-solid fa-comments"></i></a>
                         </td>
                     </tr>
                     <?php endforeach; ?>

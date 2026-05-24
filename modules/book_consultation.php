@@ -92,7 +92,7 @@ $page_title = 'Consultations';
                     <div class="card-header-kd"><h5>My Consultations (<?= count($my_consultations) ?>)</h5></div>
                     <div class="card-body-kd p-0">
                         <table class="table-kd">
-                            <thead><tr><th>Provider</th><th>Topic</th><th>Date</th><th>Duration</th><th>Fee</th><th>Status</th></tr></thead>
+                            <thead><tr><th>Provider</th><th>Topic</th><th>Date</th><th>Duration</th><th>Fee</th><th>Status</th><th>Action</th></tr></thead>
                             <tbody>
                             <?php foreach ($my_consultations as $c): ?>
                             <tr>
@@ -104,9 +104,14 @@ $page_title = 'Consultations';
                                 <td><?= $c['duration_hours'] ?> hr</td>
                                 <td style="font-weight:700;color:#7c3aed;">৳<?= number_format($c['fee']) ?></td>
                                 <td><?php $sc=['pending'=>'badge-warning','confirmed'=>'badge-info','completed'=>'badge-success','cancelled'=>'badge-danger']; ?><span class="badge-kd <?= $sc[$c['status']]??'badge-muted' ?>"><?= ucfirst($c['status']) ?></span></td>
+                                <td>
+                                    <a href="/KrishiDisha/modules/consultation_chat.php?id=<?= $c['id'] ?>" class="btn-kd btn-kd-outline" style="padding:4px 10px; font-size:12px;">
+                                        <i class="fa-solid fa-comments"></i> Chat
+                                    </a>
+                                </td>
                             </tr>
                             <?php endforeach; ?>
-                            <?php if (empty($my_consultations)): ?><tr><td colspan="6" class="text-center py-4" style="color:var(--text-muted);">No consultations booked yet.</td></tr><?php endif; ?>
+                            <?php if (empty($my_consultations)): ?><tr><td colspan="7" class="text-center py-4" style="color:var(--text-muted);">No consultations booked yet.</td></tr><?php endif; ?>
                             </tbody>
                         </table>
                     </div>

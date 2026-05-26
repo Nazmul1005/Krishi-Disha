@@ -68,7 +68,14 @@ $page_title = 'Marketplace';
             <button id="sidebarToggle" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
             <div class="topbar-title"><i class="fa-solid fa-store me-2" style="color:var(--primary);"></i>Marketplace</div>
         </div>
-        <div class="topbar-actions"><span class="badge-kd badge-success"><?= count($items) ?> products available</span></div>
+        <div class="topbar-actions">
+            <span class="badge-kd badge-success"><?= count($items) ?> products available</span>
+            <?php if (currentRole() === 'admin'): ?>
+            <a href="/KrishiDisha/admin/manage_content.php?tab=marketplace" class="btn-kd btn-kd-outline" style="padding:6px 14px;font-size:12px;">
+                <i class="fa-solid fa-pen-to-square"></i> Manage Products
+            </a>
+            <?php endif; ?>
+        </div>
     </div>
     <div class="page-body">
         <?php if ($msg): ?><div class="alert-kd alert-kd-success" data-autohide="5000"><i class="fa-solid fa-check-circle"></i> <?= $msg ?></div><?php endif; ?>
@@ -88,8 +95,13 @@ $page_title = 'Marketplace';
             <?php foreach ($items as $item): ?>
             <div class="col-md-6 col-lg-4">
                 <div class="card-kd">
-                    <div style="height:140px;background:linear-gradient(135deg,var(--surface3),var(--accent3));display:flex;align-items:center;justify-content:center;font-size:64px;">
-                        <?php $icons=['Grain'=>'🌾','Vegetable'=>'🥕','Fruit'=>'🍎','Fiber'=>'🪢','Oilseed'=>'🌻','Legume'=>'🫘','Cash Crop'=>'💰']; echo $icons[$item['category']]??'🌱'; ?>
+                    <div style="height:140px;overflow:hidden;">
+                        <?php $icons=['Grain'=>'🌾','Vegetable'=>'🥕','Fruit'=>'🍎','Fiber'=>'🪢','Oilseed'=>'🌻','Legume'=>'🫘','Cash Crop'=>'💰']; ?>
+                        <?php if (!empty($item['image']) && file_exists(__DIR__.'/../'.$item['image'])): ?>
+                        <img src="/KrishiDisha/<?= htmlspecialchars($item['image']) ?>" style="width:100%;height:140px;object-fit:cover;">
+                        <?php else: ?>
+                        <div style="height:140px;background:linear-gradient(135deg,var(--surface3),var(--accent3));display:flex;align-items:center;justify-content:center;font-size:64px;"><?= $icons[$item['category']]??'🌱' ?></div>
+                        <?php endif; ?>
                     </div>
                     <div class="card-body-kd">
                         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">

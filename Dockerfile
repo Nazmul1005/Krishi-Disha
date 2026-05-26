@@ -11,3 +11,7 @@ RUN sed -i 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf
 
 # Set working directory
 WORKDIR /var/www/html
+
+# Create a redirect from root to /KrishiDisha/
+RUN echo '<?php header("Location: /KrishiDisha/"); exit;' > /var/www/html/index.php
+

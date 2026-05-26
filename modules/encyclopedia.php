@@ -3,21 +3,17 @@ require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/../config/db.php';
 
 $search   = trim($_GET['q'] ?? '');
-$category = $_GET['category'] ?? '';
-$season   = $_GET['season'] ?? '';
-$trade    = $_GET['trade'] ?? '';
+$season   = trim($_GET['season'] ?? '');
+$category = trim($_GET['category'] ?? '');
 
 $where = ['1=1']; $params = [];
-if ($search)   { $where[] = "(name LIKE ? OR scientific_name LIKE ? OR local_name LIKE ?)"; $params = array_merge($params, ["%$search%","%$search%","%$search%"]); }
-if ($category) { $where[] = "category = ?"; $params[] = $category; }
-if ($season)   { $where[] = "season = ?";   $params[] = $season; }
-if ($trade)    { $where[] = "trade_status = ?"; $params[] = $trade; }
+if ($search)   { $where[] = '(c.name LIKE ? OR c.scientific_name LIKE ? OR c.local_name LIKE ? OR c.history LIKE ?)'; $p="%$search%"; $params=array_merge($params,[$p,$p,$p,$p]); }
+if ($season)   { $where[] = 'c.season=?';   $params[] = $season; }
+if ($category) { $where[] = 'c.category=?'; $params[] = $category; }
 
-$stmt = $pdo->prepare("SELECT * FROM CROP WHERE " . implode(' AND ', $where) . " ORDER BY name ASC");
-$stmt->execute($params);
-$crops = $stmt->fetchAll();
-
-$categories = $pdo->query("SELECT DISTINCT category FROM CROP WHERE category IS NOT NULL ORDER BY category")->fetchAll(PDO::FETCH_COLUMN);
+$sql = 'SELECT c.*, COUNT(DISTINCT cd.disease_id) as disease_count FROM CROP c LEFT JOIN CROP_DISEASE cd ON c.id=cd.crop_id WHERE '.implode(' AND ',$where).' GROUP BY c.id ORDER BY c.name';
+$st = $pdo->prepare($sql); $st->execute($params); $crops = $st->fetchAll();
+$categories = $pdo->query('SELECT DISTINCT category FROM CROP WHERE category IS NOT NULL ORDER BY category')->fetchAll(PDO::FETCH_COLUMN);
 
 $page_title = 'Crop Encyclopedia';
 ?>
@@ -47,31 +43,34 @@ $page_title = 'Crop Encyclopedia';
     </div>
     <div class="topbar-actions">
         <span class="badge-kd badge-success"><?= count($crops) ?> entries</span>
+        <?php if (isLoggedIn() && currentRole() === 'admin'): ?>
+        <a href="/KrishiDisha/admin/manage_content.php?tab=crops" class="btn-kd btn-kd-primary" style="padding:6px 14px;font-size:12px;">
+            <i class="fa-solid fa-pen-to-square"></i> Manage Crops
+        </a>
+        <?php elseif (isLoggedIn()): ?>
+        <a href="/KrishiDisha/modules/suggest.php?section=crop" class="btn-kd btn-kd-outline" style="padding:6px 14px;font-size:12px;">
+            <i class="fa-solid fa-lightbulb"></i> Suggest Crop
+        </a>
+        <?php endif; ?>
     </div>
 </div>
 
-<div class="page-body">
-    <!-- Search & Filter -->
-    <form class="filter-bar" method="GET">
-        <input type="text" name="q" placeholder="Search crops, scientific names..." value="<?= htmlspecialchars($search) ?>" style="flex:2;">
-        <select name="category">
-            <option value="">All Categories</option>
-            <?php foreach ($categories as $cat): ?><option value="<?= $cat ?>" <?= $category===$cat?'selected':'' ?>><?= $cat ?></option><?php endforeach; ?>
-        </select>
-        <select name="season">
-            <option value="">All Seasons</option>
-            <?php foreach (['summer','winter','rainy','all'] as $s): ?><option value="<?= $s ?>" <?= $season===$s?'selected':'' ?>><?= ucfirst($s) ?></option><?php endforeach; ?>
-        </select>
-        <select name="trade">
-            <option value="">All Trade Status</option>
-            <option value="local"  <?= $trade==='local'?'selected':'' ?>>Local Only</option>
-            <option value="export" <?= $trade==='export'?'selected':'' ?>>Export</option>
-            <option value="both"   <?= $trade==='both'?'selected':'' ?>>Both</option>
-        </select>
-        <button type="submit" class="btn-kd btn-kd-primary"><i class="fa-solid fa-search"></i> Search</button>
-        <a href="encyclopedia.php" class="btn-kd btn-kd-outline">Reset</a>
-    </form>
+<!-- Search & Filter -->
+<form class="filter-bar" method="GET" style="margin-bottom:20px;">
+    <input type="text" name="q" placeholder="Search crops by name, local name, description..." value="<?= htmlspecialchars($search) ?>" style="flex:3;">
+    <select name="category" class="form-control" style="flex:1;max-width:160px;">
+        <option value="">All Categories</option>
+        <?php foreach ($categories as $cat): ?><option value="<?= $cat ?>" <?= $category===$cat?'selected':'' ?>><?= $cat ?></option><?php endforeach; ?>
+    </select>
+    <select name="season" class="form-control" style="flex:1;max-width:130px;">
+        <option value="">All Seasons</option>
+        <?php foreach (['summer','winter','rainy','all'] as $s): ?><option value="<?= $s ?>" <?= $season===$s?'selected':'' ?>><?= ucfirst($s) ?></option><?php endforeach; ?>
+    </select>
+    <button type="submit" class="btn-kd btn-kd-primary"><i class="fa-solid fa-search"></i> Search</button>
+    <a href="encyclopedia.php" class="btn-kd btn-kd-outline">Reset</a>
+</form>
 
+<div class="page-body">
     <!-- Crop Grid -->
     <?php if (empty($crops)): ?>
     <div class="card-kd"><div class="card-body-kd text-center py-5"><div style="font-size:64px;">🌾</div><h4 style="color:var(--text-muted);">No crops found</h4><p style="color:var(--text-muted);">Try adjusting your search or filters.</p></div></div>
@@ -79,13 +78,20 @@ $page_title = 'Crop Encyclopedia';
     <div class="row g-4">
         <?php foreach ($crops as $crop): ?>
         <div class="col-md-6 col-lg-4 col-xl-3">
-            <a href="encyclopedia.php?detail=<?= $crop['id'] ?>" style="display:block; text-decoration:none;">
-                <div class="crop-card">
-                    <div style="height:180px; background:linear-gradient(135deg, var(--surface3), var(--accent3)); display:flex; align-items:center; justify-content:center; font-size:72px;">
-                        <?php
-                        $icons = ['Grain'=>'🌾','Vegetable'=>'🥕','Fruit'=>'🍎','Fiber'=>'🪢','Oilseed'=>'🌻','Legume'=>'🫘','Cash Crop'=>'💰'];
-                        echo $icons[$crop['category']] ?? '🌱';
-                        ?>
+            <div class="crop-card" style="position:relative;">
+                <?php if (isLoggedIn() && currentRole() === 'admin'): ?>
+                <div style="position:absolute;top:8px;right:8px;z-index:10;display:flex;gap:4px;">
+                    <a href="/KrishiDisha/admin/manage_content.php?tab=crops&edit=<?= $crop['id'] ?>" class="btn-kd btn-kd-outline" style="padding:3px 8px;font-size:10px;background:rgba(255,255,255,0.9);"><i class="fa-solid fa-pen"></i></a>
+                    <a href="/KrishiDisha/admin/manage_content.php?tab=crops&delete_crop=<?= $crop['id'] ?>" class="btn-kd btn-kd-danger" style="padding:3px 8px;font-size:10px;opacity:0.85;" data-confirm="Delete <?= htmlspecialchars($crop['name']) ?>?"><i class="fa-solid fa-trash"></i></a>
+                </div>
+                <?php endif; ?>
+                <a href="encyclopedia.php?detail=<?= $crop['id'] ?>" style="display:block; text-decoration:none;color:inherit;">
+                    <div style="height:180px; overflow:hidden; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--surface3),var(--accent3));">
+                        <?php if (!empty($crop['image']) && file_exists(__DIR__.'/../'.$crop['image'])): ?>
+                        <img src="/KrishiDisha/<?= htmlspecialchars($crop['image']) ?>" alt="<?= htmlspecialchars($crop['name']) ?>" style="width:100%;height:180px;object-fit:cover;">
+                        <?php else: ?>
+                        <div style="font-size:72px;"><?php $icons=['Grain'=>'🌾','Vegetable'=>'🥕','Fruit'=>'🍎','Fiber'=>'🪢','Oilseed'=>'🌻','Legume'=>'🫘','Cash Crop'=>'💰']; echo $icons[$crop['category']]??'🌱'; ?></div>
+                        <?php endif; ?>
                     </div>
                     <div class="crop-card-body">
                         <h5><?= htmlspecialchars($crop['name']) ?></h5>
@@ -97,8 +103,8 @@ $page_title = 'Crop Encyclopedia';
                         </div>
                         <p><?= mb_substr(strip_tags($crop['history'] ?? ''), 0, 90) ?>...</p>
                     </div>
-                </div>
-            </a>
+                </a>
+            </div>
         </div>
         <?php endforeach; ?>
     </div>

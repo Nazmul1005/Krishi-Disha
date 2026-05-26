@@ -7,7 +7,7 @@ $dealer = $pdo->prepare("SELECT * FROM DEALER WHERE user_id=?"); $dealer->execut
 if (isset($_GET['status']) && isset($_GET['id'])) {
     $valid = ['confirmed','delivered','cancelled'];
     if (in_array($_GET['status'], $valid)) {
-        $pdo->prepare("UPDATE `ORDER` SET status=? WHERE id=? AND inventory_id IN (SELECT id FROM DEALER_INVENTORY WHERE dealer_id=?)")->execute([$_GET['status'],(int)$_GET['id'],$did]);
+        $pdo->prepare("UPDATE `ORDER` SET status=? WHERE id=? AND product_id IN (SELECT product_id FROM DEALER_INVENTORY WHERE dealer_id=?)")->execute([$_GET['status'],(int)$_GET['id'],$did]);
         if ($_GET['status'] === 'delivered') {
             $order = $pdo->prepare("SELECT * FROM `ORDER` WHERE id=?"); $order->execute([(int)$_GET['id']]); $order = $order->fetch();
             if ($order) {
@@ -23,7 +23,7 @@ if (isset($_GET['status']) && isset($_GET['id'])) {
     header('Location: sales.php'); exit;
 }
 
-$orders = $pdo->query("SELECT o.*, u.name as buyer, c.name as crop_name FROM `ORDER` o JOIN USER u ON o.user_id=u.id JOIN DEALER_INVENTORY di ON o.inventory_id=di.id JOIN PRODUCT p ON di.product_id=p.id JOIN CROP c ON p.crop_id=c.id WHERE di.dealer_id=$did ORDER BY o.created_at DESC")->fetchAll();
+$orders = $pdo->query("SELECT o.*, u.name as buyer, c.name as crop_name FROM `ORDER` o JOIN USER u ON o.user_id=u.id JOIN PRODUCT p ON o.product_id=p.id JOIN DEALER_INVENTORY di ON di.product_id=p.id AND di.dealer_id=$did JOIN CROP c ON p.crop_id=c.id ORDER BY o.created_at DESC")->fetchAll();
 $page_title = 'Sales';
 ?>
 <?php include __DIR__ . '/../includes/header.php'; ?>

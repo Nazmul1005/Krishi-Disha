@@ -36,7 +36,18 @@ $page_title = 'Disease Detection';
         <?php if ($isAuth): ?><button id="sidebarToggle" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button><?php endif; ?>
         <div class="topbar-title"><i class="fa-solid fa-bug me-2" style="color:var(--danger);"></i>Crop Disease Detection</div>
     </div>
-    <div class="topbar-actions"><span class="badge-kd badge-danger"><?= count($diseases) ?> diseases tracked</span></div>
+    <div class="topbar-actions">
+        <span class="badge-kd badge-danger"><?= count($diseases) ?> diseases tracked</span>
+        <?php if ($isAuth && currentRole() === 'admin'): ?>
+        <a href="/KrishiDisha/admin/manage_content.php?tab=diseases" class="btn-kd btn-kd-primary" style="padding:6px 14px;font-size:12px;">
+            <i class="fa-solid fa-pen-to-square"></i> Manage Diseases
+        </a>
+        <?php elseif ($isAuth): ?>
+        <a href="/KrishiDisha/modules/suggest.php?section=disease" class="btn-kd btn-kd-outline" style="padding:6px 14px;font-size:12px;">
+            <i class="fa-solid fa-lightbulb"></i> Suggest Disease
+        </a>
+        <?php endif; ?>
+    </div>
 </div>
 
 <div class="page-body">
@@ -51,12 +62,26 @@ $page_title = 'Disease Detection';
         <div class="col-md-6 col-lg-4">
             <div class="card-kd" style="border-left:4px solid var(--danger);">
                 <div class="card-body-kd">
+                    <!-- Disease photo or emoji -->
+                    <?php if (!empty($d['image']) && file_exists(__DIR__.'/../'.$d['image'])): ?>
+                    <div style="height:150px;overflow:hidden;border-radius:10px;margin-bottom:16px;">
+                        <img src="/KrishiDisha/<?= htmlspecialchars($d['image']) ?>" style="width:100%;height:150px;object-fit:cover;">
+                    </div>
+                    <?php endif; ?>
                     <div class="d-flex align-items-start gap-3 mb-3">
+                        <?php if (empty($d['image']) || !file_exists(__DIR__.'/../'.$d['image'])): ?>
                         <div style="width:48px;height:48px;background:#fee2e2;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🦠</div>
-                        <div>
+                        <?php endif; ?>
+                        <div style="flex:1;">
                             <h5 style="font-size:15px;margin-bottom:4px;"><?= htmlspecialchars($d['name']) ?></h5>
                             <span class="badge-kd badge-danger" style="font-size:10px;"><i class="fa-solid fa-location-dot me-1"></i><?= htmlspecialchars($d['affected_part'] ?? 'N/A') ?></span>
                         </div>
+                        <?php if ($isAuth && currentRole() === 'admin'): ?>
+                        <div style="display:flex;gap:4px;flex-shrink:0;">
+                            <a href="/KrishiDisha/admin/manage_content.php?tab=diseases&edit=<?= $d['id'] ?>" class="btn-kd btn-kd-outline" style="padding:3px 7px;font-size:10px;"><i class="fa-solid fa-pen"></i></a>
+                            <a href="/KrishiDisha/admin/manage_content.php?tab=diseases&delete_disease=<?= $d['id'] ?>" class="btn-kd btn-kd-danger" style="padding:3px 7px;font-size:10px;" data-confirm="Delete this disease?"><i class="fa-solid fa-trash"></i></a>
+                        </div>
+                        <?php endif; ?>
                     </div>
 
                     <?php if ($d['affected_crops']): ?>

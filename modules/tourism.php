@@ -2,15 +2,21 @@
 require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/../config/db.php';
 
-$tours = $pdo->query("
+$search = trim($_GET['q'] ?? '');
+$tours = $pdo->prepare("
     SELECT ft.*, u.name as farmer_name, f.farm_location,
            (SELECT COUNT(*) FROM TOUR_BOOKING tb WHERE tb.tour_id=ft.id AND tb.status='confirmed') as booked_count
     FROM FARM_TOUR ft
     JOIN FARMER f ON ft.farmer_id=f.id
     JOIN USER u ON f.user_id=u.id
-    WHERE ft.status='active'
+    WHERE (ft.status='active' OR (ft.status='pending' AND " . (isLoggedIn() && currentRole()==='admin' ? '1=1' : '0=1') . "))
+    " . ($search ? "AND (ft.title LIKE ? OR ft.location LIKE ?)" : "") . "
     ORDER BY ft.id DESC
-")->fetchAll();
+");
+$tour_params = [];
+if ($search) { $tour_params[] = "%$search%"; $tour_params[] = "%$search%"; }
+$tours->execute($tour_params);
+$tours = $tours->fetchAll();
 
 $guides = $pdo->query("SELECT g.*, u.name FROM GUIDE g JOIN USER u ON g.user_id=u.id WHERE g.availability='available'")->fetchAll();
 
@@ -26,10 +32,23 @@ $isAuth = isLoggedIn();
         <?php if ($isAuth): ?><button id="sidebarToggle" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button><?php endif; ?>
         <div class="topbar-title"><i class="fa-solid fa-umbrella-beach me-2" style="color:#0891b2;"></i>Agri-Tourism</div>
     </div>
-    <div class="topbar-actions"><span class="badge-kd badge-info"><?= count($tours) ?> farms available</span></div>
+    <div class="topbar-actions">
+        <span class="badge-kd badge-info"><?= count($tours) ?> farms available</span>
+        <?php if ($isAuth && currentRole() === 'admin'): ?>
+        <a href="/KrishiDisha/admin/manage_content.php?tab=tours" class="btn-kd btn-kd-primary" style="padding:6px 14px;font-size:12px;">
+            <i class="fa-solid fa-pen-to-square"></i> Manage Tours
+        </a>
+        <?php endif; ?>
+    </div>
 </div>
 
 <div class="page-body">
+    <!-- Search Bar -->
+    <form class="filter-bar" method="GET" style="margin-bottom:20px;">
+        <input type="text" name="q" placeholder="Search tours by title or location..." value="<?= htmlspecialchars($search) ?>" style="flex:2;">
+        <button type="submit" class="btn-kd btn-kd-primary"><i class="fa-solid fa-search"></i> Search</button>
+        <a href="tourism.php" class="btn-kd btn-kd-outline">Reset</a>
+    </form>
     <!-- Hero banner -->
     <div style="background:linear-gradient(135deg,#0c4a6e,#0891b2);border-radius:var(--radius);padding:36px;color:#fff;margin-bottom:28px;position:relative;overflow:hidden;">
         <div style="position:absolute;right:-20px;bottom:-20px;font-size:120px;opacity:0.1;">🚜</div>
@@ -46,7 +65,22 @@ $isAuth = isLoggedIn();
         <?php foreach ($tours as $t): ?>
         <div class="col-md-6 col-lg-4">
             <div class="card-kd">
-                <div style="height:160px;background:linear-gradient(135deg,var(--primary-dark),var(--primary));display:flex;align-items:center;justify-content:center;font-size:72px;">🌿</div>
+                <div style="height:180px;overflow:hidden;position:relative;">
+                    <?php if (!empty($t['image']) && file_exists(__DIR__.'/../'.$t['image'])): ?>
+                    <img src="/KrishiDisha/<?= htmlspecialchars($t['image']) ?>" style="width:100%;height:180px;object-fit:cover;">
+                    <?php else: ?>
+                    <div style="height:180px;background:linear-gradient(135deg,var(--primary-dark),var(--primary));display:flex;align-items:center;justify-content:center;font-size:72px;">🌿</div>
+                    <?php endif; ?>
+                    <?php if ($isAuth && currentRole() === 'admin'): ?>
+                    <div style="position:absolute;top:8px;right:8px;display:flex;gap:4px;">
+                        <a href="/KrishiDisha/admin/manage_content.php?tab=tours&edit=<?= $t['id'] ?>" class="btn-kd btn-kd-outline" style="padding:4px 8px;font-size:10px;background:rgba(255,255,255,0.9);"><i class="fa-solid fa-pen"></i></a>
+                        <a href="/KrishiDisha/admin/manage_content.php?tab=tours&delete_tour=<?= $t['id'] ?>" class="btn-kd btn-kd-danger" style="padding:4px 8px;font-size:10px;" data-confirm="Delete this tour?"><i class="fa-solid fa-trash"></i></a>
+                    </div>
+                    <?php endif; ?>
+                    <?php if ($t['status'] === 'pending'): ?>
+                    <span class="badge-kd badge-warning" style="position:absolute;top:8px;left:8px;font-size:10px;">Pending Approval</span>
+                    <?php endif; ?>
+                </div>
                 <div class="card-body-kd">
                     <h5 style="margin-bottom:6px;"><?= htmlspecialchars($t['title']) ?></h5>
                     <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">

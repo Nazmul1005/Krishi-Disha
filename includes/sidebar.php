@@ -4,16 +4,19 @@ $userName = $_SESSION['name'] ?? 'User';
 
 $navMap = [
     'admin' => [
-        ['icon'=>'fa-gauge-high',     'label'=>'Dashboard',    'href'=>'/KrishiDisha/admin/dashboard.php'],
-        ['icon'=>'fa-users',          'label'=>'Users',        'href'=>'/KrishiDisha/admin/users.php'],
-        ['icon'=>'fa-user-check',     'label'=>'Approvals',    'href'=>'/KrishiDisha/admin/approvals.php'],
-        ['icon'=>'fa-hand-holding-dollar','label'=>'Commissions','href'=>'/KrishiDisha/admin/commissions.php'],
+        ['icon'=>'fa-gauge-high',       'label'=>'Dashboard',       'href'=>'/KrishiDisha/admin/dashboard.php'],
+        ['icon'=>'fa-users',            'label'=>'Users',           'href'=>'/KrishiDisha/admin/users.php'],
+        ['icon'=>'fa-user-check',       'label'=>'Approvals',       'href'=>'/KrishiDisha/admin/approvals.php'],
+        ['icon'=>'fa-pen-to-square',    'label'=>'Manage Content',  'href'=>'/KrishiDisha/admin/manage_content.php'],
+        ['icon'=>'fa-inbox',            'label'=>'Proposals',       'href'=>'/KrishiDisha/admin/proposals.php'],
+        ['icon'=>'fa-hand-holding-dollar','label'=>'Commissions',   'href'=>'/KrishiDisha/admin/commissions.php'],
     ],
     'farmer' => [
         ['icon'=>'fa-gauge-high',  'label'=>'Dashboard',     'href'=>'/KrishiDisha/farmer/dashboard.php'],
         ['icon'=>'fa-basket-shopping','label'=>'My Produce',  'href'=>'/KrishiDisha/farmer/produce.php'],
         ['icon'=>'fa-tractor',     'label'=>'Farm Lands',    'href'=>'/KrishiDisha/farmer/farmland.php'],
         ['icon'=>'fa-user-doctor', 'label'=>'Consultations', 'href'=>'/KrishiDisha/modules/book_consultation.php'],
+        ['icon'=>'fa-lightbulb',   'label'=>'Suggest Content','href'=>'/KrishiDisha/modules/suggest.php'],
     ],
     'dealer' => [
         ['icon'=>'fa-gauge-high',  'label'=>'Dashboard',  'href'=>'/KrishiDisha/dealer/dashboard.php'],
@@ -25,6 +28,7 @@ $navMap = [
         ['icon'=>'fa-map',       'label'=>'Farm Tours',  'href'=>'/KrishiDisha/tourist/tours.php'],
         ['icon'=>'fa-utensils',  'label'=>'Food Orders', 'href'=>'/KrishiDisha/tourist/food_orders.php'],
         ['icon'=>'fa-user-doctor','label'=>'Consultations','href'=>'/KrishiDisha/modules/book_consultation.php'],
+        ['icon'=>'fa-lightbulb', 'label'=>'Suggest Content','href'=>'/KrishiDisha/modules/suggest.php'],
     ],
     'cook' => [
         ['icon'=>'fa-gauge-high','label'=>'Dashboard', 'href'=>'/KrishiDisha/cook/dashboard.php'],

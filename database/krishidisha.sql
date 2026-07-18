@@ -554,5 +554,159 @@ INSERT INTO PAYMENT (payer_id, ref_type, ref_id, amount, method, status) VALUES
 INSERT INTO ADMIN_COMMISSION (payment_id, commission_rate, commission_amount, settled) VALUES
 (1,5.00,49.50,0);
 
+-- ============================================================
+-- ADDITIONAL SEED DATA (more examples across the platform)
+-- Password for every account below is also:  password
+-- ============================================================
+
+-- ---- More users (2 farmers, 2 tourists, 1 cook, 2 experts, 1 guide) ----
+INSERT INTO USER (name, email, password_hash, phone, role, status) VALUES
+('Jamal Mia',            'jamal@farmer.com',   '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '01711111113', 'farmer',  'approved'),  -- id 10
+('Ayesha Siddiqua',      'ayesha@farmer.com',  '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '01711111114', 'farmer',  'approved'),  -- id 11
+('Emma Wilson',          'emma@tourist.com',   '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '01733333332', 'tourist', 'approved'),  -- id 12
+('Kevin Tanaka',         'kevin@tourist.com',  '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '01733333333', 'tourist', 'approved'),  -- id 13
+('Ruma Khatun',          'ruma@cook.com',      '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '01744444442', 'cook',    'approved'),  -- id 14
+('Dr. Salma Rahman',     'salma@expert.com',   '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '01755555552', 'expert',  'approved'),  -- id 15
+('Prof. Habibur Rahman', 'habibur@expert.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '01755555553', 'expert',  'approved'),  -- id 16
+('Tanvir Hasan',         'tanvir@guide.com',   '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '01766666662', 'guide',   'approved');  -- id 17
+
+INSERT INTO FARMER (user_id, farm_name, farm_location, land_size_acres, soil_type) VALUES
+(10,'Sonali Fields','Bogura, Bangladesh',20.00,'Sandy Loam'),          -- farmer id 3
+(11,'Hilltop Spice Garden','Sylhet, Bangladesh',6.50,'Clay Loam');     -- farmer id 4
+
+INSERT INTO TOURIST (user_id, nationality, travel_preferences) VALUES
+(12,'British','Farm stays, bird watching, tea gardens'),               -- tourist id 2
+(13,'Japanese','Rice culture, traditional cooking, rural crafts');     -- tourist id 3
+
+INSERT INTO COOK (user_id, specialty, bio, availability) VALUES
+(14,'Mughlai & Biryani','Award-winning home chef known for rich Mughlai dishes and festive rice.','available'); -- cook id 2
+
+INSERT INTO EXPERT (user_id, specialization, qualification, hourly_rate, availability) VALUES
+(15,'Organic Farming & Vegetables','MSc Horticulture, SAU',900.00,'available'),  -- expert id 2
+(16,'Crop Genetics & Seed Science','PhD Plant Breeding, BAU',800.00,'available'); -- expert id 3
+
+INSERT INTO GUIDE (user_id, languages, experience_years, daily_rate, availability) VALUES
+(17,'Bengali, English, Japanese',7,1800.00,'available');               -- guide id 2
+
+-- ---- More crops (ids 14-21) ----
+INSERT INTO CROP (name, scientific_name, local_name, origin, history, trade_status, season, category) VALUES
+('Spinach','Spinacia oleracea','Palong Shak','Persia','A popular leafy winter vegetable in Bangladesh, rich in iron and widely used in traditional shak dishes.','local','winter','Vegetable'),
+('Cauliflower','Brassica oleracea var. botrytis','Phulkopi','Mediterranean','Introduced during the colonial period, cauliflower is now a staple winter vegetable across the country.','local','winter','Vegetable'),
+('Banana','Musa acuminata','Kola','Southeast Asia','Grown year-round throughout Bangladesh; both the fruit and plant are deeply woven into cuisine and culture.','both','all','Fruit'),
+('Papaya','Carica papaya','Pepe','Central America','Cultivated for both green (vegetable) and ripe (fruit) use; prized for aiding digestion.','local','all','Fruit'),
+('Garlic','Allium sativum','Roshun','Central Asia','An essential winter spice crop, central to Bangladeshi cooking and traditional remedies.','both','winter','Spice'),
+('Cucumber','Cucumis sativus','Shosha','South Asia','A refreshing summer crop eaten raw in salads; grown widely across the country.','local','summer','Vegetable'),
+('Pumpkin','Cucurbita moschata','Misti Kumra','Central America','A hardy year-round vegetable; both flesh and seeds are eaten. Stores very well.','local','all','Vegetable'),
+('Carrot','Daucus carota','Gajor','Persia','A winter root vegetable rich in Vitamin A, enjoyed fresh, cooked, and in sweets like halwa.','local','winter','Vegetable');
+
+-- Vitamins for the new crops
+INSERT INTO CROP_VITAMIN (crop_id, vitamin_id, amount_per_100g) VALUES
+(14,1,469.00),(14,7,28.10),(14,10,483.00),(14,6,194.00),
+(15,7,48.20),(15,6,57.00),(15,10,15.50),
+(16,7,8.70),(16,5,0.37),(16,6,20.00),
+(17,7,60.90),(17,1,47.00),(17,6,37.00),
+(18,7,31.20),(18,5,1.24),
+(19,7,2.80),(19,10,16.40),
+(20,1,426.00),(20,7,9.00),
+(21,1,835.00),(21,7,5.90),(21,10,13.20);
+
+-- ---- More diseases (ids 11-16) ----
+INSERT INTO DISEASE (name, symptoms, solution, affected_part) VALUES
+('Powdery Mildew','White powdery fungal growth on leaves and stems; leaves yellow, curl, and drop.','Apply sulfur or potassium-bicarbonate sprays. Improve air circulation and avoid overhead watering.','Leaves, Stems'),
+('Downy Mildew','Yellow angular spots on the upper leaf surface with greyish mould underneath.','Apply Metalaxyl or Mancozeb. Ensure drainage and spacing. Use resistant varieties.','Leaves'),
+('Panama Disease','Yellowing and wilting of banana leaves; internal browning of the vascular stem.','Use resistant cultivars, disease-free suckers, and strict field sanitation. No effective chemical cure.','Roots, Stem'),
+('Carrot Leaf Blight','Brown-black spots on leaflets, yellowing margins, and leaf death in severe cases.','Rotate crops, use certified seed, and apply Chlorothalonil or copper fungicides.','Leaves'),
+('Garlic Rust','Orange-brown pustules on the leaves that reduce bulb size and yield.','Apply Propiconazole. Avoid excess nitrogen. Practice crop rotation.','Leaves'),
+('Papaya Ringspot Virus','Ring-shaped spots on fruit, mosaic mottling of leaves, and stunted growth.','Control aphid vectors, rogue out infected plants, and use virus-tolerant varieties.','Leaves, Fruits');
+
+-- Link the new diseases to the new crops
+INSERT INTO CROP_DISEASE (crop_id, disease_id) VALUES
+(19,11),(20,11),(19,12),(16,13),(21,14),(18,15),(17,16);
+
+-- Region suitability for the new crops
+INSERT INTO REGION_CROP (crop_id, region, soil_type, season, suitability_score, notes) VALUES
+(14,'Jessore','Loamy','winter',9,'Ideal cool-season leafy green belt'),
+(15,'Rangpur','Sandy Loam','winter',9,'Excellent cauliflower yields'),
+(16,'Narsingdi','Alluvial','all',9,'Major banana-producing district'),
+(17,'Rajshahi','Sandy Loam','all',8,'Good papaya-growing conditions'),
+(18,'Natore','Clay Loam','winter',8,'Notable garlic cultivation'),
+(19,'Comilla','Sandy Loam','summer',8,'Widely grown cucumber region'),
+(20,'Barisal','Alluvial','all',9,'Pumpkins thrive on river silt'),
+(21,'Dinajpur','Loamy','winter',8,'Sweet carrots in the cool climate');
+
+-- Nutrient retention for a few new crops
+INSERT INTO NUTRIENT_RETENTION (crop_id, vitamin_id, method_id, retention_percentage) VALUES
+(14,7,1,100.00),(14,7,2,55.00),(14,7,3,80.00),
+(21,1,1,100.00),(21,1,2,85.00),(21,1,3,92.00),(21,1,4,70.00),
+(19,7,1,100.00),(19,7,2,60.00);
+
+-- ---- More marketplace products (product ids 5-11) ----
+INSERT INTO PRODUCT (farmer_id, crop_id, quantity_kg, price_per_kg, description, status) VALUES
+(3,14,120.00,40.00,'Fresh green spinach bundles, harvested this morning.','available'),   -- 5
+(3,15,200.00,35.00,'Snow-white cauliflower heads, winter fresh.','available'),            -- 6
+(4,18,80.00,180.00,'Aromatic single-clove garlic, sun-dried.','available'),               -- 7
+(4,21,150.00,55.00,'Sweet crunchy carrots, graded and washed.','available'),              -- 8
+(1,12,60.00,120.00,'Bogura red chili, high pungency, sun-dried.','available'),            -- 9
+(2,3,250.00,32.00,'Diamant potatoes, second harvest lot, wholesale ready.','available'),  -- 10
+(3,20,300.00,25.00,'Sweet pumpkins, long shelf life, ideal for bulk.','available');       -- 11
+
+-- Dealer stocks some of the new produce for resale
+INSERT INTO DEALER_INVENTORY (dealer_id, product_id, quantity_purchased, purchase_price, markup_price, stock_remaining) VALUES
+(1,6,100.00,35.00,45.00,100.00),
+(1,8,80.00,55.00,68.00,80.00);
+
+-- ---- More authentic meals / recipes (ids 4-8) ----
+INSERT INTO RECIPE (cook_id, name, description, prep_time_min, cook_time_min, servings, price, is_authentic) VALUES
+(1,'Bhuna Khichuri','Rich spiced rice-and-lentil comfort dish, slow-cooked with ghee and whole spices — a rainy-day Bengali favorite.',20,45,4,350.00,1),
+(1,'Chingri Malai Curry','Prawns simmered in a fragrant coconut-milk gravy with subtle spices. A festive Bengali delicacy.',25,35,3,750.00,1),
+(2,'Morog Polao','Aromatic chicken pilaf layered with fried onions, saffron, and warm spices.',30,50,4,500.00,1),
+(2,'Beef Tehari','Dhaka-style spicy beef and rice cooked in mustard oil — a beloved street-food classic.',35,60,4,450.00,1),
+(2,'Pitha Platter','Assorted traditional rice-flour cakes (bhapa, patishapta, chitoi) served with date molasses.',40,40,6,300.00,1);
+
+-- Link a couple of recipes to their key crops
+INSERT INTO RECIPE_CROP (recipe_id, crop_id, quantity_grams) VALUES
+(4,1,250),(4,8,100),(6,1,300);
+
+-- ---- More farm tours (ids 3-5) ----
+INSERT INTO FARM_TOUR (farmer_id, title, description, location, capacity, price_per_day) VALUES
+(3,'Sonali Fields Harvest Experience','Join a working paddy and vegetable farm — planting, harvesting, and a home-cooked farm lunch included.','Bogura, Bangladesh',20,3000.00),
+(4,'Hilltop Spice & Tea Trail','Walk terraced spice gardens and tea slopes with tastings and traditional hillside hospitality.','Sylhet, Bangladesh',12,3500.00),
+(1,'Green Valley Night Camp','An overnight eco-camp with pond fishing, a bonfire, and stargazing over the organic farm.','Sylhet, Bangladesh',10,4000.00);
+
+-- ---- More tour bookings ----
+INSERT INTO TOUR_BOOKING (tourist_id, tour_id, guide_id, start_date, end_date, num_visitors, total_price, status) VALUES
+(2,3,1,'2026-02-14','2026-02-15',2,7500.00,'confirmed'),
+(3,4,2,'2026-03-10','2026-03-12',3,13800.00,'pending'),
+(1,1,NULL,'2026-01-20','2026-01-21',2,5000.00,'completed');
+
+-- ---- More consultations (ids 3-7) ----
+INSERT INTO CONSULTATION (client_id, provider_id, scheduled_date, duration_hours, topic, fee, status) VALUES
+(10,7,'2026-01-15',2.00,'Boro rice irrigation scheduling and a balanced fertilizer plan',1600.00,'completed'),
+(11,15,'2026-02-02',1.00,'Organic pest control for a mixed vegetable garden',900.00,'confirmed'),
+(9,16,'2026-02-10',1.50,'Rooftop gardening: choosing the right crops and soil mix',1200.00,'pending'),
+(5,8,'2026-03-01',3.00,'Planning a multi-day guided farm tour across Sylhet',4500.00,'confirmed'),
+(2,15,'2026-03-05',2.00,'Soil salinity management for coastal-adjacent farmland',1800.00,'completed');
+
+-- ---- More food orders (ids 1-3) ----
+INSERT INTO FOOD_ORDER (tourist_id, recipe_id, cook_id, quantity, total_price, delivery_date, status) VALUES
+(2,2,1,2,1200.00,'2026-02-14','delivered'),   -- food_order id 1 (Shorshe Ilish x2)
+(3,6,2,4,2000.00,'2026-03-10','preparing'),   -- food_order id 2 (Morog Polao x4)
+(1,5,1,1,750.00,'2026-01-20','delivered');    -- food_order id 3 (Chingri Malai x1)
+
+-- ---- Payments + commissions for the new completed/paid transactions ----
+INSERT INTO PAYMENT (payer_id, ref_type, ref_id, amount, method, status) VALUES
+(10,'consultation',3,1600.00,'mobile_banking','completed'),   -- payment id 2
+(2,'consultation',7,1800.00,'cash','completed'),               -- payment id 3
+(5,'tour_booking',3,5000.00,'card','completed'),               -- payment id 4
+(12,'food_order',1,1200.00,'mobile_banking','completed'),      -- payment id 5
+(5,'food_order',3,750.00,'cash','completed');                  -- payment id 6
+
+INSERT INTO ADMIN_COMMISSION (payment_id, commission_rate, commission_amount, settled) VALUES
+(2,5.00,80.00,0),
+(3,5.00,90.00,0),
+(4,5.00,250.00,1),
+(5,5.00,60.00,0),
+(6,5.00,37.50,0);
+
 -- All demo accounts are pre-verified so they can log in immediately.
 UPDATE USER SET email_verified = 1;

@@ -6,13 +6,15 @@ $cook = $pdo->prepare("SELECT * FROM COOK WHERE user_id=?"); $cook->execute([$_S
 $msg = $err = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verifyCsrf();
     $name  = trim($_POST['name'] ?? ''); $desc = trim($_POST['description'] ?? '');
     $prep  = (int)($_POST['prep_time_min'] ?? 0); $cook_time = (int)($_POST['cook_time_min'] ?? 0);
     $serv  = (int)($_POST['servings'] ?? 2); $auth = isset($_POST['is_authentic']) ? 1 : 0;
-    if ($name) {
-        $pdo->prepare("INSERT INTO RECIPE (cook_id,name,description,prep_time_min,cook_time_min,servings,is_authentic) VALUES (?,?,?,?,?,?,?)")->execute([$cid,$name,$desc,$prep,$cook_time,$serv,$auth]);
+    $price = (float)($_POST['price'] ?? 0);
+    if ($name && $price > 0) {
+        $pdo->prepare("INSERT INTO RECIPE (cook_id,name,description,prep_time_min,cook_time_min,servings,price,is_authentic) VALUES (?,?,?,?,?,?,?,?)")->execute([$cid,$name,$desc,$prep,$cook_time,$serv,$price,$auth]);
         $msg = 'Recipe added!';
-    } else { $err = 'Recipe name is required.'; }
+    } else { $err = 'Recipe name and a price greater than zero are required.'; }
 }
 
 $recipes = $pdo->prepare("SELECT * FROM RECIPE WHERE cook_id=? ORDER BY created_at DESC"); $recipes->execute([$cid]); $recipes = $recipes->fetchAll();
@@ -31,8 +33,10 @@ $page_title = 'My Recipes';
                     <div class="card-header-kd"><h5><i class="fa-solid fa-plus me-2" style="color:#ea580c;"></i>Add Recipe</h5></div>
                     <div class="card-body-kd">
                         <form method="POST" class="form-kd" data-validate>
+                            <?= csrfField() ?>
                             <div class="form-group"><label>Recipe Name <span style="color:red">*</span></label><input type="text" name="name" class="form-control" required placeholder="e.g. Shorshe Ilish"></div>
                             <div class="form-group"><label>Description</label><textarea name="description" class="form-control" rows="3" placeholder="Describe the dish..."></textarea></div>
+                            <div class="form-group"><label>Price per order (৳) <span style="color:red">*</span></label><input type="number" name="price" class="form-control" value="300" min="1" step="0.01" required></div>
                             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
                                 <div class="form-group"><label>Prep (min)</label><input type="number" name="prep_time_min" class="form-control" value="15" min="0"></div>
                                 <div class="form-group"><label>Cook (min)</label><input type="number" name="cook_time_min" class="form-control" value="30" min="0"></div>
@@ -59,9 +63,10 @@ $page_title = 'My Recipes';
                                     <?php if ($r['is_authentic']): ?><span class="badge-kd badge-success" style="font-size:10px;">⭐ Authentic</span><?php endif; ?>
                                 </div>
                                 <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;line-height:1.5;"><?= mb_substr(htmlspecialchars($r['description']),0,100) ?>...</p>
-                                <div style="display:flex;gap:10px;font-size:11px;color:var(--text-muted);">
+                                <div style="display:flex;gap:10px;font-size:11px;color:var(--text-muted);align-items:center;">
                                     <span><i class="fa-solid fa-clock"></i> <?= $r['prep_time_min'] ?>+<?= $r['cook_time_min'] ?>m</span>
                                     <span><i class="fa-solid fa-users"></i> Serves <?= $r['servings'] ?></span>
+                                    <span style="color:#ea580c;font-weight:700;">৳<?= number_format($r['price'] ?? 0) ?></span>
                                 </div>
                             </div>
                         </div>

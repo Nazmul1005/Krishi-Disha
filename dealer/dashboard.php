@@ -9,11 +9,30 @@ $d = $dealer->fetch();
 $did = $d['id'] ?? 0;
 
 $inv_count = $pdo->prepare("SELECT COUNT(*) FROM DEALER_INVENTORY WHERE dealer_id=?"); $inv_count->execute([$did]); $inv = $inv_count->fetchColumn();
-$order_count = 0; // Deprecated
-$revenue = 0; // Deprecated
 $stock = $pdo->prepare("SELECT COALESCE(SUM(stock_remaining),0) FROM DEALER_INVENTORY WHERE dealer_id=?"); $stock->execute([$did]); $st = $stock->fetchColumn();
 
-$recent_orders = []; // Deprecated
+// Sales orders for this dealer = orders placed against this dealer's inventory
+$oc = $pdo->prepare("SELECT COUNT(*) FROM `ORDER` o
+    JOIN DEALER_INVENTORY di ON di.id = o.dealer_inventory_id AND di.dealer_id = ?");
+$oc->execute([$did]);
+$order_count = (int)$oc->fetchColumn();
+
+$rev = $pdo->prepare("SELECT COALESCE(SUM(o.total_price),0) FROM `ORDER` o
+    JOIN DEALER_INVENTORY di ON di.id = o.dealer_inventory_id AND di.dealer_id = ?
+    WHERE o.status <> 'cancelled'");
+$rev->execute([$did]);
+$revenue = (float)$rev->fetchColumn();
+
+$ro = $pdo->prepare("SELECT o.id, o.quantity_kg, o.total_price, o.status,
+        u.name AS buyer, c.name AS crop_name
+    FROM `ORDER` o
+    JOIN USER u ON o.user_id = u.id
+    JOIN PRODUCT p ON o.product_id = p.id
+    JOIN CROP c ON p.crop_id = c.id
+    JOIN DEALER_INVENTORY di ON di.id = o.dealer_inventory_id AND di.dealer_id = ?
+    ORDER BY o.created_at DESC LIMIT 5");
+$ro->execute([$did]);
+$recent_orders = $ro->fetchAll();
 
 $page_title = 'Dealer Dashboard';
 ?>

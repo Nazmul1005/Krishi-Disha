@@ -99,6 +99,10 @@ $currentPath = $_SERVER['REQUEST_URI'];
     </nav>
 
     <div class="sidebar-footer">
+        <a href="/KrishiDisha/modules/profile.php" class="nav-item <?= strpos($currentPath, 'profile.php') !== false ? 'active' : '' ?>">
+            <i class="fa-solid fa-id-card"></i>
+            <span>My Profile</span>
+        </a>
         <a href="/KrishiDisha/auth/logout.php" class="nav-item text-danger">
             <i class="fa-solid fa-right-from-bracket"></i>
             <span>Logout</span>

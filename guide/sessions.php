@@ -4,9 +4,40 @@ require_once __DIR__ . '/../config/db.php';
 requireAuth(['guide']);
 
 
-if (isset($_GET['status']) && isset($_GET['id'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['status'], $_POST['id'])) {
+    verifyCsrf();
     $valid = ['confirmed','completed','cancelled'];
-    if (in_array($_GET['status'], $valid)) $pdo->prepare("UPDATE CONSULTATION SET status=? WHERE id=? AND provider_id=?")->execute([$_GET['status'],(int)$_GET['id'],$_SESSION['user_id']]);
+    $newStatus = $_POST['status'];
+    $cid = (int)$_POST['id'];
+    if (in_array($newStatus, $valid, true)) {
+        $pdo->prepare("UPDATE CONSULTATION SET status=? WHERE id=? AND provider_id=?")
+            ->execute([$newStatus, $cid, $_SESSION['user_id']]);
+
+        // On completion, record the payment + 5% admin commission (once)
+        if ($newStatus === 'completed') {
+            $c = $pdo->prepare("SELECT * FROM CONSULTATION WHERE id=? AND provider_id=?");
+            $c->execute([$cid, $_SESSION['user_id']]);
+            $c = $c->fetch();
+            if ($c && (float)$c['fee'] > 0) {
+                $exists = $pdo->prepare("SELECT id FROM PAYMENT WHERE ref_type='consultation' AND ref_id=?");
+                $exists->execute([$cid]);
+                if (!$exists->fetch()) {
+                    $pdo->beginTransaction();
+                    try {
+                        $pdo->prepare("INSERT INTO PAYMENT (payer_id,ref_type,ref_id,amount,status) VALUES (?,'consultation',?,?,'completed')")
+                            ->execute([$c['client_id'], $cid, $c['fee']]);
+                        $pid = $pdo->lastInsertId();
+                        $pdo->prepare("INSERT INTO ADMIN_COMMISSION (payment_id,commission_rate,commission_amount) VALUES (?,5.00,?)")
+                            ->execute([$pid, (float)$c['fee'] * 0.05]);
+                        $pdo->commit();
+                    } catch (Exception $ex) {
+                        $pdo->rollBack();
+                        error_log('Consultation payment failed: ' . $ex->getMessage());
+                    }
+                }
+            }
+        }
+    }
     header('Location: sessions.php'); exit;
 }
 
@@ -34,8 +65,10 @@ $page_title = 'My Sessions';
                         <td style="color:#7c3aed;font-weight:700;">৳<?= number_format($s['fee']) ?></td>
                         <td><?php $sc=['pending'=>'badge-warning','confirmed'=>'badge-info','completed'=>'badge-success','cancelled'=>'badge-danger']; ?><span class="badge-kd <?= $sc[$s['status']]??'badge-muted' ?>"><?= ucfirst($s['status']) ?></span></td>
                         <td>
-                            <?php if ($s['status']==='pending'): ?><a href="?id=<?= $s['id'] ?>&status=confirmed" class="btn-kd btn-kd-primary" style="padding:4px 8px;font-size:11px;">Accept</a>
-                            <?php elseif ($s['status']==='confirmed'): ?><a href="?id=<?= $s['id'] ?>&status=completed" class="btn-kd btn-kd-gold" style="padding:4px 8px;font-size:11px;color:#fff;">Complete</a>
+                            <?php if ($s['status']==='pending'): ?>
+                            <form method="POST" style="display:inline;"><?= csrfField() ?><input type="hidden" name="id" value="<?= $s['id'] ?>"><input type="hidden" name="status" value="confirmed"><button type="submit" class="btn-kd btn-kd-primary" style="padding:4px 8px;font-size:11px;">Accept</button></form>
+                            <?php elseif ($s['status']==='confirmed'): ?>
+                            <form method="POST" style="display:inline;"><?= csrfField() ?><input type="hidden" name="id" value="<?= $s['id'] ?>"><input type="hidden" name="status" value="completed"><button type="submit" class="btn-kd btn-kd-gold" style="padding:4px 8px;font-size:11px;color:#fff;">Complete</button></form>
                             <?php endif; ?>
                             <a href="/KrishiDisha/modules/consultation_chat.php?id=<?= $s['id'] ?>" class="btn-kd btn-kd-outline" style="padding:4px 8px;font-size:11px;margin-left:4px;"><i class="fa-solid fa-comments"></i></a>
                         </td>

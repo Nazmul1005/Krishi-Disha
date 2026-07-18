@@ -4,9 +4,10 @@ require_once __DIR__ . '/../config/db.php';
 requireAuth(['guide']);
 $guide = $pdo->prepare("SELECT * FROM GUIDE WHERE user_id=?"); $guide->execute([$_SESSION['user_id']]); $g = $guide->fetch(); $gid = $g['id'] ?? 0;
 
-if (isset($_GET['status']) && isset($_GET['id'])) {
-    $valid = ['confirmed','completed'];
-    if (in_array($_GET['status'], $valid)) $pdo->prepare("UPDATE TOUR_BOOKING SET status=? WHERE id=? AND guide_id=?")->execute([$_GET['status'],(int)$_GET['id'],$gid]);
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['status'], $_POST['id'])) {
+    verifyCsrf();
+    $valid = ['confirmed','completed','cancelled'];
+    if (in_array($_POST['status'], $valid, true)) $pdo->prepare("UPDATE TOUR_BOOKING SET status=? WHERE id=? AND guide_id=?")->execute([$_POST['status'],(int)$_POST['id'],$gid]);
     header('Location: bookings.php'); exit;
 }
 
@@ -32,8 +33,10 @@ $page_title = 'My Bookings';
                         <td style="font-size:12px;"><?= $b['start_date'] ?> → <?= $b['end_date'] ?></td>
                         <td><?php $sc=['pending'=>'badge-warning','confirmed'=>'badge-info','completed'=>'badge-success','cancelled'=>'badge-danger']; ?><span class="badge-kd <?= $sc[$b['status']]??'badge-muted' ?>"><?= ucfirst($b['status']) ?></span></td>
                         <td>
-                            <?php if ($b['status']==='pending'): ?><a href="?id=<?= $b['id'] ?>&status=confirmed" class="btn-kd btn-kd-primary" style="padding:4px 8px;font-size:11px;">Accept</a>
-                            <?php elseif ($b['status']==='confirmed'): ?><a href="?id=<?= $b['id'] ?>&status=completed" class="btn-kd btn-kd-gold" style="padding:4px 8px;font-size:11px;color:#fff;">Complete</a>
+                            <?php if ($b['status']==='pending'): ?>
+                            <form method="POST" style="display:inline;"><?= csrfField() ?><input type="hidden" name="id" value="<?= $b['id'] ?>"><input type="hidden" name="status" value="confirmed"><button type="submit" class="btn-kd btn-kd-primary" style="padding:4px 8px;font-size:11px;">Accept</button></form>
+                            <?php elseif ($b['status']==='confirmed'): ?>
+                            <form method="POST" style="display:inline;"><?= csrfField() ?><input type="hidden" name="id" value="<?= $b['id'] ?>"><input type="hidden" name="status" value="completed"><button type="submit" class="btn-kd btn-kd-gold" style="padding:4px 8px;font-size:11px;color:#fff;">Complete</button></form>
                             <?php endif; ?>
                         </td>
                     </tr>

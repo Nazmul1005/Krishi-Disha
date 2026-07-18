@@ -6,9 +6,10 @@ requireAuth(['admin']);
 $msg = ''; $err = '';
 $filter = $_GET['filter'] ?? 'pending';
 
-// ─── Actions ─────────────────────────────────────────────────────────────────
-if (isset($_GET['approve'])) {
-    $id  = (int)$_GET['approve'];
+// ─── Actions (POST + CSRF protected) ─────────────────────────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['approve'])) {
+    verifyCsrf();
+    $id  = (int)$_POST['approve'];
     $row = $pdo->prepare("SELECT * FROM DATA_PROPOSAL WHERE id=?"); $row->execute([$id]); $row = $row->fetch();
     if ($row) {
         $data = json_decode($row['proposed_data'], true);
@@ -37,33 +38,34 @@ if (isset($_GET['approve'])) {
                 $pdo->prepare("INSERT INTO REGION_CROP (crop_id,region,soil_type,season,suitability_score) VALUES (?,?,?,?,?)")
                     ->execute([$data['crop_id']??0, $data['region']??'', $data['soil_type']??'', $data['season']??'all', $data['suitability_score']??5]);
             } elseif ($row['section'] === 'nutrition') {
-                $pdo->prepare("INSERT INTO CROP_VITAMIN (crop_id,vitamin_id,method_id,retention_percentage) VALUES (?,?,?,?)")
+                // Nutrient retention data belongs in NUTRIENT_RETENTION, not CROP_VITAMIN.
+                $pdo->prepare("INSERT INTO NUTRIENT_RETENTION (crop_id,vitamin_id,method_id,retention_percentage) VALUES (?,?,?,?)")
                     ->execute([$data['crop_id']??0, $data['vitamin_id']??0, $data['method_id']??0, $data['retention_percentage']??0]);
             }
             $pdo->prepare("UPDATE DATA_PROPOSAL SET status='approved', reviewed_by=?, reviewed_at=NOW() WHERE id=?")
                 ->execute([$_SESSION['user_id'], $id]);
             $pdo->commit();
-            // Notify user (optional placeholder)
-            $msg = 'Proposal approved and data added to the platform!';
+            flash('success', 'Proposal approved and added to the platform.');
         } catch (Exception $e) {
             $pdo->rollBack();
-            $err = 'Error: ' . $e->getMessage();
+            error_log('Proposal approval failed: ' . $e->getMessage());
+            flash('error', 'Could not approve this proposal. Please check the submitted data.');
         }
     }
-    header('Location: proposals.php?filter='.$filter.'&msg='.urlencode($msg).'&err='.urlencode($err));
+    header('Location: proposals.php?filter=' . urlencode($filter));
     exit;
 }
 
-if (isset($_GET['reject'])) {
-    $id = (int)$_GET['reject'];
-    $reason = urldecode($_GET['reason'] ?? '');
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reject'])) {
+    verifyCsrf();
+    $id = (int)$_POST['reject'];
+    $reason = trim($_POST['reason'] ?? '');
     $pdo->prepare("UPDATE DATA_PROPOSAL SET status='rejected', reviewed_by=?, reviewed_at=NOW(), admin_notes=? WHERE id=?")
         ->execute([$_SESSION['user_id'], $reason, $id]);
-    header('Location: proposals.php?filter='.$filter.'&msg='.urlencode('Proposal rejected.')); exit;
+    flash('warning', 'Proposal rejected.');
+    header('Location: proposals.php?filter=' . urlencode($filter));
+    exit;
 }
-
-if (isset($_GET['msg'])) $msg = htmlspecialchars(urldecode($_GET['msg']));
-if (isset($_GET['err'])) $err = htmlspecialchars(urldecode($_GET['err']));
 
 $proposals = $pdo->prepare("
     SELECT dp.*, u.name as user_name, u.email as user_email, u.role as user_role
@@ -95,8 +97,7 @@ $page_title = 'Content Proposals';
 </div>
 
 <div class="page-body">
-<?php if ($msg): ?><div class="alert-kd alert-kd-success" data-autohide="5000"><i class="fa-solid fa-check-circle"></i> <?= $msg ?></div><?php endif; ?>
-<?php if ($err):  ?><div class="alert-kd alert-kd-error"><i class="fa-solid fa-exclamation-circle"></i> <?= $err ?></div><?php endif; ?>
+<?= renderFlash() ?>
 
 <!-- Stats & Filter -->
 <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
@@ -168,10 +169,14 @@ $page_title = 'Content Proposals';
                     <!-- Actions -->
                     <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0;">
                         <?php if ($p['status'] === 'pending'): ?>
-                        <a href="?approve=<?= $p['id'] ?>&filter=<?= $filter ?>" class="btn-kd btn-kd-primary" style="padding:6px 14px;font-size:12px;" data-confirm="Approve and add this to the platform?">
-                            <i class="fa-solid fa-check"></i> Approve
-                        </a>
-                        <button onclick="showRejectModal(<?= $p['id'] ?>, '<?= $filter ?>')" class="btn-kd btn-kd-danger" style="padding:6px 14px;font-size:12px;">
+                        <form method="POST" action="proposals.php?filter=<?= e($filter) ?>" style="margin:0;">
+                            <?= csrfField() ?>
+                            <input type="hidden" name="approve" value="<?= $p['id'] ?>">
+                            <button type="submit" class="btn-kd btn-kd-primary" data-confirm="Approve and add this to the platform?" style="padding:6px 14px;font-size:12px;width:100%;justify-content:center;">
+                                <i class="fa-solid fa-check"></i> Approve
+                            </button>
+                        </form>
+                        <button onclick="showRejectModal(<?= $p['id'] ?>)" class="btn-kd btn-kd-danger" style="padding:6px 14px;font-size:12px;">
                             <i class="fa-solid fa-times"></i> Reject
                         </button>
                         <?php elseif ($p['status'] === 'approved'): ?>
@@ -197,27 +202,24 @@ $page_title = 'Content Proposals';
 
 <!-- Reject Modal -->
 <div id="rejectModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
-    <div style="background:var(--surface2);border-radius:16px;padding:28px;max-width:420px;width:90%;box-shadow:0 24px 48px rgba(0,0,0,0.3);">
+    <form method="POST" action="proposals.php?filter=<?= e($filter) ?>" style="background:var(--surface2);border-radius:16px;padding:28px;max-width:420px;width:90%;box-shadow:0 24px 48px rgba(0,0,0,0.3);">
+        <?= csrfField() ?>
+        <input type="hidden" name="reject" id="rejectId" value="">
         <h5 style="margin-bottom:16px;"><i class="fa-solid fa-times-circle me-2" style="color:var(--danger);"></i>Reject Proposal</h5>
         <div class="form-group">
             <label>Reason (optional)</label>
-            <textarea id="rejectReason" class="form-control" rows="3" placeholder="Explain why this was rejected..."></textarea>
+            <textarea name="reason" class="form-control" rows="3" placeholder="Explain why this was rejected..."></textarea>
         </div>
         <div style="display:flex;gap:10px;margin-top:16px;">
-            <button onclick="submitReject()" class="btn-kd btn-kd-danger" style="flex:1;justify-content:center;"><i class="fa-solid fa-times"></i> Reject</button>
-            <button onclick="closeRejectModal()" class="btn-kd btn-kd-outline" style="flex:1;justify-content:center;">Cancel</button>
+            <button type="submit" class="btn-kd btn-kd-danger" style="flex:1;justify-content:center;"><i class="fa-solid fa-times"></i> Reject</button>
+            <button type="button" onclick="closeRejectModal()" class="btn-kd btn-kd-outline" style="flex:1;justify-content:center;">Cancel</button>
         </div>
-    </div>
+    </form>
 </div>
 
 <script>
-let rejectId = null, rejectFilter = '';
-function showRejectModal(id, filter) { rejectId=id; rejectFilter=filter; document.getElementById('rejectModal').style.display='flex'; }
-function closeRejectModal() { document.getElementById('rejectModal').style.display='none'; rejectId=null; }
-function submitReject() {
-    const reason = encodeURIComponent(document.getElementById('rejectReason').value);
-    window.location = `proposals.php?reject=${rejectId}&filter=${rejectFilter}&reason=${reason}`;
-}
+function showRejectModal(id) { document.getElementById('rejectId').value = id; document.getElementById('rejectModal').style.display='flex'; }
+function closeRejectModal() { document.getElementById('rejectModal').style.display='none'; document.getElementById('rejectId').value=''; }
 </script>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

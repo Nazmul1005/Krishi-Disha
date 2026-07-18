@@ -4,9 +4,10 @@ require_once __DIR__ . '/../config/db.php';
 requireAuth(['cook']);
 $cook = $pdo->prepare("SELECT * FROM COOK WHERE user_id=?"); $cook->execute([$_SESSION['user_id']]); $ck = $cook->fetch(); $cid = $ck['id'] ?? 0;
 
-if (isset($_GET['status']) && isset($_GET['id'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['status'], $_POST['id'])) {
+    verifyCsrf();
     $valid = ['preparing','delivered','cancelled'];
-    if (in_array($_GET['status'], $valid)) $pdo->prepare("UPDATE FOOD_ORDER SET status=? WHERE id=? AND cook_id=?")->execute([$_GET['status'],(int)$_GET['id'],$cid]);
+    if (in_array($_POST['status'], $valid, true)) $pdo->prepare("UPDATE FOOD_ORDER SET status=? WHERE id=? AND cook_id=?")->execute([$_POST['status'],(int)$_POST['id'],$cid]);
     header('Location: orders.php'); exit;
 }
 
@@ -33,8 +34,10 @@ $page_title = 'Food Orders';
                         <td style="font-size:12px;"><?= $o['delivery_date'] ?></td>
                         <td><?php $sc=['pending'=>'badge-warning','preparing'=>'badge-info','delivered'=>'badge-success','cancelled'=>'badge-danger']; ?><span class="badge-kd <?= $sc[$o['status']]??'badge-muted' ?>"><?= ucfirst($o['status']) ?></span></td>
                         <td>
-                            <?php if ($o['status']==='pending'): ?><a href="?id=<?= $o['id'] ?>&status=preparing" class="btn-kd btn-kd-primary" style="padding:4px 8px;font-size:11px;">Start</a>
-                            <?php elseif ($o['status']==='preparing'): ?><a href="?id=<?= $o['id'] ?>&status=delivered" class="btn-kd btn-kd-gold" style="padding:4px 8px;font-size:11px;color:#fff;">Deliver</a>
+                            <?php if ($o['status']==='pending'): ?>
+                            <form method="POST" style="display:inline;"><?= csrfField() ?><input type="hidden" name="id" value="<?= $o['id'] ?>"><input type="hidden" name="status" value="preparing"><button type="submit" class="btn-kd btn-kd-primary" style="padding:4px 8px;font-size:11px;">Start</button></form>
+                            <?php elseif ($o['status']==='preparing'): ?>
+                            <form method="POST" style="display:inline;"><?= csrfField() ?><input type="hidden" name="id" value="<?= $o['id'] ?>"><input type="hidden" name="status" value="delivered"><button type="submit" class="btn-kd btn-kd-gold" style="padding:4px 8px;font-size:11px;color:#fff;">Deliver</button></form>
                             <?php endif; ?>
                         </td>
                     </tr>

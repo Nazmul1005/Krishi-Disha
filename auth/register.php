@@ -4,7 +4,7 @@ require_once __DIR__ . '/../config/db.php';
 
 if (isLoggedIn()) { redirectToDashboard(); }
 
-$error = $success = '';
+$error = $success = $verify_link = '';
 $roles = ['farmer','dealer','tourist','cook','expert','guide','general'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -52,9 +52,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 };
 
                 $pdo->commit();
+
+                // Issue an email-verification link (no SMTP here → surfaced in dev mode)
+                $verify_token = createAuthToken($pdo, (int)$userId, 'email_verify', 60 * 24);
+                $verify_link  = baseUrl() . '/KrishiDisha/auth/verify_email.php?token=' . $verify_token;
+
                 $success = $status === 'pending'
                     ? 'Registration successful! Your account is pending admin approval.'
-                    : 'Registration successful! You can now log in.';
+                    : 'Registration successful! Please verify your email, then log in.';
             } catch (Exception $e) {
                 $pdo->rollBack();
                 $error = 'Registration failed. Please try again.';
@@ -79,6 +84,18 @@ $page_title = 'Register';
         <?php endif; ?>
         <?php if ($success): ?>
         <div class="alert-kd alert-kd-success"><i class="fa-solid fa-circle-check"></i> <?= htmlspecialchars($success) ?></div>
+        <?php endif; ?>
+        <?php if ($verify_link): ?>
+        <div class="alert-kd alert-kd-info" style="font-size:12px;word-break:break-all;">
+            <i class="fa-solid fa-flask"></i>
+            <div>
+                <strong>Development mode:</strong> email delivery isn't configured, so verify using this link:
+                <br><a href="<?= e($verify_link) ?>" style="color:var(--primary);font-weight:600;"><?= e($verify_link) ?></a>
+            </div>
+        </div>
+        <?php endif; ?>
+        <?php if ($success): ?>
+        <a href="/KrishiDisha/auth/login.php" class="btn-kd btn-kd-primary w-100 justify-content-center mb-3"><i class="fa-solid fa-right-to-bracket"></i> Go to Login</a>
         <?php endif; ?>
 
         <form method="POST" class="form-kd" data-validate>

@@ -3,14 +3,14 @@ require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/../config/db.php';
 requireAuth(['tourist']);
 $tourist = $pdo->prepare("SELECT * FROM TOURIST WHERE user_id=?"); $tourist->execute([$_SESSION['user_id']]); $t = $tourist->fetch(); $tid = $t['id'] ?? 0;
-$msg = $err = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verifyCsrf();
     $tour_id    = (int)$_POST['tour_id'];
     $guide_id   = (int)($_POST['guide_id'] ?? 0) ?: null;
     $start      = $_POST['start_date'] ?? '';
     $end        = $_POST['end_date'] ?? '';
-    $visitors   = (int)($_POST['num_visitors'] ?? 1);
+    $visitors   = max(1, (int)($_POST['num_visitors'] ?? 1));
     $tour       = $pdo->prepare("SELECT * FROM FARM_TOUR WHERE id=? AND status='active'"); $tour->execute([$tour_id]); $tour = $tour->fetch();
     if ($tour && $start && $end && $start <= $end) {
         $days  = (strtotime($end) - strtotime($start)) / 86400 + 1;
@@ -19,9 +19,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $g = $pdo->prepare("SELECT daily_rate FROM GUIDE WHERE id=?"); $g->execute([$guide_id]); $g = $g->fetch();
             if ($g) $total += $g['daily_rate'] * $days;
         }
-        $pdo->prepare("INSERT INTO TOUR_BOOKING (tourist_id,tour_id,guide_id,start_date,end_date,num_visitors,total_price) VALUES (?,?,?,?,?,?,?)")->execute([$tid,$tour_id,$guide_id,$start,$end,$visitors,$total]);
-        $msg = "Tour booked! Total: ৳" . number_format($total);
-    } else { $err = 'Invalid selection or dates.'; }
+        $pdo->beginTransaction();
+        try {
+            $pdo->prepare("INSERT INTO TOUR_BOOKING (tourist_id,tour_id,guide_id,start_date,end_date,num_visitors,total_price) VALUES (?,?,?,?,?,?,?)")
+                ->execute([$tid,$tour_id,$guide_id,$start,$end,$visitors,$total]);
+            $bid = $pdo->lastInsertId();
+            // Prepaid booking: record payment + 5% admin commission
+            $pdo->prepare("INSERT INTO PAYMENT (payer_id,ref_type,ref_id,amount,status) VALUES (?,'tour_booking',?,?,'completed')")
+                ->execute([$_SESSION['user_id'], $bid, $total]);
+            $pid = $pdo->lastInsertId();
+            $pdo->prepare("INSERT INTO ADMIN_COMMISSION (payment_id,commission_rate,commission_amount) VALUES (?,5.00,?)")
+                ->execute([$pid, $total * 0.05]);
+            $pdo->commit();
+            flash('success', 'Tour booked and paid! Total: ' . taka($total));
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            error_log('Tour booking failed: ' . $e->getMessage());
+            flash('error', 'Booking failed. Please try again.');
+        }
+    } else { flash('error', 'Invalid selection or dates.'); }
+    header('Location: tours.php'); exit;
 }
 
 $tours  = $pdo->query("SELECT ft.*, u.name as farmer FROM FARM_TOUR ft JOIN FARMER f ON ft.farmer_id=f.id JOIN USER u ON f.user_id=u.id WHERE ft.status='active'")->fetchAll();
@@ -35,14 +52,14 @@ $page_title = 'Farm Tours';
 <div class="main-content">
     <div class="topbar"><div class="d-flex align-items-center gap-3"><button id="sidebarToggle" class="btn btn-sm d-lg-none" style="border:none;font-size:20px;"><i class="fa-solid fa-bars"></i></button><div class="topbar-title"><i class="fa-solid fa-map me-2" style="color:#0891b2;"></i>Farm Tours</div></div></div>
     <div class="page-body">
-        <?php if ($msg): ?><div class="alert-kd alert-kd-success" data-autohide="4000"><i class="fa-solid fa-check"></i> <?= $msg ?></div><?php endif; ?>
-        <?php if ($err): ?><div class="alert-kd alert-kd-error"><i class="fa-solid fa-exclamation-circle"></i> <?= $err ?></div><?php endif; ?>
+        <?= renderFlash() ?>
         <div class="row g-4">
             <div class="col-lg-4">
                 <div class="card-kd">
                     <div class="card-header-kd"><h5><i class="fa-solid fa-calendar-plus me-2" style="color:#0891b2;"></i>Book a Tour</h5></div>
                     <div class="card-body-kd">
                         <form method="POST" class="form-kd" data-validate>
+                            <?= csrfField() ?>
                             <div class="form-group"><label>Farm Tour <span style="color:red">*</span></label>
                             <select name="tour_id" class="form-control" required><option value="">Select farm tour</option>
                             <?php foreach ($tours as $to): ?><option value="<?= $to['id'] ?>" <?= $pre_tour===$to['id']?'selected':'' ?>><?= htmlspecialchars($to['title']) ?> — ৳<?= number_format($to['price_per_day']) ?>/day</option><?php endforeach; ?></select></div>

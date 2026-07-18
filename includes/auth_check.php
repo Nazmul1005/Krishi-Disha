@@ -1,6 +1,8 @@
 <?php
 session_start();
 
+require_once __DIR__ . '/helpers.php';
+
 function requireAuth(array $allowed_roles = []) {
     if (!isset($_SESSION['user_id'])) {
         header('Location: /KrishiDisha/auth/login.php');

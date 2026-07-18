@@ -5,6 +5,7 @@ require_once __DIR__ . '/../config/db.php';
 if (isLoggedIn()) { redirectToDashboard(); }
 
 $error = '';
+$verify_link = '';
 $selected_role = $_GET['role'] ?? '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -20,6 +21,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($user && password_verify($password, $user['password_hash'])) {
             if ($user['role'] !== $selected_role) {
                 $error = "This account is registered as a " . ucfirst($user['role']) . ". Please go back and select the correct role.";
+            } elseif (in_array($user['role'], ['general','tourist'], true) && (int)$user['email_verified'] !== 1) {
+                // Consumers must confirm their email before logging in
+                $verify_token = createAuthToken($pdo, (int)$user['id'], 'email_verify', 60 * 24);
+                $verify_link  = baseUrl() . '/KrishiDisha/auth/verify_email.php?token=' . $verify_token;
+                $error = 'Please verify your email address before logging in.';
             } else {
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['name']    = $user['name'];
@@ -98,8 +104,17 @@ $page_title = $selected_role ? ucfirst($selected_role) . ' Login' : 'Select Role
         <p class="sub">Sign in to your <?= ucfirst($selected_role) ?> dashboard</p>
 
         <?php if ($error): ?>
-        <div class="alert-kd alert-kd-error" data-autohide="6000">
+        <div class="alert-kd alert-kd-error">
             <i class="fa-solid fa-circle-exclamation"></i> <?= htmlspecialchars($error) ?>
+        </div>
+        <?php endif; ?>
+        <?php if ($verify_link): ?>
+        <div class="alert-kd alert-kd-info" style="font-size:12px;word-break:break-all;">
+            <i class="fa-solid fa-flask"></i>
+            <div>
+                <strong>Development mode:</strong> verify your email using this link:
+                <br><a href="<?= e($verify_link) ?>" style="color:var(--primary);font-weight:600;"><?= e($verify_link) ?></a>
+            </div>
         </div>
         <?php endif; ?>
         <?php if ($pending_msg): ?>
@@ -121,6 +136,9 @@ $page_title = $selected_role ? ucfirst($selected_role) . ' Login' : 'Select Role
                 <label for="password"><i class="fa-solid fa-lock me-1"></i>Password</label>
                 <input type="password" id="password" name="password" class="form-control"
                        placeholder="Enter password" required>
+            </div>
+            <div style="text-align:right;margin-top:-8px;margin-bottom:8px;">
+                <a href="/KrishiDisha/auth/forgot_password.php" style="font-size:12px;color:var(--primary);font-weight:600;">Forgot password?</a>
             </div>
             <button type="submit" class="btn-kd btn-kd-primary w-100 justify-content-center mt-2">
                 <i class="fa-solid fa-right-to-bracket"></i> Sign In

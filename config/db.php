@@ -16,5 +16,11 @@ try {
         ]
     );
 } catch (PDOException $e) {
-    die(json_encode(['error' => 'Database connection failed: ' . $e->getMessage()]));
+    // Log the real reason server-side; never leak DB internals to the client.
+    error_log('KrishiDisha DB connection failed: ' . $e->getMessage());
+    http_response_code(503);
+    die('<div style="font-family:sans-serif;max-width:520px;margin:80px auto;text-align:center;color:#334155;">'
+        . '<h2 style="color:#1b4332;">🌱 KrishiDisha</h2>'
+        . '<p>We could not reach the database right now. Please try again in a moment.</p>'
+        . '</div>');
 }

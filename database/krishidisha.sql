@@ -16,6 +16,7 @@ CREATE TABLE USER (
     phone VARCHAR(20),
     role ENUM('admin','farmer','dealer','tourist','cook','expert','guide','general') NOT NULL,
     status ENUM('pending','approved','suspended') NOT NULL DEFAULT 'pending',
+    email_verified TINYINT(1) NOT NULL DEFAULT 0,
     profile_image VARCHAR(255) DEFAULT 'assets/images/default_avatar.png',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -157,6 +158,7 @@ CREATE TABLE PRODUCT (
     quantity_kg DECIMAL(10,2) NOT NULL,
     price_per_kg DECIMAL(10,2) NOT NULL,
     description TEXT,
+    image VARCHAR(255) DEFAULT NULL,
     status ENUM('available','sold','pending') DEFAULT 'available',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (farmer_id) REFERENCES FARMER(id) ON DELETE CASCADE,
@@ -180,12 +182,14 @@ CREATE TABLE `ORDER` (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     product_id INT NOT NULL,
+    dealer_inventory_id INT NULL,
     quantity_kg DECIMAL(10,2) NOT NULL,
     total_price DECIMAL(10,2) NOT NULL,
     status ENUM('pending','confirmed','delivered','cancelled') DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES USER(id),
-    FOREIGN KEY (product_id) REFERENCES PRODUCT(id)
+    FOREIGN KEY (product_id) REFERENCES PRODUCT(id),
+    FOREIGN KEY (dealer_inventory_id) REFERENCES DEALER_INVENTORY(id)
 );
 
 -- ============================================================
@@ -217,6 +221,7 @@ CREATE TABLE RECIPE (
     prep_time_min INT,
     cook_time_min INT,
     servings INT DEFAULT 2,
+    price DECIMAL(10,2) NOT NULL DEFAULT 300.00,
     image VARCHAR(255),
     is_authentic TINYINT(1) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -245,7 +250,7 @@ CREATE TABLE FARM_TOUR (
     capacity INT DEFAULT 10,
     price_per_day DECIMAL(10,2),
     image VARCHAR(255),
-    status ENUM('active','inactive') DEFAULT 'active',
+    status ENUM('active','inactive','pending') DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (farmer_id) REFERENCES FARMER(id) ON DELETE CASCADE
 );
@@ -333,14 +338,55 @@ CREATE TABLE ADMIN_COMMISSION (
 );
 
 -- ============================================================
+-- DOMAIN 7: CONTENT MODERATION (user-submitted proposals)
+-- ============================================================
+
+CREATE TABLE DATA_PROPOSAL (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    section ENUM('crop','disease','nutrition','tourism','recommender','marketplace') NOT NULL,
+    action ENUM('create','update','delete') NOT NULL DEFAULT 'create',
+    target_id INT NULL,
+    title VARCHAR(255) NOT NULL,
+    proposed_data TEXT NOT NULL,
+    status ENUM('pending','approved','rejected') DEFAULT 'pending',
+    admin_notes TEXT DEFAULT NULL,
+    rejection_reason TEXT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    reviewed_at TIMESTAMP NULL DEFAULT NULL,
+    reviewed_by INT NULL,
+    FOREIGN KEY (user_id) REFERENCES USER(id) ON DELETE CASCADE,
+    FOREIGN KEY (reviewed_by) REFERENCES USER(id) ON DELETE SET NULL
+);
+
+-- ============================================================
+-- DOMAIN 8: AUTH TOKENS (password reset + email verification)
+-- ============================================================
+
+CREATE TABLE AUTH_TOKEN (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    token_hash CHAR(64) NOT NULL,
+    type ENUM('password_reset','email_verify') NOT NULL,
+    expires_at DATETIME NOT NULL,
+    used TINYINT(1) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES USER(id) ON DELETE CASCADE,
+    INDEX idx_token_hash (token_hash)
+);
+
+-- ============================================================
 -- SEED DATA
 -- ============================================================
 
--- Admin (password: Admin@1234)
+-- NOTE: Every demo account below uses the password:  password
+-- (the bcrypt hash is identical for all seeded users).
+
+-- Admin (password: password)
 INSERT INTO USER (name, email, password_hash, phone, role, status) VALUES
 ('System Admin', 'admin@krishidisha.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '01700000001', 'admin', 'approved');
 
--- Farmers (password: Test@1234)
+-- Farmers (password: password)
 INSERT INTO USER (name, email, password_hash, phone, role, status) VALUES
 ('Karim Uddin', 'karim@farmer.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '01711111111', 'farmer', 'approved'),
 ('Fatema Begum', 'fatema@farmer.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '01711111112', 'farmer', 'approved');
@@ -475,10 +521,10 @@ INSERT INTO FARM_TOUR (farmer_id, title, description, location, capacity, price_
 (2,'Fatema Organic Farm Visit','Learn about organic farming practices, composting, and sustainable agriculture at our certified organic farm.','Mymensingh, Bangladesh',10,2000.00);
 
 -- RECIPES
-INSERT INTO RECIPE (cook_id, name, description, prep_time_min, cook_time_min, servings, is_authentic) VALUES
-(1,'Panta Bhat','Traditional fermented rice soaked overnight in water, served with mustard paste, dried fish, and green chilies. A Bengali cultural heritage dish.',15,480,4,1),
-(1,'Shorshe Ilish','Hilsa fish cooked in mustard paste with turmeric and green chilies. The quintessential Bengali recipe.',20,30,4,1),
-(1,'Aloo Bhorta','Mashed potato with mustard oil, green onion, green chilies, and dried red chilies. Simple and delicious.',10,20,2,1);
+INSERT INTO RECIPE (cook_id, name, description, prep_time_min, cook_time_min, servings, price, is_authentic) VALUES
+(1,'Panta Bhat','Traditional fermented rice soaked overnight in water, served with mustard paste, dried fish, and green chilies. A Bengali cultural heritage dish.',15,480,4,250.00,1),
+(1,'Shorshe Ilish','Hilsa fish cooked in mustard paste with turmeric and green chilies. The quintessential Bengali recipe.',20,30,4,600.00,1),
+(1,'Aloo Bhorta','Mashed potato with mustard oil, green onion, green chilies, and dried red chilies. Simple and delicious.',10,20,2,180.00,1);
 
 INSERT INTO RECIPE_CROP (recipe_id, crop_id, quantity_grams) VALUES
 (1,1,200),(1,7,10),(3,3,300);
@@ -507,3 +553,6 @@ INSERT INTO PAYMENT (payer_id, ref_type, ref_id, amount, method, status) VALUES
 -- ADMIN COMMISSION
 INSERT INTO ADMIN_COMMISSION (payment_id, commission_rate, commission_amount, settled) VALUES
 (1,5.00,49.50,0);
+
+-- All demo accounts are pre-verified so they can log in immediately.
+UPDATE USER SET email_verified = 1;

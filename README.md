@@ -19,7 +19,7 @@
 <br/>
 
 [![Live on Docker](https://img.shields.io/badge/▶%20Run%20with%20Docker%20Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)](#-quick-start-with-docker)
-[![27 DB Tables](https://img.shields.io/badge/Database-27%20Tables-FF6B35?style=for-the-badge&logo=mysql&logoColor=white)](#️-database-architecture)
+[![30 DB Tables](https://img.shields.io/badge/Database-30%20Tables-FF6B35?style=for-the-badge&logo=mysql&logoColor=white)](#️-database-architecture)
 [![8 Roles](https://img.shields.io/badge/RBAC-8%20User%20Roles-8B5CF6?style=for-the-badge)](#-role-based-access-control)
 
 </div>
@@ -35,6 +35,68 @@ KrishiDisha is a full-stack, database-driven **agricultural intelligence platfor
 | 🛒 Marketplace | 📚 Intelligence Hub | 🌿 Tourism Engine | 🤝 Consultation Network |
 |:---:|:---:|:---:|:---:|
 | Direct-to-consumer produce trading with auto 5% commission tracking | Crop encyclopedia, disease detection, profit calculator & nutrition analyzer | Farm tour bookings with guide hiring & authentic rural food ordering | Live expert & guide chat consultations for all users |
+
+---
+
+## ✨ What's New
+
+<div align="center">
+
+![Unified Payments](https://img.shields.io/badge/💳%20Unified%20Payments-4%20Revenue%20Streams-22C55E?style=for-the-badge)
+![B2B2C](https://img.shields.io/badge/🔁%20Dealer%20Resale-Buyer↔Dealer%20Loop-2563EB?style=for-the-badge)
+![Security](https://img.shields.io/badge/🔒%20CSRF%20Protected-POST%20Mutations-DC2626?style=for-the-badge)
+![Auth](https://img.shields.io/badge/🔑%20Password%20Reset%20+%20Email%20Verify-7C3AED?style=for-the-badge)
+
+</div>
+
+The platform was hardened from a demo into a coherent, transaction-consistent system:
+
+| Area | Enhancement |
+|:-----|:------------|
+| 🔁 **Dealer Marketplace** | Dealers stock farmer produce and **resell to consumers** — the marketplace now surfaces a *"From Dealers"* section; purchases decrement dealer stock and flow into the dealer's sales pipeline |
+| 💳 **Unified Revenue Engine** | **Every** transaction type — marketplace orders, dealer resales, tour bookings, food orders, and consultations — now records a `PAYMENT` + automatic **5% `ADMIN_COMMISSION`** |
+| 👤 **Self-Service Profiles** | Every role can edit their profile via `modules/profile.php` — experts/guides set their own **rates**, farmers set farm details, cooks set specialty & pricing |
+| 🍛 **Real Recipe Pricing** | Food orders use a per-recipe `price` set by the cook (replacing the old flat rate) |
+| 🔒 **CSRF + POST Hardening** | All state-changing actions moved from GET links to **CSRF-protected POST** forms; DB errors no longer leak to clients |
+| 🔑 **Account Recovery** | Full **password-reset** flow and **email-verification** gate for consumers, backed by hashed, single-use, expiring tokens (`AUTH_TOKEN`) |
+| 🗄️ **Reproducible Schema** | Base schema + an **idempotent** migration (`update_schema.sql`) that is safe to re-run |
+
+### 💳 Unified Transaction & Commission Flow
+
+```mermaid
+flowchart LR
+    classDef act fill:#2d6a4f,color:#fff,stroke:#1b4332
+    classDef pay fill:#f4a261,color:#111,stroke:#e76f51
+    classDef adm fill:#7c3aed,color:#fff,stroke:#4c1d95
+
+    O[Marketplace Order]:::act --> P[PAYMENT<br/>status = completed]:::pay
+    DR[Dealer Resale]:::act --> P
+    TB[Tour Booking]:::act --> P
+    FO[Food Order]:::act --> P
+    CS[Consultation<br/>on completion]:::act --> P
+    P --> AC[ADMIN_COMMISSION<br/>5% auto-recorded]:::adm
+    AC --> LED[Admin Commission Ledger]:::adm
+```
+
+### 🔑 Authentication & Recovery Flow
+
+```mermaid
+flowchart TD
+    classDef s fill:#2563eb,color:#fff,stroke:#1e3a8a
+    classDef g fill:#dc2626,color:#fff,stroke:#991b1b
+    classDef ok fill:#22c55e,color:#111,stroke:#15803d
+
+    R[Register]:::s --> T1[Issue email_verify token]:::s
+    T1 --> V[verify_email.php]:::s
+    V --> OK1[email_verified = 1]:::ok
+    L[Login] --> C{Consumer &<br/>verified?}:::g
+    C -- no --> B[Blocked + resend link]:::g
+    C -- yes --> D[Dashboard]:::ok
+    FP[Forgot Password] --> T2[Issue reset token<br/>hashed · single-use · 1h]:::s
+    T2 --> RP[reset_password.php]:::s --> OK2[Password updated]:::ok
+```
+
+> ℹ️ This environment has no SMTP server, so verification and reset links are surfaced on-screen in a clearly labeled **Development mode** panel.
 
 ---
 
@@ -68,7 +130,7 @@ graph TD
     end
 
     subgraph Database
-        DB[(MySQL 8.0 — 27 Tables)]:::data
+        DB[(MySQL 8.0 — 30 Tables)]:::data
     end
 
     F -->|Lists Produce| M
@@ -300,7 +362,7 @@ Auto-inserted into correct table
 
 ## 🗄️ Database Architecture
 
-> **27 tables** structured around a highly normalized relational schema with strict foreign key constraints.
+> **30 tables** structured around a highly normalized relational schema with strict foreign key constraints.
 
 ```mermaid
 erDiagram
@@ -338,16 +400,21 @@ erDiagram
 | Table | Purpose |
 |:------|:--------|
 | `DATA_PROPOSAL` | Stores pending user suggestions awaiting admin approval; `proposed_data` is JSON-encoded |
-| `CROP.image` | Path to uploaded crop photo |
-| `DISEASE.image` | Path to uploaded disease photo |
-| `FARM_TOUR.image` | Path to uploaded farm tour photo |
-| `PRODUCT.image` | Path to uploaded marketplace product photo |
+| `AUTH_TOKEN` | Hashed, single-use, expiring tokens for **password reset** & **email verification** |
+| `USER.email_verified` | Email-confirmation flag gating consumer login |
+| `ORDER.dealer_inventory_id` | Links an order to a dealer's inventory (buyer↔dealer resale loop) |
+| `RECIPE.price` | Per-recipe price set by the cook (drives food-order totals) |
+| `CROP.image` · `DISEASE.image` · `FARM_TOUR.image` · `PRODUCT.image` | Paths to uploaded photos |
 
 ### 🔒 Security & Data Integrity
 
 | Layer | Implementation |
 |:------|:---------------|
 | **Password Security** | `password_hash()` + `password_verify()` — no plaintext storage |
+| **Password Recovery** | Self-service reset via hashed, single-use, 1-hour-expiry tokens (`AUTH_TOKEN`) |
+| **Email Verification** | Consumers must confirm their email before login (token-gated) |
+| **CSRF Protection** | Per-session tokens on **all** state-changing POST forms (`csrfField()` / `verifyCsrf()`) |
+| **No Info Leaks** | DB exceptions logged server-side, never echoed to the client |
 | **SQL Injection** | PDO Prepared Statements (`prepare()` + `execute()`) across all queries |
 | **Atomic Transactions** | `BEGIN TRANSACTION … COMMIT` for multi-table operations (orders, payments) |
 | **Access Control** | `includes/auth_check.php` — every protected page verifies `$_SESSION['role']` |

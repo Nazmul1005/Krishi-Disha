@@ -4,26 +4,26 @@ require_once __DIR__ . '/../config/db.php';
 requireAuth(['dealer']);
 $dealer = $pdo->prepare("SELECT * FROM DEALER WHERE user_id=?"); $dealer->execute([$_SESSION['user_id']]); $d = $dealer->fetch(); $did = $d['id'] ?? 0;
 
-if (isset($_GET['status']) && isset($_GET['id'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['status'], $_POST['id'])) {
+    verifyCsrf();
     $valid = ['confirmed','delivered','cancelled'];
-    if (in_array($_GET['status'], $valid)) {
-        $pdo->prepare("UPDATE `ORDER` SET status=? WHERE id=? AND product_id IN (SELECT product_id FROM DEALER_INVENTORY WHERE dealer_id=?)")->execute([$_GET['status'],(int)$_GET['id'],$did]);
-        if ($_GET['status'] === 'delivered') {
-            $order = $pdo->prepare("SELECT * FROM `ORDER` WHERE id=?"); $order->execute([(int)$_GET['id']]); $order = $order->fetch();
-            if ($order) {
-                $payRes = $pdo->prepare("SELECT id FROM PAYMENT WHERE ref_type='order' AND ref_id=?"); $payRes->execute([(int)$_GET['id']]); $pay = $payRes->fetch();
-                if (!$pay) {
-                    $pdo->prepare("INSERT INTO PAYMENT (payer_id,ref_type,ref_id,amount,status) VALUES (?,?,?,?,'completed')")->execute([$order['user_id'],'order',$order['id'],$order['total_price']]);
-                    $pid = $pdo->lastInsertId();
-                    $pdo->prepare("INSERT INTO ADMIN_COMMISSION (payment_id,commission_rate,commission_amount) VALUES (?,5.00,?)")->execute([$pid, $order['total_price']*0.05]);
-                }
-            }
-        }
+    if (in_array($_POST['status'], $valid, true)) {
+        // Only allow status changes on orders tied to this dealer's inventory
+        $pdo->prepare("UPDATE `ORDER` SET status=? WHERE id=? AND dealer_inventory_id IN (SELECT id FROM DEALER_INVENTORY WHERE dealer_id=?)")
+            ->execute([$_POST['status'], (int)$_POST['id'], $did]);
     }
     header('Location: sales.php'); exit;
 }
 
-$orders = $pdo->query("SELECT o.*, u.name as buyer, c.name as crop_name FROM `ORDER` o JOIN USER u ON o.user_id=u.id JOIN PRODUCT p ON o.product_id=p.id JOIN DEALER_INVENTORY di ON di.product_id=p.id AND di.dealer_id=$did JOIN CROP c ON p.crop_id=c.id ORDER BY o.created_at DESC")->fetchAll();
+$orders = $pdo->prepare("SELECT o.*, u.name as buyer, c.name as crop_name
+    FROM `ORDER` o
+    JOIN USER u ON o.user_id=u.id
+    JOIN DEALER_INVENTORY di ON di.id = o.dealer_inventory_id AND di.dealer_id = ?
+    JOIN PRODUCT p ON o.product_id=p.id
+    JOIN CROP c ON p.crop_id=c.id
+    ORDER BY o.created_at DESC");
+$orders->execute([$did]);
+$orders = $orders->fetchAll();
 $page_title = 'Sales';
 ?>
 <?php include __DIR__ . '/../includes/header.php'; ?>
@@ -48,9 +48,9 @@ $page_title = 'Sales';
                         <td style="font-size:12px;color:var(--text-muted);"><?= date('d M Y',strtotime($o['created_at'])) ?></td>
                         <td>
                             <?php if ($o['status']==='pending'): ?>
-                            <a href="?id=<?= $o['id'] ?>&status=confirmed" class="btn-kd btn-kd-primary" style="padding:4px 8px;font-size:11px;">Confirm</a>
+                            <form method="POST" style="display:inline;"><?= csrfField() ?><input type="hidden" name="id" value="<?= $o['id'] ?>"><input type="hidden" name="status" value="confirmed"><button type="submit" class="btn-kd btn-kd-primary" style="padding:4px 8px;font-size:11px;">Confirm</button></form>
                             <?php elseif ($o['status']==='confirmed'): ?>
-                            <a href="?id=<?= $o['id'] ?>&status=delivered" class="btn-kd btn-kd-gold" style="padding:4px 8px;font-size:11px;color:#fff;">Deliver</a>
+                            <form method="POST" style="display:inline;"><?= csrfField() ?><input type="hidden" name="id" value="<?= $o['id'] ?>"><input type="hidden" name="status" value="delivered"><button type="submit" class="btn-kd btn-kd-gold" style="padding:4px 8px;font-size:11px;color:#fff;">Deliver</button></form>
                             <?php endif; ?>
                         </td>
                     </tr>

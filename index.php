@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/auth_check.php';
 require_once __DIR__ . '/config/db.php';
+require_once __DIR__ . '/includes/reference_photos.php';
 $page_title = 'Home — Agricultural Platform';
 $cropCount=(int)$pdo->query("SELECT COUNT(*) FROM CROP WHERE review_status='reviewed'")->fetchColumn();
 $diseaseCount=(int)$pdo->query("SELECT COUNT(*) FROM DISEASE WHERE review_status='reviewed'")->fetchColumn();
@@ -24,6 +25,7 @@ $recentListing=$pdo->query("SELECT p.price_per_kg,c.name FROM PRODUCT p JOIN CRO
             <div class="d-flex align-items-center gap-3">
                 <a href="/KrishiDisha/modules/encyclopedia.php" class="nav-link d-none d-md-inline">Encyclopedia</a>
                 <a href="/KrishiDisha/modules/disease.php" class="nav-link d-none d-md-inline">Disease</a>
+                <a href="/KrishiDisha/modules/photo_library.php" class="nav-link d-none d-md-inline">Photos</a>
                 <a href="/KrishiDisha/modules/calculator.php" class="nav-link d-none d-md-inline">Calculator</a>
                 <?php if (isLoggedIn()): ?>
                     <a href="/KrishiDisha/<?= currentRole() ?>/dashboard.php" class="btn-kd btn-kd-primary" style="padding:8px 18px; font-size:13px;">
@@ -73,7 +75,7 @@ $recentListing=$pdo->query("SELECT p.price_per_kg,c.name FROM PRODUCT p JOIN CRO
                         <div class="hero-stat-label">User Roles</div>
                     </div>
                     <div>
-                        <div class="hero-stat-value">26</div>
+                        <div class="hero-stat-value"><?= $farmerCount ?></div>
                         <div class="hero-stat-label">Approved farmers</div>
                     </div>
                 </div>
@@ -136,6 +138,28 @@ $recentListing=$pdo->query("SELECT p.price_per_kg,c.name FROM PRODUCT p JOIN CRO
                 </div>
             </div>
         </div>
+    </div>
+</section>
+
+<!-- Photo references -->
+<section class="section photo-home-section" id="photos">
+    <div class="container">
+        <div class="text-center mb-5 fade-up">
+            <span class="section-label">Field Reference Photos</span>
+            <h2 class="section-title">See real crops and symptoms</h2>
+            <p class="section-sub mx-auto">A growing collection of credited photographs. Symptoms are examples, not a diagnosis.</p>
+        </div>
+        <div class="photo-home-grid">
+        <?php foreach (['rice', 'mango', 'eggplant', 'rice_blast', 'potato_late_blight', 'papaya_ringspot'] as $slug): ?>
+            <?php foreach (referencePhotos() as $photo): if ($photo['slug'] !== $slug) continue; ?>
+            <a class="photo-home-card" href="/KrishiDisha/modules/photo_library.php?type=<?= e($photo['type']) ?>#<?= e($photo['slug']) ?>">
+                <img loading="lazy" decoding="async" src="/KrishiDisha/<?= e($photo['image']) ?>" alt="<?= e($photo['caption']) ?>" width="420" height="260">
+                <span><?= e($photo['name']) ?><small><?= $photo['type'] === 'crop' ? 'Crop' : 'Disease example' ?> · <?= e($photo['credit']) ?></small></span>
+            </a>
+            <?php endforeach; ?>
+        <?php endforeach; ?>
+        </div>
+        <div class="text-center mt-4"><a class="btn-kd btn-kd-primary" href="/KrishiDisha/modules/photo_library.php">Browse all <?= count(referencePhotos()) ?> photographs <i class="fa-solid fa-arrow-right"></i></a></div>
     </div>
 </section>
 
@@ -245,6 +269,7 @@ $recentListing=$pdo->query("SELECT p.price_per_kg,c.name FROM PRODUCT p JOIN CRO
                 <div style="display:flex; flex-direction:column; gap:6px; font-size:13px;">
                     <a href="/KrishiDisha/modules/encyclopedia.php" style="color:rgba(255,255,255,0.6);">Crop Encyclopedia</a>
                     <a href="/KrishiDisha/modules/disease.php" style="color:rgba(255,255,255,0.6);">Disease Reference</a>
+                    <a href="/KrishiDisha/modules/photo_library.php" style="color:rgba(255,255,255,0.6);">Photo Library</a>
                     <a href="/KrishiDisha/modules/calculator.php" style="color:rgba(255,255,255,0.6);">Profit Calculator</a>
                     <a href="/KrishiDisha/modules/tourism.php" style="color:rgba(255,255,255,0.6);">Agri-Tourism</a>
                 </div>

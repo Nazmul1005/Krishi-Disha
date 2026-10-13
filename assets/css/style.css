@@ -608,3 +608,30 @@ img { max-width: 100%; }
 .fade-up.visible { opacity: 1; transform: translateY(0); }
 
 .language-switch{position:relative;z-index:20;display:flex;justify-content:flex-end;align-items:center;gap:.5rem;padding:.5rem 1rem;background:#eef6f0;font-size:.875rem}.language-switch select,.language-switch button{border:1px solid #506b59;border-radius:6px;padding:.3rem;background:white}.skip-link{position:absolute;left:1rem;top:-100px;z-index:10000;background:white;padding:1rem}.skip-link:focus{top:1rem}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #d97706;outline-offset:3px}.card-kd form+form{margin-top:.75rem}.page-body table{display:block;overflow-x:auto}.page-body h1{font-size:1.8rem}.card-body-kd input,.card-body-kd select{margin-bottom:.5rem}.language-switch+ .layout-wrapper{min-height:calc(100vh - 50px)}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+/* Credited crop and symptom photography */
+.photo-public-main { padding-top: 70px; }
+.photo-intro { background: linear-gradient(135deg, #edf8f0, #fff); border: 1px solid #d4e9da; border-radius: 18px; padding: clamp(22px, 4vw, 40px); margin-bottom: 24px; }
+.photo-intro h1 { color: #1b4332; font-size: clamp(24px, 3vw, 36px); margin-bottom: 10px; }
+.photo-intro p { max-width: 780px; line-height: 1.65; margin-bottom: 8px; }
+.photo-intro-links a { color: #1b6c4a; font-weight: 700; }
+.photo-filter { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 24px; }
+.photo-filter input { flex: 2 1 240px; }
+.photo-filter select { flex: 1 1 160px; }
+.photo-grid, .photo-home-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 20px; }
+.photo-card { overflow: hidden; background: #fff; border: 1px solid #dfe8df; border-radius: 16px; box-shadow: 0 5px 20px rgba(23, 59, 40, .06); }
+.photo-card > img { display: block; width: 100%; height: 220px; object-fit: cover; background: #e8f2e9; }
+.photo-card-body { padding: 18px; }
+.photo-card h2 { font-size: 19px; color: #1b4332; margin: 7px 0 4px; }
+.photo-card p { font-size: 13px; line-height: 1.55; margin-bottom: 8px; }
+.photo-type { display: inline-block; padding: 3px 9px; border-radius: 20px; background: #d8f3dc; color: #1b4332; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+.photo-context { color: #526457; font-style: italic; }
+.photo-credit, .photo-inline-credit { color: #526457; font-size: 11px !important; line-height: 1.45; }
+.photo-credit { border-top: 1px solid #e7eee8; padding-top: 9px; margin-top: 12px; }
+.photo-credit a, .photo-inline-credit a { color: #1b6c4a; text-decoration: underline; }
+.photo-inline-credit { padding: 6px 12px; margin: 0; }
+.photo-home-section { background: #f3f8f3; }
+.photo-home-card { display: block; overflow: hidden; border-radius: 14px; background: #fff; color: #1b4332; text-decoration: none; box-shadow: 0 5px 18px rgba(23, 59, 40, .08); transition: transform .2s ease; }
+.photo-home-card:hover { transform: translateY(-3px); color: #1b4332; }
+.photo-home-card img { display: block; width: 100%; height: 170px; object-fit: cover; }
+.photo-home-card span { display: block; padding: 12px 14px; font-weight: 800; }
+.photo-home-card small { display: block; color: #617368; font-size: 11px; font-weight: 500; margin-top: 4px; }

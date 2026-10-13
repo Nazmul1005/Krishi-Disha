@@ -1,0 +1,9 @@
+# Crop and disease reference photographs
+
+The photo library contains 34 real photographs (21 crops and 13 disease or pest examples) downloaded from Wikimedia Commons and stored under `assets/images/reference/`. Each entry in [`catalog.json`](../assets/images/reference/catalog.json) records the original file page, photographer or credited institution, license, visible caption, and SHA-256 of the downloaded image. The public photo library displays this credit and links to the original file and license for each image. Preserve these notices when reusing an image.
+
+These are **illustrative reference photos**. They were photographed in different places and conditions; they are not a collection of verified Bangladesh farm observations. A similar-looking symptom can have several causes. In particular, the wheat rust photo shows **leaf rust**, while the database's broader “Wheat Rust” record discusses other rust types too, so it is not automatically attached to that record. The mango anthracnose image shows a **flower panicle**, not affected fruit. Photos do not establish a diagnosis or a treatment.
+
+Existing uploaded crop and disease images take priority over reference photos. Reference photos are displayed on reviewed records when the name matches and no uploaded image exists. The photo library itself is available without reviewed database records; adding photos does not publish any unreviewed agronomic advice.
+
+Before adding more photos, verify the crop, host, affected plant part, condition and original file page; use a reusable license, download the image locally, update `catalog.json` with an accurate caption and credit, and check the displayed image visually. Where the image only depicts one example of a broader condition, say so in the caption and do not automatically map it to broader advice.

@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__.'/../includes/content.php';
+require_once __DIR__.'/../includes/reference_photos.php';
 
 $search = trim($_GET['q'] ?? '');
 $where = "WHERE d.review_status='reviewed'" . ($search ? " AND (d.name LIKE ? OR d.symptoms LIKE ? OR d.affected_part LIKE ? OR c.name LIKE ? OR c.local_name LIKE ?)" : "");
@@ -38,6 +39,7 @@ $page_title = 'Disease Reference';
         <div class="topbar-title"><i class="fa-solid fa-bug me-2" style="color:var(--danger);"></i>Crop disease reference</div>
     </div>
     <div class="topbar-actions">
+        <a href="/KrishiDisha/modules/photo_library.php?type=disease" class="btn-kd btn-kd-outline" style="padding:6px 14px;font-size:12px;"><i class="fa-solid fa-images"></i> Symptom photos</a>
         <span class="badge-kd badge-danger"><?= count($diseases) ?> diseases tracked</span>
         <?php if ($isAuth && currentRole() === 'admin'): ?>
         <a href="/KrishiDisha/admin/manage_content.php?tab=diseases" class="btn-kd btn-kd-primary" style="padding:6px 14px;font-size:12px;">
@@ -60,17 +62,19 @@ $page_title = 'Disease Reference';
 
     <div class="row g-4">
         <?php foreach ($diseases as $d): ?>
+        <?php $photo = $d['name'] === 'Wheat Rust' ? null : referencePhoto('disease', $d['name']); $hasUploadedImage = !empty($d['image']) && mediaAvailable($d['image']); ?>
         <div class="col-md-6 col-lg-4">
             <div class="card-kd" style="border-left:4px solid var(--danger);">
                 <div class="card-body-kd">
                     <p class="small">Source: <a href="<?= e($d['source_url']) ?>" target="_blank" rel="noopener">Reference</a> · Reviewed <?= e($d['reviewed_at']) ?></p><!-- Disease photo or emoji -->
-                    <?php if (!empty($d['image']) && mediaAvailable($d['image'])): ?>
+                    <?php if ($hasUploadedImage || $photo): ?>
                     <div style="height:150px;overflow:hidden;border-radius:10px;margin-bottom:16px;">
-                        <img alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($d['image']) ?>" style="width:100%;height:150px;object-fit:cover;">
+                        <img loading="lazy" src="/KrishiDisha/<?= e($hasUploadedImage ? $d['image'] : $photo['image']) ?>" alt="<?= e($hasUploadedImage ? $d['name'] : $photo['caption']) ?>" style="width:100%;height:150px;object-fit:cover;">
                     </div>
+                    <?php if (!$hasUploadedImage && $photo): ?><p class="photo-inline-credit">Photo: <?= e($photo['credit']) ?> · <a href="/KrishiDisha/modules/photo_library.php?type=disease#<?= e($photo['slug']) ?>">source & license</a></p><?php endif; ?>
                     <?php endif; ?>
                     <div class="d-flex align-items-start gap-3 mb-3">
-                        <?php if (empty($d['image']) || !mediaAvailable($d['image'])): ?>
+                        <?php if (!$hasUploadedImage && !$photo): ?>
                         <div style="width:48px;height:48px;background:#fee2e2;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🦠</div>
                         <?php endif; ?>
                         <div style="flex:1;">

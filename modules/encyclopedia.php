@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../includes/reference_photos.php';
 
 $search   = trim($_GET['q'] ?? '');
 $season   = trim($_GET['season'] ?? '');
@@ -42,6 +43,7 @@ $page_title = 'Crop Encyclopedia';
         <div class="topbar-title"><i class="fa-solid fa-book-atlas me-2" style="color:var(--primary);"></i>Crop Encyclopedia</div>
     </div>
     <div class="topbar-actions">
+        <a href="/KrishiDisha/modules/photo_library.php?type=crop" class="btn-kd btn-kd-outline" style="padding:6px 14px;font-size:12px;"><i class="fa-solid fa-images"></i> Crop photos</a>
         <span class="badge-kd badge-success"><?= count($crops) ?> entries</span>
         <?php if (isLoggedIn() && currentRole() === 'admin'): ?>
         <a href="/KrishiDisha/admin/manage_content.php?tab=crops" class="btn-kd btn-kd-primary" style="padding:6px 14px;font-size:12px;">
@@ -77,6 +79,7 @@ $page_title = 'Crop Encyclopedia';
     <?php else: ?>
     <div class="row g-4">
         <?php foreach ($crops as $crop): ?>
+        <?php $photo = referencePhoto('crop', $crop['name']); $hasUploadedImage = !empty($crop['image']) && mediaAvailable($crop['image']); ?>
         <div class="col-md-6 col-lg-4 col-xl-3">
             <div class="crop-card" style="position:relative;">
                 <?php if (isLoggedIn() && currentRole() === 'admin'): ?>
@@ -87,8 +90,8 @@ $page_title = 'Crop Encyclopedia';
                 <?php endif; ?>
                 <a href="encyclopedia.php?detail=<?= e($crop['id']) ?>" style="display:block; text-decoration:none;color:inherit;">
                     <div style="height:180px; overflow:hidden; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--surface3),var(--accent3));">
-                        <?php if (!empty($crop['image']) && mediaAvailable($crop['image'])): ?>
-                        <img alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($crop['image']) ?>" alt="<?= htmlspecialchars($crop['name']) ?>" style="width:100%;height:180px;object-fit:cover;">
+                        <?php if ($hasUploadedImage || $photo): ?>
+                        <img loading="lazy" src="/KrishiDisha/<?= e($hasUploadedImage ? $crop['image'] : $photo['image']) ?>" alt="<?= e($hasUploadedImage ? $crop['name'] : $photo['caption']) ?>" style="width:100%;height:180px;object-fit:cover;">
                         <?php else: ?>
                         <div style="font-size:72px;"><?php $icons=['Grain'=>'🌾','Vegetable'=>'🥕','Fruit'=>'🍎','Fiber'=>'🪢','Oilseed'=>'🌻','Legume'=>'🫘','Cash Crop'=>'💰']; echo $icons[$crop['category']]??'🌱'; ?></div>
                         <?php endif; ?>
@@ -104,6 +107,7 @@ $page_title = 'Crop Encyclopedia';
                         <p><?= mb_substr(strip_tags($crop['history'] ?? ''), 0, 90) ?>...</p>
                     </div>
                 </a>
+                <?php if (!$hasUploadedImage && $photo): ?><div class="photo-inline-credit">Photo: <?= e($photo['credit']) ?> · <a href="/KrishiDisha/modules/photo_library.php?type=crop#<?= e($photo['slug']) ?>">source & license</a></div><?php endif; ?>
             </div>
         </div>
         <?php endforeach; ?>

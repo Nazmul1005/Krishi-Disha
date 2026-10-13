@@ -62,6 +62,7 @@ $sharedNav = [
     ['icon'=>'fa-store',        'label'=>'Marketplace',       'href'=>'/KrishiDisha/user/marketplace.php'],
     ['icon'=>'fa-book-atlas',   'label'=>'Crop Encyclopedia', 'href'=>'/KrishiDisha/modules/encyclopedia.php'],
     ['icon'=>'fa-bug',          'label'=>'Disease Reference', 'href'=>'/KrishiDisha/modules/disease.php'],
+    ['icon'=>'fa-images',       'label'=>'Crop & Disease Photos', 'href'=>'/KrishiDisha/modules/photo_library.php'],
     ['icon'=>'fa-seedling',     'label'=>'Crop Reference Matches',  'href'=>'/KrishiDisha/modules/recommend.php'],
     ['icon'=>'fa-leaf',         'label'=>'Nutrition Guide',   'href'=>'/KrishiDisha/modules/nutrition.php'],
     ['icon'=>'fa-umbrella-beach','label'=>'Agri-Tourism',     'href'=>'/KrishiDisha/modules/tourism.php'],

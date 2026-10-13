@@ -628,6 +628,10 @@ Payout/settlement records use real transfer references
 
 ---
 
+## 📷 Real Crop and Disease Photographs
+
+The [photo library](modules/photo_library.php) adds 34 locally hosted, credited Wikimedia Commons photographs: 21 crops and 13 disease or pest examples. Every card links to its original file and license. The [image source guide](docs/IMAGE_SOURCES.md) explains the scope and limitations; the complete per-image attribution and checksums are in [the catalog](assets/images/reference/catalog.json). Photos illustrate examples only and do not diagnose a field problem. Reviewed crop and disease entries use a matching reference photo when they have no uploaded image; unreviewed advice remains unpublished.
+
 ## 🧪 Verification & Responsible Use
 
 ```bash

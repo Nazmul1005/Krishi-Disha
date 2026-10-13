@@ -20,7 +20,10 @@ jobs:
       - name: Scan database image
         run: docker run --rm -v /var/run/docker.sock:/var/run/docker.sock:ro aquasec/trivy:0.75.0 image --scanners vuln --ignore-unfixed --severity HIGH,CRITICAL --exit-code 1 krishidisha-mysql:8.4
       - name: Prepare isolated browser database
-        run: docker compose run --rm --no-deps -v "$PWD:/app" migrate php tests/browser-fixtures.php
+        run: |
+          docker compose run --rm --no-deps -v "$PWD:/app" migrate php tests/browser-fixtures.php
+          sudo chown "$(id -u):$(id -g)" .browser-fixtures.json
+          test -r .browser-fixtures.json
       - name: Start isolated browser app
         run: BROWSER_DB="$(node -p "require('./.browser-fixtures.json').database")" docker compose --profile tests up -d browser
       - run: PLAYWRIGHT_SKIP_BROWSER_GC=1 npx playwright install --with-deps chromium

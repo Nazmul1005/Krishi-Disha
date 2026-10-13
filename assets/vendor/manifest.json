@@ -7,5 +7,11 @@
   "assets/vendor/fontawesome/webfonts/fa-brands-400.woff2": "d7236a19bf23cbb2027280e8f51dc99d6c45976a2ed60de73382b034b18a2b68",
   "assets/vendor/fontawesome/webfonts/fa-regular-400.woff2": "e3456d1283b9d75337a773dfd147bf908fd02c01b4bf48576d8603a69b13cbe5",
   "assets/vendor/fontawesome/webfonts/fa-solid-900.woff2": "aa75998623a391e61c6901794ace832e3ecdd288b56d608f21bea0411acc0b8e",
-  "assets/vendor/fontawesome/webfonts/fa-v4compatibility.woff2": "0ce9033c69dc714f5f45ef9bf17d55e4c46bcdfad6799a4e92b38e7781bf86bd"
+  "assets/vendor/fontawesome/webfonts/fa-v4compatibility.woff2": "0ce9033c69dc714f5f45ef9bf17d55e4c46bcdfad6799a4e92b38e7781bf86bd",
+  "assets/fonts/Manrope-OFL.txt": "58172e0c0fac2cda8a37b348164bb55e44b0e69051e557e92b1d3f6910141f7b",
+  "assets/fonts/Noto-Sans-Bengali-OFL.txt": "754f0e221aa7d5a915489f3bf1f20fe53ddc35ab2834a4d91656d78f9622de70",
+  "assets/fonts/README.md": "62c87475445f5aac9be17ef88d08178a0f865ab51c8ae09858f87bc4a1b2b9c3",
+  "assets/fonts/fonts.css": "a6c4f09c54075aa5f82f3fbdb24216363a37505613da1709f6cc780570ff3d39",
+  "assets/fonts/noto-sans-bengali.woff2": "d8cebde0595ce46cfbf85911792fc7cb5525d8ba61e1a2f8979cb4389d40c948",
+  "assets/fonts/ui-latin.woff2": "e310b55a7fd9677f5e3555e6c6c4d064fa1f1d24393f0ddbe217cea12a8c432f"
 }

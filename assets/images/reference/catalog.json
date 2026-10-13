@@ -10,7 +10,12 @@
     "credit": "Kalaiyarasiselvam",
     "license": "CC BY-SA 4.0",
     "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
-    "sha256": "1e5b239d60cc1bb31a7dee8d7689500fc268fac9ce7c5b7f14d0fb0084362ef6"
+    "sha256": "1e5b239d60cc1bb31a7dee8d7689500fc268fac9ce7c5b7f14d0fb0084362ef6",
+    "optimized_image": "assets/images/reference/crop/rice.webp",
+    "optimized_sha256": "6f5e431da2ce9013316019585794d234b2c3034e65a36abcae4c2c806cb6a25c",
+    "optimized_bytes": 189224,
+    "optimized_width": 720,
+    "optimized_height": 960
   },
   {
     "type": "crop",
@@ -23,7 +28,12 @@
     "credit": "Bijay chaurasia",
     "license": "CC BY-SA 4.0",
     "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
-    "sha256": "f40fd84e561e843af6b7209864e1787b77b7359822d2353aaa2bbdefad7af3d9"
+    "sha256": "f40fd84e561e843af6b7209864e1787b77b7359822d2353aaa2bbdefad7af3d9",
+    "optimized_image": "assets/images/reference/crop/wheat.webp",
+    "optimized_sha256": "a6665cfec828100b954f53cb1ad43558ea45a0d571723c1f4d09c2fdaacbcf71",
+    "optimized_bytes": 169746,
+    "optimized_width": 960,
+    "optimized_height": 540
   },
   {
     "type": "crop",
@@ -36,7 +46,12 @@
     "credit": "Sciencia58",
     "license": "CC0",
     "license_url": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
-    "sha256": "d14d256ae03749f85dffff9eb77a69c09c8e600ee44b1eab000820854d584290"
+    "sha256": "d14d256ae03749f85dffff9eb77a69c09c8e600ee44b1eab000820854d584290",
+    "optimized_image": "assets/images/reference/crop/potato.webp",
+    "optimized_sha256": "fec1c9e5ec4626d0e298a26ee0262570ec33bb4a3c766626c68e9254c656b927",
+    "optimized_bytes": 87892,
+    "optimized_width": 849,
+    "optimized_height": 960
   },
   {
     "type": "crop",
@@ -49,7 +64,12 @@
     "credit": "George Chernilevsky",
     "license": "CC BY 4.0",
     "license_url": "https://creativecommons.org/licenses/by/4.0",
-    "sha256": "f0803f613004e376b7ac4a153380aba76e8dd8364c2779e0d5df5aa7b2469ca6"
+    "sha256": "f0803f613004e376b7ac4a153380aba76e8dd8364c2779e0d5df5aa7b2469ca6",
+    "optimized_image": "assets/images/reference/crop/tomato.webp",
+    "optimized_sha256": "732c1852b934012e811570d49c5927b171bfccba48445dc6edb173e60e2fcf6d",
+    "optimized_bytes": 40626,
+    "optimized_width": 662,
+    "optimized_height": 960
   },
   {
     "type": "crop",
@@ -62,7 +82,12 @@
     "credit": "பிருந்தா சுப்ரமணி",
     "license": "CC BY-SA 4.0",
     "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
-    "sha256": "df0ab9e610e028131e1ff83b67e37a0145e374c8d9a02404b345c358fb71da12"
+    "sha256": "df0ab9e610e028131e1ff83b67e37a0145e374c8d9a02404b345c358fb71da12",
+    "optimized_image": "assets/images/reference/crop/mango.webp",
+    "optimized_sha256": "d9731375377c5ee5830c387d1c19ecf2f107d48dd8a69ccc3cd8c068952218e5",
+    "optimized_bytes": 39456,
+    "optimized_width": 720,
+    "optimized_height": 960
   },
   {
     "type": "crop",
@@ -75,7 +100,12 @@
     "credit": "Dinesh Valke",
     "license": "CC BY-SA 4.0",
     "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
-    "sha256": "4a857f2df70424907dc9afd70517812a479e2185ff26bd3fcf9de953ec1098fb"
+    "sha256": "4a857f2df70424907dc9afd70517812a479e2185ff26bd3fcf9de953ec1098fb",
+    "optimized_image": "assets/images/reference/crop/jute.webp",
+    "optimized_sha256": "a7c3585375ff7a390cbcd0b612cba2c4cd5dcc0fe3f4e27ec1eb64fa4086ed2f",
+    "optimized_bytes": 40080,
+    "optimized_width": 960,
+    "optimized_height": 720
   },
   {
     "type": "crop",
@@ -88,7 +118,12 @@
     "credit": "Petr Pakandl",
     "license": "CC BY-SA 2.5",
     "license_url": "https://creativecommons.org/licenses/by-sa/2.5",
-    "sha256": "e0cd029f8ac404a3b68d497287f7fe627020f02d17b6d91c65150e16df5e364b"
+    "sha256": "e0cd029f8ac404a3b68d497287f7fe627020f02d17b6d91c65150e16df5e364b",
+    "optimized_image": "assets/images/reference/crop/mustard.webp",
+    "optimized_sha256": "b4e501a5f9bdfb401425fd7959ba3c734e7f5cc2e2531c467e131fd22e10fff4",
+    "optimized_bytes": 33650,
+    "optimized_width": 960,
+    "optimized_height": 540
   },
   {
     "type": "crop",
@@ -101,7 +136,12 @@
     "credit": "ChriKo",
     "license": "CC BY-SA 3.0",
     "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
-    "sha256": "bfb22258d77573a2db76cada612a619e273c00bce75c2a06853edebb471c8728"
+    "sha256": "bfb22258d77573a2db76cada612a619e273c00bce75c2a06853edebb471c8728",
+    "optimized_image": "assets/images/reference/crop/lentil.webp",
+    "optimized_sha256": "94b66bf5a95d193b6d8ebff0717c53bcebcf126107c468ce5c9aa284dc639132",
+    "optimized_bytes": 224084,
+    "optimized_width": 960,
+    "optimized_height": 600
   },
   {
     "type": "crop",
@@ -114,7 +154,12 @@
     "credit": "Billjones94",
     "license": "CC BY-SA 4.0",
     "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
-    "sha256": "db4c64bc79632d634a007f2add4b3acc95c7cc5d088b3352b980c1f3cc6942d6"
+    "sha256": "db4c64bc79632d634a007f2add4b3acc95c7cc5d088b3352b980c1f3cc6942d6",
+    "optimized_image": "assets/images/reference/crop/bitter_gourd.webp",
+    "optimized_sha256": "9cbdda625b9097007e0b4a1261c4f112775ba392579d57d6e6121c6b9807b636",
+    "optimized_bytes": 97698,
+    "optimized_width": 720,
+    "optimized_height": 960
   },
   {
     "type": "crop",
@@ -127,7 +172,12 @@
     "credit": "Photo by David J. Stang",
     "license": "CC BY-SA 4.0",
     "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
-    "sha256": "a3452447f5236e8ea30ef40e009a837b5fc4f0196b335077851caf40470a86ea"
+    "sha256": "a3452447f5236e8ea30ef40e009a837b5fc4f0196b335077851caf40470a86ea",
+    "optimized_image": "assets/images/reference/crop/sugarcane.webp",
+    "optimized_sha256": "364e58ec770dd5497321481bdb07c11c7463cbed73c88ae963e5bf7f7f7141cd",
+    "optimized_bytes": 105692,
+    "optimized_width": 640,
+    "optimized_height": 960
   },
   {
     "type": "crop",
@@ -140,7 +190,12 @@
     "credit": "Azreey",
     "license": "CC BY-SA 4.0",
     "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
-    "sha256": "1e0eb39f4b54e9e2431cd35f2e2b98b1648c118ee51f759c842c0f571ae0bcfe"
+    "sha256": "1e0eb39f4b54e9e2431cd35f2e2b98b1648c118ee51f759c842c0f571ae0bcfe",
+    "optimized_image": "assets/images/reference/crop/eggplant.webp",
+    "optimized_sha256": "a06b0aeb5c09ba7b8fd2ff90897f76cd03ca09f6b727e9d503f6c3b585dda5d0",
+    "optimized_bytes": 72024,
+    "optimized_width": 432,
+    "optimized_height": 960
   },
   {
     "type": "crop",
@@ -153,7 +208,12 @@
     "credit": "Clintacc",
     "license": "CC0",
     "license_url": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
-    "sha256": "3b66c9b76b9a24424034964ea0977aad718cdfd663064d1e782b797bab6fdb53"
+    "sha256": "3b66c9b76b9a24424034964ea0977aad718cdfd663064d1e782b797bab6fdb53",
+    "optimized_image": "assets/images/reference/crop/chili.webp",
+    "optimized_sha256": "2aac0984d1bc36b5b02816bafd29f0b814377a4b342b4e79c9a50ce61f648e75",
+    "optimized_bytes": 118506,
+    "optimized_width": 431,
+    "optimized_height": 960
   },
   {
     "type": "crop",
@@ -166,7 +226,12 @@
     "credit": "Lfatty22",
     "license": "CC0",
     "license_url": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
-    "sha256": "17d22dda6e3f42f17d4c228e864e671ba307199b9e7e7057371f33ef68035cab"
+    "sha256": "17d22dda6e3f42f17d4c228e864e671ba307199b9e7e7057371f33ef68035cab",
+    "optimized_image": "assets/images/reference/crop/onion.webp",
+    "optimized_sha256": "22a94a46bbac4f57fee0a380e6a93e369f2e8ab6e16116703ba04b9dd72c06fb",
+    "optimized_bytes": 41236,
+    "optimized_width": 433,
+    "optimized_height": 960
   },
   {
     "type": "crop",
@@ -179,7 +244,12 @@
     "credit": "Kayser Ahmad",
     "license": "CC BY-SA 4.0",
     "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
-    "sha256": "428f33c8774d9d38e92628ebeed8029b1ecd1f0742d1314eb3ec3e93b1c137a8"
+    "sha256": "428f33c8774d9d38e92628ebeed8029b1ecd1f0742d1314eb3ec3e93b1c137a8",
+    "optimized_image": "assets/images/reference/crop/spinach.webp",
+    "optimized_sha256": "073e03792eeeea0ba237a8dab8301ef752c37a0ecb0e8fec8c626988d5ffb4bb",
+    "optimized_bytes": 123452,
+    "optimized_width": 720,
+    "optimized_height": 960
   },
   {
     "type": "crop",
@@ -192,7 +262,12 @@
     "credit": "Rjcastillo",
     "license": "CC BY-SA 4.0",
     "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
-    "sha256": "ed4d2876c5b25781fb6bfd760750b0cef394821cd1e2b79d95bd9454a33020d8"
+    "sha256": "ed4d2876c5b25781fb6bfd760750b0cef394821cd1e2b79d95bd9454a33020d8",
+    "optimized_image": "assets/images/reference/crop/cauliflower.webp",
+    "optimized_sha256": "7c6016012d4012292a2729dbbe359cc5bffa5d55500039db9315561594a7b1ac",
+    "optimized_bytes": 77316,
+    "optimized_width": 960,
+    "optimized_height": 669
   },
   {
     "type": "crop",
@@ -205,7 +280,12 @@
     "credit": "Forest and Kim Starr",
     "license": "CC BY 3.0 us",
     "license_url": "https://creativecommons.org/licenses/by/3.0/us/deed.en",
-    "sha256": "76fadd309e15a43021cd305c062ff8349f03b789aacfbabf8e37da3e473f9a5e"
+    "sha256": "76fadd309e15a43021cd305c062ff8349f03b789aacfbabf8e37da3e473f9a5e",
+    "optimized_image": "assets/images/reference/crop/banana.webp",
+    "optimized_sha256": "0d27bcce678b7a8073ce9c9b3a32600d5b708b86964706338ccc093b52669711",
+    "optimized_bytes": 68046,
+    "optimized_width": 960,
+    "optimized_height": 720
   },
   {
     "type": "crop",
@@ -218,7 +298,12 @@
     "credit": "Joydeep",
     "license": "CC BY-SA 3.0",
     "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
-    "sha256": "40ba241032a35da126e6f0d4e5df7d94de10226881f84fc7d1b7446c0dcae3f2"
+    "sha256": "40ba241032a35da126e6f0d4e5df7d94de10226881f84fc7d1b7446c0dcae3f2",
+    "optimized_image": "assets/images/reference/crop/papaya.webp",
+    "optimized_sha256": "005ffaf396bb56e57b5b5ad2cc8a8720ddb938eaf9a35eae842bad18c466a30a",
+    "optimized_bytes": 64560,
+    "optimized_width": 714,
+    "optimized_height": 960
   },
   {
     "type": "crop",
@@ -231,7 +316,12 @@
     "credit": "Ermell",
     "license": "CC BY-SA 4.0",
     "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
-    "sha256": "ee375bfbc564228ad5a46472a3b4f8d1f1b9ab03e20fd8b6073197f8b9d735cc"
+    "sha256": "ee375bfbc564228ad5a46472a3b4f8d1f1b9ab03e20fd8b6073197f8b9d735cc",
+    "optimized_image": "assets/images/reference/crop/garlic.webp",
+    "optimized_sha256": "2d3aa8f4e73b4e0ca539905b29aa28b901ae19519d13914bc4552992bad19f98",
+    "optimized_bytes": 17558,
+    "optimized_width": 960,
+    "optimized_height": 720
   },
   {
     "type": "crop",
@@ -244,7 +334,12 @@
     "credit": "Maathavan",
     "license": "CC BY-SA 3.0",
     "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
-    "sha256": "8d62b9cb31750072cbefb8b75b7408fa0df4512b202abaa2386839fa25e7d6ec"
+    "sha256": "8d62b9cb31750072cbefb8b75b7408fa0df4512b202abaa2386839fa25e7d6ec",
+    "optimized_image": "assets/images/reference/crop/cucumber.webp",
+    "optimized_sha256": "df2fe54956ece9593d5f72c0ae8f04dc06b1287fed5bf590c08acf4b90dd9e76",
+    "optimized_bytes": 38048,
+    "optimized_width": 540,
+    "optimized_height": 960
   },
   {
     "type": "crop",
@@ -257,7 +352,12 @@
     "credit": "Fpalli",
     "license": "CC BY-SA 3.0",
     "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
-    "sha256": "7bebf506ae09b3d94c1a1f63e9a7744e81e3d9c3d02e78843e45da308889aa9c"
+    "sha256": "7bebf506ae09b3d94c1a1f63e9a7744e81e3d9c3d02e78843e45da308889aa9c",
+    "optimized_image": "assets/images/reference/crop/pumpkin.webp",
+    "optimized_sha256": "dc46bcdaeb40e25df96e4f68d8fa1818ba1159db503d3d83355a5606bcffb297",
+    "optimized_bytes": 187760,
+    "optimized_width": 960,
+    "optimized_height": 720
   },
   {
     "type": "crop",
@@ -270,7 +370,12 @@
     "credit": "woodleywonderworks",
     "license": "CC BY 2.0",
     "license_url": "https://creativecommons.org/licenses/by/2.0",
-    "sha256": "3eeb63071afc21c1a3fff995c768093874a74c2bc5fa450d2c8e8acbe56bef18"
+    "sha256": "3eeb63071afc21c1a3fff995c768093874a74c2bc5fa450d2c8e8acbe56bef18",
+    "optimized_image": "assets/images/reference/crop/carrot.webp",
+    "optimized_sha256": "0a037db2af29c8d5ed9b761e882f5df98eeaa79dc93a1ff70667e7fd41fdef5d",
+    "optimized_bytes": 352578,
+    "optimized_width": 960,
+    "optimized_height": 960
   },
   {
     "type": "disease",
@@ -283,7 +388,12 @@
     "credit": "Donald Groth, Louisiana State University AgCenter, Bugwood.org",
     "license": "Public domain",
     "license_url": "https://commons.wikimedia.org/wiki/File:Rice_blast_symptoms.jpg",
-    "sha256": "ac3772e1a1d7522b3e71654eead950701c824042a6fdedab27fec38bd037e383"
+    "sha256": "ac3772e1a1d7522b3e71654eead950701c824042a6fdedab27fec38bd037e383",
+    "optimized_image": "assets/images/reference/disease/rice_blast.webp",
+    "optimized_sha256": "490a452a242b62fe5655b714e5e2a0e37e78d13278bbd2eb9a90f02a4329d5e6",
+    "optimized_bytes": 39880,
+    "optimized_width": 960,
+    "optimized_height": 643
   },
   {
     "type": "disease",
@@ -296,7 +406,12 @@
     "credit": "Donald Groth, Louisiana State University AgCenter, Bugwood.org",
     "license": "CC BY 3.0 us",
     "license_url": "https://creativecommons.org/licenses/by/3.0/us/deed.en",
-    "sha256": "cf62bf2ac8772d12ceb906b632d3e983a3637d5eb33f8f2ebccc93da272be663"
+    "sha256": "cf62bf2ac8772d12ceb906b632d3e983a3637d5eb33f8f2ebccc93da272be663",
+    "optimized_image": "assets/images/reference/disease/bacterial_leaf_blight.webp",
+    "optimized_sha256": "254bbf365d68a634a70c033da527fabaca028251ee2863836b08b5aeee4e9bf1",
+    "optimized_bytes": 129830,
+    "optimized_width": 960,
+    "optimized_height": 668
   },
   {
     "type": "disease",
@@ -309,7 +424,12 @@
     "credit": "Mary Ann Hansen, Virginia Polytechnic Institute and State University, United States",
     "license": "CC BY 3.0 us",
     "license_url": "https://creativecommons.org/licenses/by/3.0/us/deed.en",
-    "sha256": "a6001c2e17708a5aa162d0bcb41cfa9e00b6c21cd8a14db76ef930baac27c608"
+    "sha256": "a6001c2e17708a5aa162d0bcb41cfa9e00b6c21cd8a14db76ef930baac27c608",
+    "optimized_image": "assets/images/reference/disease/potato_late_blight.webp",
+    "optimized_sha256": "1099f4d165205759952ff2a9daa431a28ccb773b8635e841c6f56c1f591dd0f1",
+    "optimized_bytes": 49622,
+    "optimized_width": 960,
+    "optimized_height": 639
   },
   {
     "type": "disease",
@@ -322,7 +442,12 @@
     "credit": "Dwight Sipler from Stow, MA, USA",
     "license": "CC BY 2.0",
     "license_url": "https://creativecommons.org/licenses/by/2.0",
-    "sha256": "bf5535560b44d504963b3b45c530dae48bbdc635bb2b77c92d4cd6da50950e18"
+    "sha256": "bf5535560b44d504963b3b45c530dae48bbdc635bb2b77c92d4cd6da50950e18",
+    "optimized_image": "assets/images/reference/disease/tomato_early_blight.webp",
+    "optimized_sha256": "6697755dba71f9891b0342da5cdb01a440d61cdcef8391c5cf27b348e808d996",
+    "optimized_bytes": 63112,
+    "optimized_width": 960,
+    "optimized_height": 643
   },
   {
     "type": "disease",
@@ -335,7 +460,12 @@
     "credit": "Scot Nelson",
     "license": "CC0",
     "license_url": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
-    "sha256": "1b5b84a07ded889d09e7d8391ad7a646768c36338694a7992939426f0a250fdb"
+    "sha256": "1b5b84a07ded889d09e7d8391ad7a646768c36338694a7992939426f0a250fdb",
+    "optimized_image": "assets/images/reference/disease/mango_anthracnose.webp",
+    "optimized_sha256": "ef6c092395ac46db14de0b4c6827ab8be92021b597a02349234d61f29d58441f",
+    "optimized_bytes": 181880,
+    "optimized_width": 960,
+    "optimized_height": 720
   },
   {
     "type": "disease",
@@ -348,7 +478,12 @@
     "credit": "James Kolmer",
     "license": "Public domain",
     "license_url": "https://commons.wikimedia.org/wiki/File:Wheat_leaf_rust_on_wheat.jpg",
-    "sha256": "a38384d2a5eb1e2b1d991ebf1d00c90f6db0419fd88da787788772e83a354df7"
+    "sha256": "a38384d2a5eb1e2b1d991ebf1d00c90f6db0419fd88da787788772e83a354df7",
+    "optimized_image": "assets/images/reference/disease/wheat_rust.webp",
+    "optimized_sha256": "96a20e3ae2ed2fa5537602e771020a5d219fed194943af8483aec9491505e98f",
+    "optimized_bytes": 53666,
+    "optimized_width": 640,
+    "optimized_height": 426
   },
   {
     "type": "disease",
@@ -361,7 +496,12 @@
     "credit": "Chirag85",
     "license": "CC BY-SA 4.0",
     "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
-    "sha256": "4f824251d1ff35e7d7c8473556dc9bc83ab0a2e1473859e488fa254c968079fc"
+    "sha256": "4f824251d1ff35e7d7c8473556dc9bc83ab0a2e1473859e488fa254c968079fc",
+    "optimized_image": "assets/images/reference/disease/eggplant_shoot_borer.webp",
+    "optimized_sha256": "c552ffa973451a71456cc8935832f110efd9aeedb889ae231498021409be1628",
+    "optimized_bytes": 73606,
+    "optimized_width": 960,
+    "optimized_height": 719
   },
   {
     "type": "disease",
@@ -374,7 +514,12 @@
     "credit": "Jeff Kubina",
     "license": "Public domain",
     "license_url": "https://commons.wikimedia.org/wiki/File:Powdery_mildew_on_pumpkin_leaves_1.jpg",
-    "sha256": "88aeb717f5b6722d8ef216791b18d9266245aa398c2d9b9dd0ceb93c2fbb11ce"
+    "sha256": "88aeb717f5b6722d8ef216791b18d9266245aa398c2d9b9dd0ceb93c2fbb11ce",
+    "optimized_image": "assets/images/reference/disease/powdery_mildew.webp",
+    "optimized_sha256": "d4fa4f4d017da6d17fffcbbaf1cce449450cc83c3eaf1af72c7db3d88c753896",
+    "optimized_bytes": 60176,
+    "optimized_width": 960,
+    "optimized_height": 634
   },
   {
     "type": "disease",
@@ -387,7 +532,12 @@
     "credit": "Wee Hong",
     "license": "CC BY-SA 4.0",
     "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
-    "sha256": "8ca0454bf34607593ef4b821ecfe0a1aa139d3884afc0e784b3107b467351595"
+    "sha256": "8ca0454bf34607593ef4b821ecfe0a1aa139d3884afc0e784b3107b467351595",
+    "optimized_image": "assets/images/reference/disease/downy_mildew.webp",
+    "optimized_sha256": "2b79e0f9aa57bfe9379a8e03735c91c29fd40b44f9f86016a73f12a744f04986",
+    "optimized_bytes": 188122,
+    "optimized_width": 960,
+    "optimized_height": 720
   },
   {
     "type": "disease",
@@ -400,7 +550,12 @@
     "credit": "Scot Nelson",
     "license": "CC0",
     "license_url": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
-    "sha256": "24423463b64174ff0e500b20fd4f7b54bf2da0a4b75bdb98b17bbbc34c28c7ea"
+    "sha256": "24423463b64174ff0e500b20fd4f7b54bf2da0a4b75bdb98b17bbbc34c28c7ea",
+    "optimized_image": "assets/images/reference/disease/panama_disease.webp",
+    "optimized_sha256": "620ea9389430769f4e6fd28fc57b5fa402277ede5fe67b58d036c9798b723f3f",
+    "optimized_bytes": 125288,
+    "optimized_width": 720,
+    "optimized_height": 960
   },
   {
     "type": "disease",
@@ -413,7 +568,12 @@
     "credit": "ApplemanCooperKutzke",
     "license": "CC BY-SA 3.0",
     "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
-    "sha256": "a7a07ae0420059458f220a3c401f949f6d8335bed860930346b21276a41bc9c3"
+    "sha256": "a7a07ae0420059458f220a3c401f949f6d8335bed860930346b21276a41bc9c3",
+    "optimized_image": "assets/images/reference/disease/carrot_leaf_blight.webp",
+    "optimized_sha256": "f268fc5006d92b873357a6da058a5b51f632fb1a28ee4924f22eeee200168c80",
+    "optimized_bytes": 9342,
+    "optimized_width": 504,
+    "optimized_height": 675
   },
   {
     "type": "disease",
@@ -426,7 +586,12 @@
     "credit": "Schlaghecken Josef",
     "license": "CC BY-SA 4.0",
     "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
-    "sha256": "6f258dbf01234d9b96d62147591f8cc123586e537655f6a5587cfa7a02d0e8a7"
+    "sha256": "6f258dbf01234d9b96d62147591f8cc123586e537655f6a5587cfa7a02d0e8a7",
+    "optimized_image": "assets/images/reference/disease/garlic_rust.webp",
+    "optimized_sha256": "0f60f5dae12a80dd043fdaa3f6d3037f1653ae776ab45a3fd36fd43ff679e425",
+    "optimized_bytes": 337440,
+    "optimized_width": 960,
+    "optimized_height": 720
   },
   {
     "type": "disease",
@@ -439,6 +604,11 @@
     "credit": "Plant pests and diseases",
     "license": "CC0",
     "license_url": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
-    "sha256": "04772e835c877148a90cc03f1e29d3d7ed7320267a2804421902080b5a4bcd33"
+    "sha256": "04772e835c877148a90cc03f1e29d3d7ed7320267a2804421902080b5a4bcd33",
+    "optimized_image": "assets/images/reference/disease/papaya_ringspot.webp",
+    "optimized_sha256": "99dbd308b5dfed9afc56d5ec9fbb09ca37c3f9fa165b42c5e914d0252c5c09d3",
+    "optimized_bytes": 184042,
+    "optimized_width": 960,
+    "optimized_height": 720
   }
 ]

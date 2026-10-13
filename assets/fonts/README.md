@@ -1,0 +1,8 @@
+# Local UI fonts
+
+Both fonts are stored locally so page requests do not contact a font CDN. `fonts.css` declares `KD UI` (Manrope, Latin, weights 200–800) and `KD Bengali` (Noto Sans Bengali, Bengali subset, weights 100–900), both with `font-display: swap`. Use `'KD UI', 'KD Bengali', system-ui, sans-serif` in the UI font stack. Unicode ranges preserve the correct Bengali font shaping and Latin typography in mixed text.
+
+- **Manrope**: Copyright 2018 The Manrope Project Authors. [Official source and license](https://github.com/google/fonts/tree/main/ofl/manrope); full license in `Manrope-OFL.txt`. The variable Latin WOFF2 is the official Google Fonts v20 asset: `https://fonts.gstatic.com/s/manrope/v20/xn7gYHE41ni1AdIRggexSvfedN4.woff2`.
+- **Noto Sans Bengali**: Copyright 2022 The Noto Project Authors (as recorded in the supplied license). [Official source and license](https://github.com/google/fonts/tree/main/ofl/notosansbengali); [upstream project](https://github.com/notofonts/bengali); full license in `Noto-Sans-Bengali-OFL.txt`. The variable Bengali WOFF2 is the official Google Fonts v33 asset: `https://fonts.gstatic.com/s/notosansbengali/v33/Cn-fJsCGWQxOjaGwMQ6fIiMywrNJIky6nvd8BjzVMvJx2mc4I3mYrtU3_I-n.woff2`.
+
+The downloaded binary data is unchanged; local filenames and CSS aliases simplify application integration. Both fonts are distributed under SIL Open Font License 1.1. Preserve copyright and license files with redistributed assets. `npm run assets` records local font and license checksums in the vendor manifest; `node bin/assets.js --check` verifies the recorded files without network access.

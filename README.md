@@ -89,4 +89,4 @@ Read [deployment and upgrade instructions](docs/DEPLOYMENT.md) before changing a
 
 Versions are tracked in `SCHEMA_MIGRATION`; migrations do not mass-verify users. Unchanged public demo-password hashes are suspended on upgrade. Legacy payments are not treated as verified cash; their allocations and receipts need operator reconciliation before collection/reporting. Existing user email verification must be completed through the configured delivery workflow.
 
-No production deployment or main-branch merge is performed automatically.
+Updating this repository does not deploy a production service. Follow the deployment guide and complete the external setup and field review above before a public launch.

@@ -1,6 +1,6 @@
 # Implementation status — 13 October 2026
 
-The changes address the source audit of commit b16a855. They are implemented locally on `fix/security-and-agricultural-workflows`; production rollout requires the deployment/upgrade instructions.
+The current codebase addresses the source audit of commit b16a855. Production rollout requires the deployment and upgrade instructions.
 
 ## Completed
 

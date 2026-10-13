@@ -11,7 +11,7 @@ $cid = $ck['id'] ?? 0;
 $recipes   = $pdo->prepare("SELECT COUNT(*) FROM RECIPE WHERE cook_id=?"); $recipes->execute([$cid]); $rc = $recipes->fetchColumn();
 $orders    = $pdo->prepare("SELECT COUNT(*) FROM FOOD_ORDER WHERE cook_id=?"); $orders->execute([$cid]); $oc = $orders->fetchColumn();
 $pending_o = $pdo->prepare("SELECT COUNT(*) FROM FOOD_ORDER WHERE cook_id=? AND status='pending'"); $pending_o->execute([$cid]); $pend = $pending_o->fetchColumn();
-$earned    = $pdo->prepare("SELECT COALESCE(SUM(total_price),0) FROM FOOD_ORDER WHERE cook_id=? AND status='delivered'"); $earned->execute([$cid]); $earn = $earned->fetchColumn();
+$earned=$pdo->prepare("SELECT COALESCE(SUM(ps.net_amount),0) FROM PAYMENT_SHARE ps JOIN PAYMENT p ON ps.payment_id=p.id WHERE ps.payee_id=? AND p.status='completed' AND p.verified_at IS NOT NULL AND p.refund_requested_at IS NULL");$earned->execute([$_SESSION['user_id']]);$earn=$earned->fetchColumn();
 
 $recent_orders = $pdo->prepare("SELECT fo.*, r.name as recipe_name, u.name as tourist_name FROM FOOD_ORDER fo JOIN RECIPE r ON fo.recipe_id=r.id JOIN TOURIST t ON fo.tourist_id=t.id JOIN USER u ON t.user_id=u.id WHERE fo.cook_id=? ORDER BY fo.created_at DESC LIMIT 6");
 $recent_orders->execute([$cid]);
@@ -22,10 +22,10 @@ $page_title = 'Cook Dashboard';
 <?php include __DIR__ . '/../includes/header.php'; ?>
 <div class="layout-wrapper">
 <?php include __DIR__ . '/../includes/sidebar.php'; ?>
-<div class="main-content">
+<div class="main-content" id="main-content" tabindex="-1">
     <div class="topbar">
         <div class="d-flex align-items-center gap-3">
-            <button id="sidebarToggle" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
+            <button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
             <div class="topbar-title">👩‍🍳 Cook Dashboard</div>
         </div>
         <div class="topbar-actions">
@@ -55,9 +55,9 @@ $page_title = 'Cook Dashboard';
                             <tr>
                                 <td style="font-weight:600;"><?= htmlspecialchars($o['tourist_name']) ?></td>
                                 <td><?= htmlspecialchars($o['recipe_name']) ?></td>
-                                <td><?= $o['quantity'] ?></td>
+                                <td><?= e($o['quantity']) ?></td>
                                 <td style="color:var(--primary); font-weight:700;">৳<?= number_format($o['total_price']) ?></td>
-                                <td><?php $sc=['pending'=>'badge-warning','preparing'=>'badge-info','delivered'=>'badge-success','cancelled'=>'badge-danger']; ?><span class="badge-kd <?= $sc[$o['status']]??'badge-muted' ?>"><?= ucfirst($o['status']) ?></span></td>
+                                <td><?php $sc=['pending'=>'badge-warning','preparing'=>'badge-info','delivered'=>'badge-success','cancelled'=>'badge-danger']; ?><span class="badge-kd <?= $sc[$o['status']]??'badge-muted' ?>"><?= e(ucfirst($o['status'])) ?></span></td>
                             </tr>
                             <?php endforeach; ?>
                             <?php if (empty($recent_orders)): ?><tr><td colspan="5" class="text-center py-4" style="color:var(--text-muted);">No orders yet.</td></tr><?php endif; ?>

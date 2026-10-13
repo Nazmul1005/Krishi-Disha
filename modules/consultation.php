@@ -15,12 +15,12 @@ $page_title = 'Expert Consultation';
 $isAuth = isLoggedIn();
 ?>
 <?php include __DIR__ . '/../includes/header.php'; ?>
-<?php if ($isAuth): ?><div class="layout-wrapper"><?php include __DIR__ . '/../includes/sidebar.php'; ?><div class="main-content">
+<?php if ($isAuth): ?><div class="layout-wrapper"><?php include __DIR__ . '/../includes/sidebar.php'; ?><div class="main-content" id="main-content" tabindex="-1">
 <?php else: ?><nav class="kd-navbar"><div class="container"><div class="d-flex align-items-center justify-content-between"><a href="/KrishiDisha/index.php" class="navbar-brand" style="display:flex;align-items:center;gap:10px;font-family:'Nunito',sans-serif;font-size:20px;font-weight:800;color:#fff;"><div style="width:34px;height:34px;background:linear-gradient(135deg,#52b788,#2d6a4f);border-radius:8px;display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-leaf" style="color:#fff;font-size:15px;"></i></div>KrishiDisha</a><a href="/KrishiDisha/auth/login.php" class="btn-kd btn-kd-primary" style="padding:8px 18px;font-size:13px;">Login</a></div></div></nav><div style="padding-top:70px;"><?php endif; ?>
 
 <div class="topbar">
     <div class="d-flex align-items-center gap-3">
-        <?php if ($isAuth): ?><button id="sidebarToggle" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button><?php endif; ?>
+        <?php if ($isAuth): ?><button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button><?php endif; ?>
         <div class="topbar-title"><i class="fa-solid fa-user-doctor me-2" style="color:#7c3aed;"></i>Expert Consultation</div>
     </div>
 </div>
@@ -48,7 +48,7 @@ $isAuth = isLoggedIn();
 
                     <div style="background:var(--surface3);border-radius:8px;padding:12px;margin-bottom:14px;">
                         <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;"><i class="fa-solid fa-graduation-cap me-1"></i><?= htmlspecialchars($ex['qualification'] ?? 'N/A') ?></div>
-                        <div style="font-size:12px;color:var(--text-muted);"><i class="fa-solid fa-circle-check me-1" style="color:var(--primary);"></i><?= $ex['completed_sessions'] ?> consultations completed</div>
+                        <div style="font-size:12px;color:var(--text-muted);"><i class="fa-solid fa-circle-check me-1" style="color:var(--primary);"></i><?= e($ex['completed_sessions']) ?> consultations completed</div>
                     </div>
 
                     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
@@ -57,7 +57,7 @@ $isAuth = isLoggedIn();
                     </div>
 
                     <?php if ($isAuth && in_array(currentRole(), ['farmer', 'general', 'tourist'])): ?>
-                    <a href="/KrishiDisha/modules/book_consultation.php?provider=<?= $ex['user_id'] ?>" class="btn-kd w-100 justify-content-center" style="background:linear-gradient(135deg,#4c1d95,#7c3aed);color:#fff;padding:10px;">
+                    <a href="/KrishiDisha/modules/book_consultation.php?provider=<?= e($ex['user_id']) ?>" class="btn-kd w-100 justify-content-center" style="background:linear-gradient(135deg,#4c1d95,#7c3aed);color:#fff;padding:10px;">
                         <i class="fa-solid fa-calendar-plus"></i> Book Session
                     </a>
                     <?php elseif (!$isAuth): ?>

@@ -7,69 +7,18 @@ $uid = $_SESSION['user_id'];
 $search   = trim($_GET['q'] ?? '');
 $category = $_GET['category'] ?? '';
 
-/**
- * Shared helper: record a completed payment + 5% admin commission for an order.
- */
-function recordOrderPayment(PDO $pdo, int $uid, int $oid, float $total): void {
-    $pdo->prepare("INSERT INTO PAYMENT (payer_id,ref_type,ref_id,amount,status) VALUES (?,'order',?,?,'completed')")
-        ->execute([$uid, $oid, $total]);
-    $pay_id = $pdo->lastInsertId();
-    $pdo->prepare("INSERT INTO ADMIN_COMMISSION (payment_id,commission_rate,commission_amount) VALUES (?,5.00,?)")
-        ->execute([$pay_id, $total * 0.05]);
-}
-
-// ── Buy directly from a farmer ────────────────────────────────
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_farmer'])) {
-    verifyCsrf();
-    $prod_id = (int)$_POST['product_id'];
-    $qty     = (float)$_POST['quantity_kg'];
-    $prod    = $pdo->prepare("SELECT p.*, c.name FROM PRODUCT p JOIN CROP c ON p.crop_id=c.id WHERE p.id=?");
-    $prod->execute([$prod_id]);
-    $prod = $prod->fetch();
-    if ($prod && $qty > 0 && $qty <= $prod['quantity_kg'] && $prod['status'] === 'available') {
-        $total = $qty * $prod['price_per_kg'];
-        $pdo->beginTransaction();
-        try {
-            $pdo->prepare("INSERT INTO `ORDER` (user_id,product_id,quantity_kg,total_price) VALUES (?,?,?,?)")
-                ->execute([$uid, $prod_id, $qty, $total]);
-            $oid = $pdo->lastInsertId();
-            $new_qty    = $prod['quantity_kg'] - $qty;
-            $new_status = ($new_qty <= 0) ? 'sold' : 'available';
-            $pdo->prepare("UPDATE PRODUCT SET quantity_kg=?, status=? WHERE id=?")->execute([$new_qty, $new_status, $prod_id]);
-            recordOrderPayment($pdo, $uid, $oid, $total);
-            $pdo->commit();
-            flash('success', 'Order placed! Total: ' . taka($total));
-        } catch (Exception $e) { $pdo->rollBack(); error_log('Farmer order failed: '.$e->getMessage()); flash('error', 'Order failed. Please try again.'); }
-    } else { flash('error', 'Invalid quantity or product unavailable.'); }
-    header('Location: marketplace.php'); exit;
-}
-
-// ── Buy from a dealer's inventory ─────────────────────────────
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_dealer'])) {
-    verifyCsrf();
-    $inv_id = (int)$_POST['dealer_inventory_id'];
-    $qty    = (float)$_POST['quantity_kg'];
-    $inv    = $pdo->prepare("SELECT di.* FROM DEALER_INVENTORY di WHERE di.id=?");
-    $inv->execute([$inv_id]);
-    $inv = $inv->fetch();
-    if ($inv && $qty > 0 && $qty <= $inv['stock_remaining'] && $inv['markup_price'] > 0) {
-        $total = $qty * $inv['markup_price'];
-        $pdo->beginTransaction();
-        try {
-            $pdo->prepare("INSERT INTO `ORDER` (user_id,product_id,dealer_inventory_id,quantity_kg,total_price) VALUES (?,?,?,?,?)")
-                ->execute([$uid, $inv['product_id'], $inv_id, $qty, $total]);
-            $oid = $pdo->lastInsertId();
-            $pdo->prepare("UPDATE DEALER_INVENTORY SET stock_remaining = stock_remaining - ? WHERE id=?")->execute([$qty, $inv_id]);
-            recordOrderPayment($pdo, $uid, $oid, $total);
-            $pdo->commit();
-            flash('success', 'Order placed with dealer! Total: ' . taka($total));
-        } catch (Exception $e) { $pdo->rollBack(); error_log('Dealer order failed: '.$e->getMessage()); flash('error', 'Order failed. Please try again.'); }
-    } else { flash('error', 'Invalid quantity or stock unavailable.'); }
-    header('Location: marketplace.php'); exit;
+require_once __DIR__.'/../includes/transactions.php';
+if($_SERVER['REQUEST_METHOD']==='POST') {
+    try {
+        $dealer=isset($_POST['order_dealer']);
+        $id=orderProduce($pdo,(int)$uid,requestKey(),(int)($_POST[$dealer ? 'dealer_inventory_id' : 'product_id'] ?? 0),(string)($_POST['quantity_kg'] ?? ''),$dealer,$_POST);
+        flash('success','Order #'.$id.' reserved. Pay cash after delivery or pickup.');
+    } catch(Throwable $e) { error_log('Order rejected: '.$e->getMessage());flash('error',$e instanceof InvalidArgumentException ? $e->getMessage() : 'Order could not be placed. Please try again.'); }
+    header('Location: marketplace.php');exit;
 }
 
 // ── Fetch farmer produce ──────────────────────────────────────
-$where = ['p.status = "available" AND p.quantity_kg > 0']; $params = [];
+$where = ['p.status = "available" AND p.quantity_kg > 0 AND u.status="approved"']; $params = [];
 if ($search)   { $where[] = "(c.name LIKE ? OR c.scientific_name LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
 if ($category) { $where[] = "c.category = ?"; $params[] = $category; }
 
@@ -86,12 +35,12 @@ $stmt->execute($params);
 $items = $stmt->fetchAll();
 
 // ── Fetch dealer inventory (resale listings) ──────────────────
-$dwhere = ['di.stock_remaining > 0']; $dparams = [];
+$dwhere = ['di.stock_remaining > 0 AND u.status="approved"']; $dparams = [];
 if ($search)   { $dwhere[] = "(c.name LIKE ? OR c.scientific_name LIKE ?)"; $dparams[] = "%$search%"; $dparams[] = "%$search%"; }
 if ($category) { $dwhere[] = "c.category = ?"; $dparams[] = $category; }
 
 $dstmt = $pdo->prepare("
-    SELECT di.id AS inventory_id, di.markup_price, di.stock_remaining,
+    SELECT di.id AS inventory_id, di.markup_price, di.stock_remaining,p.minimum_order_kg,
            c.name as crop_name, c.category, u.name as dealer_name
     FROM DEALER_INVENTORY di
     JOIN PRODUCT p ON di.product_id=p.id
@@ -116,10 +65,10 @@ $page_title = 'Marketplace';
 <?php include __DIR__ . '/../includes/header.php'; ?>
 <div class="layout-wrapper">
 <?php include __DIR__ . '/../includes/sidebar.php'; ?>
-<div class="main-content">
+<div class="main-content" id="main-content" tabindex="-1">
     <div class="topbar">
         <div class="d-flex align-items-center gap-3">
-            <button id="sidebarToggle" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
+            <button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
             <div class="topbar-title"><i class="fa-solid fa-store me-2" style="color:var(--primary);"></i>Marketplace</div>
         </div>
         <div class="topbar-actions">
@@ -156,8 +105,8 @@ $page_title = 'Marketplace';
                 <div class="card-kd">
                     <div style="height:140px;overflow:hidden;">
                         <?php $icons=['Grain'=>'🌾','Vegetable'=>'🥕','Fruit'=>'🍎','Fiber'=>'🪢','Oilseed'=>'🌻','Legume'=>'🫘','Cash Crop'=>'💰']; ?>
-                        <?php if (!empty($item['image']) && file_exists(__DIR__.'/../'.$item['image'])): ?>
-                        <img src="/KrishiDisha/<?= htmlspecialchars($item['image']) ?>" style="width:100%;height:140px;object-fit:cover;">
+                        <?php if (!empty($item['image']) && mediaAvailable($item['image'])): ?>
+                        <img alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($item['image']) ?>" style="width:100%;height:140px;object-fit:cover;">
                         <?php else: ?>
                         <div style="height:140px;background:linear-gradient(135deg,var(--surface3),var(--accent3));display:flex;align-items:center;justify-content:center;font-size:64px;"><?= $icons[$item['category']]??'🌱' ?></div>
                         <?php endif; ?>
@@ -165,20 +114,20 @@ $page_title = 'Marketplace';
                     <div class="card-body-kd">
                         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
                             <h5 style="margin:0;"><?= htmlspecialchars($item['crop_name']) ?></h5>
-                            <span class="badge-kd badge-info" style="font-size:10px;"><?= $item['category'] ?></span>
+                            <span class="badge-kd badge-info" style="font-size:10px;"><?= e($item['category']) ?></span>
                         </div>
-                        <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Sold by: <?= htmlspecialchars($item['farmer_name']) ?> (Farmer)</div>
+                        <p class="small"><?= e($item['variety'] ?? '') ?> · <?= e($item['grade'] ?? '') ?> · Harvest: <?= e($item['harvest_date'] ?? 'Not supplied') ?> · Pickup: <?= e($item['pickup_location'] ?? 'Agree with seller') ?></p><div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Sold by: <?= htmlspecialchars($item['farmer_name']) ?> (Farmer)</div>
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
                             <div>
-                                <div style="font-size:24px;font-weight:800;color:var(--primary);font-family:'Nunito',sans-serif;">৳<?= $item['price_per_kg'] ?><span style="font-size:12px;font-weight:400;color:var(--text-muted);">/kg</span></div>
-                                <div style="font-size:12px;color:var(--text-muted);"><i class="fa-solid fa-weight-hanging me-1"></i><?= $item['quantity_kg'] ?> kg available</div>
+                                <div style="font-size:24px;font-weight:800;color:var(--primary);font-family:'Nunito',sans-serif;">৳<?= e($item['price_per_kg']) ?><span style="font-size:12px;font-weight:400;color:var(--text-muted);">/kg</span></div>
+                                <div style="font-size:12px;color:var(--text-muted);"><i class="fa-solid fa-weight-hanging me-1"></i><?= e($item['quantity_kg']) ?> kg available</div>
                             </div>
                         </div>
-                        <form method="POST">
+                        <form method="POST"><?= csrfField() ?><?= requestKeyField() ?>
                             <?= csrfField() ?>
-                            <input type="hidden" name="product_id" value="<?= $item['id'] ?>">
+                            <label>Pickup or delivery</label><select name="fulfillment" class="form-control"><option value="pickup">Pickup / সংগ্রহ</option><option value="delivery">Delivery / সরবরাহ</option></select><label>Pickup arrangement or delivery address</label><input name="delivery_address" class="form-control" maxlength="500" required><label>Contact phone</label><input name="contact_phone" class="form-control" maxlength="20" required><p class="small">Arrange availability and delivery charges with the seller before ordering.</p><input type="hidden" name="product_id" value="<?= e($item['id']) ?>">
                             <div style="display:flex;gap:8px;align-items:center;">
-                                <input type="number" name="quantity_kg" step="0.5" min="0.5" max="<?= $item['quantity_kg'] ?>" placeholder="kg" class="form-control" style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;outline:none;" required>
+                                <input type="number" name="quantity_kg" step="0.01" min="<?= e($item['minimum_order_kg']) ?>" max="<?= e($item['quantity_kg']) ?>" placeholder="kg" class="form-control" style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;outline:none;" required>
                                 <button type="submit" name="order_farmer" class="btn-kd btn-kd-primary" style="flex:1;justify-content:center;" data-confirm="Place this order?">
                                     <i class="fa-solid fa-cart-shopping"></i> Order
                                 </button>
@@ -209,15 +158,15 @@ $page_title = 'Marketplace';
                         <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Sold by: <?= htmlspecialchars($d['dealer_name']) ?> (Dealer)</div>
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
                             <div>
-                                <div style="font-size:24px;font-weight:800;color:#2563eb;font-family:'Nunito',sans-serif;">৳<?= $d['markup_price'] ?><span style="font-size:12px;font-weight:400;color:var(--text-muted);">/kg</span></div>
-                                <div style="font-size:12px;color:var(--text-muted);"><i class="fa-solid fa-weight-hanging me-1"></i><?= $d['stock_remaining'] ?> kg in stock</div>
+                                <div style="font-size:24px;font-weight:800;color:#2563eb;font-family:'Nunito',sans-serif;">৳<?= e($d['markup_price']) ?><span style="font-size:12px;font-weight:400;color:var(--text-muted);">/kg</span></div>
+                                <div style="font-size:12px;color:var(--text-muted);"><i class="fa-solid fa-weight-hanging me-1"></i><?= e($d['stock_remaining']) ?> kg in stock</div>
                             </div>
                         </div>
-                        <form method="POST">
+                        <form method="POST"><?= csrfField() ?><?= requestKeyField() ?>
                             <?= csrfField() ?>
-                            <input type="hidden" name="dealer_inventory_id" value="<?= $d['inventory_id'] ?>">
+                            <label>Pickup or delivery</label><select name="fulfillment" class="form-control"><option value="pickup">Pickup / সংগ্রহ</option><option value="delivery">Delivery / সরবরাহ</option></select><label>Pickup arrangement or delivery address</label><input name="delivery_address" class="form-control" maxlength="500" required><label>Contact phone</label><input name="contact_phone" class="form-control" maxlength="20" required><p class="small">Arrange availability and delivery charges with the seller before ordering.</p><input type="hidden" name="dealer_inventory_id" value="<?= e($d['inventory_id']) ?>">
                             <div style="display:flex;gap:8px;align-items:center;">
-                                <input type="number" name="quantity_kg" step="0.5" min="0.5" max="<?= $d['stock_remaining'] ?>" placeholder="kg" class="form-control" style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;outline:none;" required>
+                                <input type="number" name="quantity_kg" step="0.01" min="<?= e($d['minimum_order_kg']) ?>" max="<?= e($d['stock_remaining']) ?>" placeholder="kg" class="form-control" style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;outline:none;" required>
                                 <button type="submit" name="order_dealer" class="btn-kd btn-kd-primary" style="flex:1;justify-content:center;background:linear-gradient(135deg,#2563eb,#60a5fa);" data-confirm="Place this order?">
                                     <i class="fa-solid fa-cart-shopping"></i> Order
                                 </button>

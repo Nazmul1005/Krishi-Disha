@@ -11,8 +11,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $prep  = (int)($_POST['prep_time_min'] ?? 0); $cook_time = (int)($_POST['cook_time_min'] ?? 0);
     $serv  = (int)($_POST['servings'] ?? 2); $auth = isset($_POST['is_authentic']) ? 1 : 0;
     $price = (float)($_POST['price'] ?? 0);
-    if ($name && $price > 0) {
-        $pdo->prepare("INSERT INTO RECIPE (cook_id,name,description,prep_time_min,cook_time_min,servings,price,is_authentic) VALUES (?,?,?,?,?,?,?,?)")->execute([$cid,$name,$desc,$prep,$cook_time,$serv,$price,$auth]);
+    if ($name && mb_strlen($name)<=200 && $price > 0 && $price<=100000 && $prep>=0 && $cook_time>=0 && $serv>0 && $serv<=100) {
+        $pdo->prepare("INSERT INTO RECIPE (cook_id,name,description,prep_time_min,cook_time_min,servings,price,is_authentic,ingredients,allergens) VALUES (?,?,?,?,?,?,?,?,?,?)")->execute([$cid,$name,$desc,$prep,$cook_time,$serv,$price,$auth,textInput($_POST['ingredients'] ?? '',5000),textInput($_POST['allergens'] ?? '',255,false)]);
         $msg = 'Recipe added!';
     } else { $err = 'Recipe name and a price greater than zero are required.'; }
 }
@@ -22,8 +22,8 @@ $page_title = 'My Recipes';
 ?>
 <?php include __DIR__ . '/../includes/header.php'; ?>
 <div class="layout-wrapper"><?php include __DIR__ . '/../includes/sidebar.php'; ?>
-<div class="main-content">
-    <div class="topbar"><div class="d-flex align-items-center gap-3"><button id="sidebarToggle" class="btn btn-sm d-lg-none" style="border:none;font-size:20px;"><i class="fa-solid fa-bars"></i></button><div class="topbar-title"><i class="fa-solid fa-book-open me-2" style="color:#ea580c;"></i>My Recipes</div></div></div>
+<div class="main-content" id="main-content" tabindex="-1">
+    <div class="topbar"><div class="d-flex align-items-center gap-3"><button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none;font-size:20px;"><i class="fa-solid fa-bars"></i></button><div class="topbar-title"><i class="fa-solid fa-book-open me-2" style="color:#ea580c;"></i>My Recipes</div></div></div>
     <div class="page-body">
         <?php if ($msg): ?><div class="alert-kd alert-kd-success" data-autohide="3000"><i class="fa-solid fa-check"></i> <?= $msg ?></div><?php endif; ?>
         <?php if ($err): ?><div class="alert-kd alert-kd-error"><i class="fa-solid fa-exclamation-circle"></i> <?= $err ?></div><?php endif; ?>
@@ -32,7 +32,7 @@ $page_title = 'My Recipes';
                 <div class="card-kd">
                     <div class="card-header-kd"><h5><i class="fa-solid fa-plus me-2" style="color:#ea580c;"></i>Add Recipe</h5></div>
                     <div class="card-body-kd">
-                        <form method="POST" class="form-kd" data-validate>
+                        <form method="POST" class="form-kd" data-validate><?= csrfField() ?><?= requestKeyField() ?>
                             <?= csrfField() ?>
                             <div class="form-group"><label>Recipe Name <span style="color:red">*</span></label><input type="text" name="name" class="form-control" required placeholder="e.g. Shorshe Ilish"></div>
                             <div class="form-group"><label>Description</label><textarea name="description" class="form-control" rows="3" placeholder="Describe the dish..."></textarea></div>
@@ -47,7 +47,7 @@ $page_title = 'My Recipes';
                                     <input type="checkbox" name="is_authentic" style="width:16px;height:16px;"> Mark as Authentic
                                 </label>
                             </div>
-                            <button type="submit" class="btn-kd w-100 justify-content-center" style="background:linear-gradient(135deg,#ea580c,#f97316);color:#fff;padding:12px;"><i class="fa-solid fa-plus"></i> Add Recipe</button>
+                            <label>Ingredients</label><textarea class="form-control" name="ingredients" maxlength="5000" required></textarea><label>Allergens (or state none known)</label><input class="form-control" name="allergens" maxlength="255" required><button type="submit" class="btn-kd w-100 justify-content-center" style="background:linear-gradient(135deg,#ea580c,#f97316);color:#fff;padding:12px;"><i class="fa-solid fa-plus"></i> Add Recipe</button>
                         </form>
                     </div>
                 </div>
@@ -64,8 +64,8 @@ $page_title = 'My Recipes';
                                 </div>
                                 <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;line-height:1.5;"><?= mb_substr(htmlspecialchars($r['description']),0,100) ?>...</p>
                                 <div style="display:flex;gap:10px;font-size:11px;color:var(--text-muted);align-items:center;">
-                                    <span><i class="fa-solid fa-clock"></i> <?= $r['prep_time_min'] ?>+<?= $r['cook_time_min'] ?>m</span>
-                                    <span><i class="fa-solid fa-users"></i> Serves <?= $r['servings'] ?></span>
+                                    <span><i class="fa-solid fa-clock"></i> <?= e($r['prep_time_min']) ?>+<?= e($r['cook_time_min']) ?>m</span>
+                                    <span><i class="fa-solid fa-users"></i> Serves <?= e($r['servings']) ?></span>
                                     <span style="color:#ea580c;font-weight:700;">৳<?= number_format($r['price'] ?? 0) ?></span>
                                 </div>
                             </div>

@@ -28,6 +28,7 @@ $roleConfig = [
     'cook' => ['table' => 'COOK', 'fields' => [
         'specialty'    => ['label' => 'Cuisine Specialty',       'type' => 'text'],
         'bio'          => ['label' => 'Short Bio',               'type' => 'textarea'],
+        'daily_capacity' => ['label' => 'Maximum daily food orders', 'type' => 'number', 'step'=>'1'],
         'availability' => ['label' => 'Availability',            'type' => 'enum', 'options' => ['available', 'busy']],
     ]],
     'expert' => ['table' => 'EXPERT', 'fields' => [
@@ -45,6 +46,15 @@ $roleConfig = [
 ];
 
 $config = $roleConfig[$role] ?? null;
+
+if($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['change_password'])) {
+    throttle($pdo,'change-password',(string)$uid,5);
+    $stmt=$pdo->prepare('SELECT password_hash FROM USER WHERE id=?');$stmt->execute([$uid]);
+    $current=$_POST['current_password'] ?? ''; $next=$_POST['new_password'] ?? ''; $confirm=$_POST['confirm_password'] ?? '';
+    if(!is_string($current) || !password_verify($current,$stmt->fetchColumn()) || !is_string($next) || strlen($next)<12 || strlen($next)>72 || $next!==$confirm) {flash('error','Check your current password and use a matching new password of 12–72 characters.');header('Location: profile.php');exit;}
+    transaction($pdo,function()use($pdo,$uid,$next) { $pdo->prepare('UPDATE USER SET password_hash=?,auth_version=auth_version+1 WHERE id=?')->execute([password_hash($next,PASSWORD_DEFAULT),$uid]);$pdo->prepare('UPDATE AUTH_TOKEN SET used=1 WHERE user_id=?')->execute([$uid]);audit($pdo,'password.changed','USER',$uid); });
+    destroyLogin();header('Location: /KrishiDisha/auth/login.php');exit;
+}
 
 /* ------------------------------------------------------------
    Handle profile update
@@ -72,11 +82,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 foreach ($config['fields'] as $col => $meta) {
                     $raw = $_POST[$col] ?? '';
                     if ($meta['type'] === 'number') {
+                        if($raw!=='' && (!is_scalar($raw) || !is_numeric($raw) || (float)$raw<0 || (float)$raw>1000000)) throw new InvalidArgumentException('Numeric profile values must be between 0 and 1,000,000.');
                         $vals[$col] = ($raw === '') ? null : (float)$raw;
                     } elseif ($meta['type'] === 'enum') {
                         $vals[$col] = in_array($raw, $meta['options'], true) ? $raw : $meta['options'][0];
                     } else {
-                        $vals[$col] = trim($raw);
+                        $vals[$col] = textInput($raw, $meta['type']==='textarea' ? 5000 : 150, false);
                     }
                 }
 
@@ -124,10 +135,10 @@ $page_title = 'My Profile';
 <?php include __DIR__ . '/../includes/header.php'; ?>
 <div class="layout-wrapper">
 <?php include __DIR__ . '/../includes/sidebar.php'; ?>
-<div class="main-content">
+<div class="main-content" id="main-content" tabindex="-1">
     <div class="topbar">
         <div class="d-flex align-items-center gap-3">
-            <button id="sidebarToggle" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
+            <button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
             <div class="topbar-title"><i class="fa-solid fa-id-card me-2" style="color:var(--primary);"></i>My Profile</div>
         </div>
         <div class="topbar-actions">
@@ -138,6 +149,7 @@ $page_title = 'My Profile';
     <div class="page-body">
         <?= renderFlash() ?>
 
+        <section class="card-kd mb-3"><div class="card-body-kd"><h2 class="h5">Change password / পাসওয়ার্ড পরিবর্তন</h2><form method="POST"><?= csrfField() ?><label for="current_password">Current password</label><input class="form-control" id="current_password" name="current_password" type="password" autocomplete="current-password" required><label for="new_password">New password (12–72 characters)</label><input class="form-control" id="new_password" name="new_password" type="password" minlength="12" maxlength="72" autocomplete="new-password" required><label for="confirm_password">Confirm new password</label><input class="form-control" id="confirm_password" name="confirm_password" type="password" autocomplete="new-password" required><button class="btn-kd btn-kd-primary" name="change_password" value="1">Change and sign out all sessions</button></form></div></section>
         <div class="row g-4">
             <!-- Identity summary card -->
             <div class="col-lg-4">
@@ -164,7 +176,7 @@ $page_title = 'My Profile';
                 <div class="card-kd">
                     <div class="card-header-kd"><h5><i class="fa-solid fa-pen-to-square me-2" style="color:var(--primary);"></i>Edit Profile</h5></div>
                     <div class="card-body-kd">
-                        <form method="POST" class="form-kd" data-validate>
+                        <form method="POST" class="form-kd" data-validate><?= csrfField() ?><?= requestKeyField() ?>
                             <?= csrfField() ?>
 
                             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">

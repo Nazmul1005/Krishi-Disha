@@ -4,23 +4,32 @@ require_once __DIR__ . '/../config/db.php';
 
 if (isLoggedIn()) { redirectToDashboard(); }
 
-$error = $success = $verify_link = '';
+require_once __DIR__ . '/../includes/mail.php';
+$error = $success = '';
 $roles = ['farmer','dealer','tourist','cook','expert','guide','general'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    throttle($pdo,'register-ip',$_SERVER['REMOTE_ADDR'] ?? '',5,3600);
     $name     = trim($_POST['name'] ?? '');
     $email    = trim($_POST['email'] ?? '');
     $phone    = trim($_POST['phone'] ?? '');
     $password = $_POST['password'] ?? '';
     $confirm  = $_POST['confirm_password'] ?? '';
     $role     = $_POST['role'] ?? '';
+    $application=trim($_POST['application_details'] ?? '');
 
-    if (!$name || !$email || !$password || !$role) {
+    if (!emailConfigured()) {
+        $error = 'Registration will open when email delivery is configured. Please contact support.';
+    } elseif (mb_strlen($name)>100 || strlen($email)>150 || strlen($phone)>20) {
+        $error = 'Name, email or phone is too long.';
+    } elseif (!$name || !$email || !$password || !$role) {
         $error = 'All required fields must be filled.';
+    } elseif (in_array($role,['farmer','dealer','expert','guide','cook'],true) && (mb_strlen($application)<20 || mb_strlen($application)>5000 || !$phone)) {
+        $error='Provide a contact phone and at least 20 characters describing your farm, business or qualifications for review.';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = 'Invalid email address.';
-    } elseif (strlen($password) < 6) {
-        $error = 'Password must be at least 6 characters.';
+    } elseif (strlen($password) < 12 || strlen($password)>72) {
+        $error = 'Password must be between 12 and 72 characters.';
     } elseif ($password !== $confirm) {
         $error = 'Passwords do not match.';
     } elseif (!in_array($role, $roles)) {
@@ -36,8 +45,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $pdo->beginTransaction();
             try {
-                $pdo->prepare("INSERT INTO USER (name,email,password_hash,phone,role,status) VALUES (?,?,?,?,?,?)")
-                    ->execute([$name, $email, $hash, $phone, $role, $status]);
+                $pdo->prepare("INSERT INTO USER (name,email,password_hash,phone,role,status,application_details) VALUES (?,?,?,?,?,?,?)")
+                    ->execute([$name, $email, $hash, $phone, $role, $status,$application]);
                 $userId = $pdo->lastInsertId();
 
                 // Create role-specific record
@@ -51,17 +60,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     default   => null
                 };
 
-                $pdo->commit();
-
-                // Issue an email-verification link (no SMTP here → surfaced in dev mode)
+                // Create verification token and account atomically.
                 $verify_token = createAuthToken($pdo, (int)$userId, 'email_verify', 60 * 24);
-                $verify_link  = baseUrl() . '/KrishiDisha/auth/verify_email.php?token=' . $verify_token;
+                $pdo->commit();
+                try { sendAccountEmail($email,$verify_token,'email_verify'); } catch(Throwable $delivery) { error_log('Verification delivery failed'); }
 
                 $success = $status === 'pending'
-                    ? 'Registration successful! Your account is pending admin approval.'
-                    : 'Registration successful! Please verify your email, then log in.';
+                    ? 'Registration successful! Verify your email and wait for admin approval.'
+                    : 'Registration successful! Please check your email, or use Resend verification if delivery is delayed.';
             } catch (Exception $e) {
-                $pdo->rollBack();
+                if ($pdo->inTransaction()) $pdo->rollBack();
                 $error = 'Registration failed. Please try again.';
             }
         }
@@ -85,20 +93,11 @@ $page_title = 'Register';
         <?php if ($success): ?>
         <div class="alert-kd alert-kd-success"><i class="fa-solid fa-circle-check"></i> <?= htmlspecialchars($success) ?></div>
         <?php endif; ?>
-        <?php if ($verify_link): ?>
-        <div class="alert-kd alert-kd-info" style="font-size:12px;word-break:break-all;">
-            <i class="fa-solid fa-flask"></i>
-            <div>
-                <strong>Development mode:</strong> email delivery isn't configured, so verify using this link:
-                <br><a href="<?= e($verify_link) ?>" style="color:var(--primary);font-weight:600;"><?= e($verify_link) ?></a>
-            </div>
-        </div>
-        <?php endif; ?>
         <?php if ($success): ?>
         <a href="/KrishiDisha/auth/login.php" class="btn-kd btn-kd-primary w-100 justify-content-center mb-3"><i class="fa-solid fa-right-to-bracket"></i> Go to Login</a>
         <?php endif; ?>
 
-        <form method="POST" class="form-kd" data-validate>
+        <form id="registrationForm" method="POST" class="form-kd" data-validate><?= csrfField() ?><?= requestKeyField() ?>
             <div class="form-group">
                 <label>Full Name <span style="color:red">*</span></label>
                 <input type="text" name="name" class="form-control" placeholder="Your full name" required value="<?= htmlspecialchars($_POST['name'] ?? '') ?>">
@@ -119,7 +118,7 @@ $page_title = 'Register';
                     <option value="">Select your role</option>
                     <?php foreach ($roles as $r): ?>
                     <option value="<?= $r ?>" <?= (($_POST['role'] ?? '') === $r) ? 'selected' : '' ?>>
-                        <?= ucfirst($r) ?>
+                        <?= e(ucfirst($r)) ?>
                     </option>
                     <?php endforeach; ?>
                 </select>
@@ -127,14 +126,14 @@ $page_title = 'Register';
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
                 <div class="form-group">
                     <label>Password <span style="color:red">*</span></label>
-                    <input type="password" name="password" class="form-control" placeholder="Min 6 characters" required>
+                    <input type="password" name="password" class="form-control" placeholder="12–72 characters" required>
                 </div>
                 <div class="form-group">
                     <label>Confirm Password <span style="color:red">*</span></label>
                     <input type="password" name="confirm_password" class="form-control" placeholder="Repeat password" required>
                 </div>
             </div>
-            <div class="alert-kd alert-kd-info" style="font-size:12px; padding:10px 14px;">
+<label>Farm, business or qualifications (required for provider roles)</label><textarea class="form-control" name="application_details" form="registrationForm" maxlength="5000"></textarea><p class="small">Describe your experience, qualifications or business and how the administrator can verify it. Do not submit sensitive identity numbers in this field.</p><div class="alert-kd alert-kd-info" style="font-size:12px; padding:10px 14px;">
                 <i class="fa-solid fa-info-circle"></i>
                 Roles like Farmer, Dealer, Cook, Expert & Guide require admin approval before login.
             </div>
@@ -143,7 +142,7 @@ $page_title = 'Register';
             </button>
         </form>
 
-        <div class="divider"></div>
+<div class="divider"></div>
         <p class="text-center" style="font-size:14px; color:var(--text-muted)">
             Already have an account?
             <a href="/KrishiDisha/auth/login.php" style="color:var(--primary); font-weight:600">Sign in</a>

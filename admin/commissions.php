@@ -3,21 +3,17 @@ require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/../config/db.php';
 requireAuth(['admin']);
 
-if (isset($_GET['settle'])) {
-    $pdo->prepare("UPDATE ADMIN_COMMISSION SET settled=1, settled_at=NOW() WHERE id=?")->execute([(int)$_GET['settle']]);
-    header('Location: commissions.php?msg=settled'); exit;
-}
-
 $commissions = $pdo->query("
     SELECT ac.*, p.amount, p.ref_type, p.ref_id, p.status as pay_status, u.name as payer
     FROM ADMIN_COMMISSION ac
     JOIN PAYMENT p ON ac.payment_id = p.id
     JOIN USER u ON p.payer_id = u.id
+    WHERE p.verified_at IS NOT NULL AND p.status='completed' AND p.refund_requested_at IS NULL AND ac.reversed=0
     ORDER BY ac.id DESC
 ")->fetchAll();
 
-$total_earned  = $pdo->query("SELECT COALESCE(SUM(commission_amount),0) FROM ADMIN_COMMISSION")->fetchColumn();
-$total_settled = $pdo->query("SELECT COALESCE(SUM(commission_amount),0) FROM ADMIN_COMMISSION WHERE settled=1")->fetchColumn();
+$total_earned  = $pdo->query("SELECT COALESCE(SUM(commission_amount),0) FROM ADMIN_COMMISSION ac JOIN PAYMENT p ON p.id=ac.payment_id WHERE p.verified_at IS NOT NULL AND p.status='completed' AND p.refund_requested_at IS NULL AND ac.reversed=0")->fetchColumn();
+$total_settled = $pdo->query("SELECT COALESCE(SUM(commission_amount),0) FROM ADMIN_COMMISSION ac JOIN PAYMENT p ON p.id=ac.payment_id WHERE ac.settled=1 AND p.verified_at IS NOT NULL AND p.status='completed' AND p.refund_requested_at IS NULL AND ac.reversed=0")->fetchColumn();
 $total_pending = $total_earned - $total_settled;
 
 $page_title = 'Commission Tracker';
@@ -25,10 +21,10 @@ $page_title = 'Commission Tracker';
 <?php include __DIR__ . '/../includes/header.php'; ?>
 <div class="layout-wrapper">
 <?php include __DIR__ . '/../includes/sidebar.php'; ?>
-<div class="main-content">
+<div class="main-content" id="main-content" tabindex="-1">
     <div class="topbar">
         <div class="d-flex align-items-center gap-3">
-            <button id="sidebarToggle" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
+            <button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
             <div class="topbar-title">Commission Tracker</div>
         </div>
     </div>
@@ -68,11 +64,11 @@ $page_title = 'Commission Tracker';
                     <tbody>
                     <?php foreach ($commissions as $c): ?>
                     <tr>
-                        <td style="color:var(--text-muted); font-size:12px;"><?= $c['id'] ?></td>
+                        <td style="color:var(--text-muted); font-size:12px;"><?= e($c['id']) ?></td>
                         <td style="font-weight:600;"><?= htmlspecialchars($c['payer']) ?></td>
                         <td><span class="badge-kd badge-info" style="font-size:10px;"><?= str_replace('_',' ', ucfirst($c['ref_type'])) ?></span></td>
                         <td style="font-weight:700;">৳<?= number_format($c['amount'], 2) ?></td>
-                        <td><?= $c['commission_rate'] ?>%</td>
+                        <td><?= e($c['commission_rate']) ?>%</td>
                         <td style="font-weight:700; color:var(--primary);">৳<?= number_format($c['commission_amount'], 2) ?></td>
                         <td>
                             <?php if ($c['settled']): ?>
@@ -83,9 +79,7 @@ $page_title = 'Commission Tracker';
                         </td>
                         <td>
                             <?php if (!$c['settled']): ?>
-                            <a href="?settle=<?= $c['id'] ?>" class="btn-kd btn-kd-primary" style="padding:4px 12px; font-size:11px;" data-confirm="Mark as settled?">
-                                <i class="fa-solid fa-check"></i> Settle
-                            </a>
+                            <a class="btn-kd btn-kd-primary" href="../modules/payments.php">Record collection receipt</a>
                             <?php else: ?>
                             <span style="font-size:11px; color:var(--text-muted);"><?= $c['settled_at'] ? date('d M Y', strtotime($c['settled_at'])) : '' ?></span>
                             <?php endif; ?>

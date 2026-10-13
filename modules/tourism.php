@@ -24,12 +24,12 @@ $page_title = 'Agri-Tourism';
 $isAuth = isLoggedIn();
 ?>
 <?php include __DIR__ . '/../includes/header.php'; ?>
-<?php if ($isAuth): ?><div class="layout-wrapper"><?php include __DIR__ . '/../includes/sidebar.php'; ?><div class="main-content">
+<?php if ($isAuth): ?><div class="layout-wrapper"><?php include __DIR__ . '/../includes/sidebar.php'; ?><div class="main-content" id="main-content" tabindex="-1">
 <?php else: ?><nav class="kd-navbar"><div class="container"><div class="d-flex align-items-center justify-content-between"><a href="/KrishiDisha/index.php" class="navbar-brand" style="display:flex;align-items:center;gap:10px;font-family:'Nunito',sans-serif;font-size:20px;font-weight:800;color:#fff;"><div style="width:34px;height:34px;background:linear-gradient(135deg,#52b788,#2d6a4f);border-radius:8px;display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-leaf" style="color:#fff;font-size:15px;"></i></div>KrishiDisha</a><a href="/KrishiDisha/auth/login.php" class="btn-kd btn-kd-primary" style="padding:8px 18px;font-size:13px;">Login</a></div></div></nav><div style="padding-top:70px;"><?php endif; ?>
 
 <div class="topbar">
     <div class="d-flex align-items-center gap-3">
-        <?php if ($isAuth): ?><button id="sidebarToggle" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button><?php endif; ?>
+        <?php if ($isAuth): ?><button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button><?php endif; ?>
         <div class="topbar-title"><i class="fa-solid fa-umbrella-beach me-2" style="color:#0891b2;"></i>Agri-Tourism</div>
     </div>
     <div class="topbar-actions">
@@ -66,15 +66,15 @@ $isAuth = isLoggedIn();
         <div class="col-md-6 col-lg-4">
             <div class="card-kd">
                 <div style="height:180px;overflow:hidden;position:relative;">
-                    <?php if (!empty($t['image']) && file_exists(__DIR__.'/../'.$t['image'])): ?>
-                    <img src="/KrishiDisha/<?= htmlspecialchars($t['image']) ?>" style="width:100%;height:180px;object-fit:cover;">
+                    <?php if (!empty($t['image']) && mediaAvailable($t['image'])): ?>
+                    <img alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($t['image']) ?>" style="width:100%;height:180px;object-fit:cover;">
                     <?php else: ?>
                     <div style="height:180px;background:linear-gradient(135deg,var(--primary-dark),var(--primary));display:flex;align-items:center;justify-content:center;font-size:72px;">🌿</div>
                     <?php endif; ?>
                     <?php if ($isAuth && currentRole() === 'admin'): ?>
                     <div style="position:absolute;top:8px;right:8px;display:flex;gap:4px;">
-                        <a href="/KrishiDisha/admin/manage_content.php?tab=tours&edit=<?= $t['id'] ?>" class="btn-kd btn-kd-outline" style="padding:4px 8px;font-size:10px;background:rgba(255,255,255,0.9);"><i class="fa-solid fa-pen"></i></a>
-                        <a href="/KrishiDisha/admin/manage_content.php?tab=tours&delete_tour=<?= $t['id'] ?>" class="btn-kd btn-kd-danger" style="padding:4px 8px;font-size:10px;" data-confirm="Delete this tour?"><i class="fa-solid fa-trash"></i></a>
+                        <a href="/KrishiDisha/admin/manage_content.php?tab=tours&edit=<?= e($t['id']) ?>" class="btn-kd btn-kd-outline" style="padding:4px 8px;font-size:10px;background:rgba(255,255,255,0.9);"><i class="fa-solid fa-pen"></i></a>
+                        <form method="POST" action="/KrishiDisha/admin/manage_content.php?tab=tours" style="display:inline"><?= csrfField() ?><?= requestKeyField() ?><input type="hidden" name="delete_tour" value="<?= e($t['id']) ?>"><button type="submit" class="btn-kd btn-kd-danger" style="padding:4px 8px;font-size:10px;" data-confirm="Delete this tour?"><i class="fa-solid fa-trash"></i></button></form>
                     </div>
                     <?php endif; ?>
                     <?php if ($t['status'] === 'pending'): ?>
@@ -90,13 +90,13 @@ $isAuth = isLoggedIn();
                     <p style="font-size:13px;color:var(--text-muted);line-height:1.5;margin-bottom:14px;"><?= mb_substr(htmlspecialchars($t['description']),0,120) ?>...</p>
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
                         <div>
-                            <div style="font-size:20px;font-weight:800;color:var(--primary);">৳<?= number_format($t['price_per_day']) ?><span style="font-size:12px;font-weight:400;color:var(--text-muted);">/day</span></div>
-                            <div style="font-size:12px;color:var(--text-muted);"><i class="fa-solid fa-users me-1"></i>Max <?= $t['capacity'] ?> visitors</div>
+                            <div style="font-size:20px;font-weight:800;color:var(--primary);">৳<?= number_format($t['price_per_day']) ?><span style="font-size:12px;font-weight:400;color:var(--text-muted);">/group/day</span></div>
+                            <div style="font-size:12px;color:var(--text-muted);"><i class="fa-solid fa-users me-1"></i>Max <?= e($t['capacity']) ?> visitors</div>
                         </div>
-                        <span class="badge-kd <?= $t['status']==='active' ? 'badge-success' : 'badge-muted' ?>"><?= ucfirst($t['status']) ?></span>
+                        <span class="badge-kd <?= $t['status']==='active' ? 'badge-success' : 'badge-muted' ?>"><?= e(ucfirst($t['status'])) ?></span>
                     </div>
                     <?php if ($isAuth && currentRole() === 'tourist'): ?>
-                    <a href="/KrishiDisha/tourist/tours.php?book=<?= $t['id'] ?>" class="btn-kd btn-kd-primary w-100 justify-content-center">
+                    <a href="/KrishiDisha/tourist/tours.php?book=<?= e($t['id']) ?>" class="btn-kd btn-kd-primary w-100 justify-content-center">
                         <i class="fa-solid fa-calendar-plus"></i> Book Tour
                     </a>
                     <?php elseif (!$isAuth): ?>
@@ -124,7 +124,7 @@ $isAuth = isLoggedIn();
                         <span class="badge-kd badge-success" style="font-size:10px;"><?= $g['experience_years'] ?? 0 ?> yrs exp</span>
                         <span class="badge-kd badge-success" style="font-size:10px;">Available</span>
                     </div>
-                    <div style="font-size:18px;font-weight:800;color:var(--primary);">৳<?= number_format($g['daily_rate'] ?? 0) ?>/day</div>
+                    <div style="font-size:18px;font-weight:800;color:var(--primary);">৳<?= number_format($g['daily_rate'] ?? 0) ?>/group/day</div>
                 </div>
             </div>
         </div>

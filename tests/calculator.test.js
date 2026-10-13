@@ -1,0 +1,16 @@
+const assert = require('node:assert/strict');
+const { calculate } = require('../assets/js/calculator');
+const base = { area: 100, unit: 'decimal', yieldKg: 1000, price: 20, cost: 10000, loss: 10, commission: 5 };
+const result = calculate(base);
+assert.equal(result.acres, 1);
+assert.equal(result.saleable, 900);
+assert.equal(result.base.gross, 18000);
+assert.equal(result.base.profit, 7100);
+assert.equal(result.low.profit, 3680);
+assert.equal(calculate({ ...base, cost: 0 }).base.roi, null);
+assert.equal(calculate({ ...base, loss: 100 }).breakEvenPrice, null);
+assert.equal(calculate({ ...base, price: 0 }).breakEvenYield, null);
+assert.throws(() => calculate({ ...base, area: 0 }));
+assert.throws(() => calculate({ ...base, loss: 101 }));
+assert.throws(() => calculate({ ...base, price: Infinity }));
+console.log('Calculator scenarios, units, losses, commission and invalid-input checks passed.');

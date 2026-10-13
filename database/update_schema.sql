@@ -35,7 +35,7 @@ CALL kd_add_column_if_missing('RECIPE',    'price',               "DECIMAL(10,2)
 DROP PROCEDURE IF EXISTS kd_add_column_if_missing;
 
 -- Existing accounts predate email verification: treat them as verified.
-UPDATE USER SET email_verified = 1 WHERE email_verified = 0;
+-- Verification is never granted by a schema migration.
 
 -- ---- 2. Allow 'pending' farm tours (approval workflow) -----
 ALTER TABLE FARM_TOUR

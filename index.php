@@ -1,7 +1,13 @@
 <?php
 require_once __DIR__ . '/includes/auth_check.php';
 require_once __DIR__ . '/config/db.php';
-$page_title = 'Home — Agricultural Intelligence Platform';
+$page_title = 'Home — Agricultural Platform';
+$cropCount=(int)$pdo->query("SELECT COUNT(*) FROM CROP WHERE review_status='reviewed'")->fetchColumn();
+$diseaseCount=(int)$pdo->query("SELECT COUNT(*) FROM DISEASE WHERE review_status='reviewed'")->fetchColumn();
+$expertCount=(int)$pdo->query("SELECT COUNT(*) FROM EXPERT e JOIN USER u ON e.user_id=u.id WHERE u.status='approved' AND e.availability='available'")->fetchColumn();
+$farmerCount=(int)$pdo->query("SELECT COUNT(*) FROM FARMER f JOIN USER u ON f.user_id=u.id WHERE u.status='approved'")->fetchColumn();
+$recentListing=$pdo->query("SELECT p.price_per_kg,c.name FROM PRODUCT p JOIN CROP c ON p.crop_id=c.id JOIN FARMER f ON p.farmer_id=f.id JOIN USER u ON f.user_id=u.id WHERE p.status='available' AND p.quantity_kg>0 AND u.status='approved' ORDER BY p.created_at DESC LIMIT 1")->fetch();
+
 ?>
 <?php include __DIR__ . '/includes/header.php'; ?>
 
@@ -41,11 +47,10 @@ $page_title = 'Home — Agricultural Intelligence Platform';
             <div class="col-lg-6 hero-content">
                 <div class="hero-eyebrow">
                     <i class="fa-solid fa-seedling"></i>
-                    Bangladesh's #1 Agri Intelligence Platform
+                    <?= t('Agriculture for local communities','স্থানীয় কৃষকের জন্য কৃষিদিশা') ?>
                 </div>
                 <h1>
-                    Empowering Farmers<br>
-                    with <span class="highlight">Smart Agriculture</span>
+                    <?= t('Connect your farm','আপনার খামারকে যুক্ত করুন') ?><br><span class="highlight"><?= t('with buyers and experts','ক্রেতা ও বিশেষজ্ঞের সাথে') ?></span>
                 </h1>
                 <p>
                     KrishiDisha connects farmers, traders, tourists, and experts in a unified digital ecosystem — from crop knowledge to marketplace, from farm tours to expert consultations.
@@ -60,8 +65,8 @@ $page_title = 'Home — Agricultural Intelligence Platform';
                 </div>
                 <div class="hero-stats">
                     <div>
-                        <div class="hero-stat-value">10+</div>
-                        <div class="hero-stat-label">Crop Species</div>
+                        <div class="hero-stat-value"><?= $cropCount ?></div>
+                        <div class="hero-stat-label">Reviewed crops</div>
                     </div>
                     <div>
                         <div class="hero-stat-value">8</div>
@@ -69,33 +74,33 @@ $page_title = 'Home — Agricultural Intelligence Platform';
                     </div>
                     <div>
                         <div class="hero-stat-value">26</div>
-                        <div class="hero-stat-label">Database Tables</div>
+                        <div class="hero-stat-label">Approved farmers</div>
                     </div>
                 </div>
             </div>
             <div class="col-lg-6 position-relative d-none d-lg-block" style="height:560px;">
                 <!-- Floating info cards -->
                 <div class="floating-card card-a">
-                    <div style="font-size:12px; color:rgba(255,255,255,0.6); margin-bottom:4px;">Market Price</div>
-                    <div style="font-size:20px; font-weight:800; color:#74c69d;">৳ 45/kg</div>
-                    <div style="font-size:12px; color:rgba(255,255,255,0.7);">🌾 Rice — Sylhet Region</div>
+                    <div style="font-size:12px; color:rgba(255,255,255,0.6); margin-bottom:4px;">Latest asking price</div>
+                    <div style="font-size:20px; font-weight:800; color:#74c69d;"><?= $recentListing ? taka($recentListing['price_per_kg']).'/kg' : 'No listings yet' ?></div>
+                    <div style="font-size:12px; color:rgba(255,255,255,0.7);"><?= e($recentListing['name'] ?? 'Add your first listing') ?></div>
                 </div>
                 <div class="floating-card card-b">
-                    <div style="font-size:12px; color:rgba(255,255,255,0.6); margin-bottom:6px;">Expert Available</div>
+                    <div style="font-size:12px; color:rgba(255,255,255,0.6); margin-bottom:6px;">Available experts</div>
                     <div style="display:flex; align-items:center; gap:8px;">
                         <div style="width:36px;height:36px;background:linear-gradient(135deg,#52b788,#2d6a4f);border-radius:50%;display:flex;align-items:center;justify-content:center;">
                             <i class="fa-solid fa-user-doctor" style="color:#fff; font-size:14px;"></i>
                         </div>
                         <div>
-                            <div style="font-weight:700; font-size:13px;">Dr. Anwar</div>
-                            <div style="font-size:11px; color:rgba(255,255,255,0.6);">Soil & Pest Expert</div>
+                            <div style="font-weight:700; font-size:13px;"> <?= $expertCount ?> approved providers</div>
+                            <div style="font-size:11px; color:rgba(255,255,255,0.6);">See provider profiles</div>
                         </div>
                     </div>
                 </div>
                 <div class="floating-card card-c">
-                    <div style="font-size:12px; color:rgba(255,255,255,0.6); margin-bottom:4px;">Vitamin C / 100g</div>
-                    <div style="font-size:24px; font-weight:800; color:#f4a261;">84 mg</div>
-                    <div style="font-size:12px; color:rgba(255,255,255,0.7);">🥝 Bitter Gourd</div>
+                    <div style="font-size:12px; color:rgba(255,255,255,0.6); margin-bottom:4px;">Agricultural references</div>
+                    <div style="font-size:24px; font-weight:800; color:#f4a261;">Check the source</div>
+                    <div style="font-size:12px; color:rgba(255,255,255,0.7);">Reviewed information only</div>
                 </div>
             </div>
         </div>
@@ -108,26 +113,26 @@ $page_title = 'Home — Agricultural Intelligence Platform';
         <div class="row g-0 text-center">
             <div class="col-6 col-md-3">
                 <div class="counter-item">
-                    <div class="counter-num" data-count="10">0</div>
-                    <div class="counter-label">Crop Species</div>
+                    <div class="counter-num" data-count="<?= $cropCount ?>">0</div>
+                    <div class="counter-label">Reviewed crops</div>
                 </div>
             </div>
             <div class="col-6 col-md-3">
                 <div class="counter-item">
-                    <div class="counter-num" data-count="7">0</div>
+                    <div class="counter-num" data-count="<?= $diseaseCount ?>">0</div>
                     <div class="counter-label">Crop Diseases Tracked</div>
                 </div>
             </div>
             <div class="col-6 col-md-3">
                 <div class="counter-item">
-                    <div class="counter-num" data-count="10">0</div>
-                    <div class="counter-label">Vitamins & Nutrients</div>
+                    <div class="counter-num" data-count="<?= $expertCount ?>">0</div>
+                    <div class="counter-label">Available experts</div>
                 </div>
             </div>
             <div class="col-6 col-md-3">
                 <div class="counter-item">
-                    <div class="counter-num" data-count="26">0</div>
-                    <div class="counter-label">Database Tables</div>
+                    <div class="counter-num" data-count="<?= $farmerCount ?>">0</div>
+                    <div class="counter-label">Approved farmers</div>
                 </div>
             </div>
         </div>
@@ -147,23 +152,23 @@ $page_title = 'Home — Agricultural Intelligence Platform';
             $modules = [
                 ['icon'=>'fa-book-atlas',    'color'=>'#2d6a4f','bg'=>'#d8f3dc','title'=>'Crop Encyclopedia',    'desc'=>'Scientific names, origins, history, trade status, and varieties of all major crops.', 'link'=>'/KrishiDisha/modules/encyclopedia.php'],
                 ['icon'=>'fa-store',         'color'=>'#1d4ed8','bg'=>'#dbeafe','title'=>'Marketplace',          'desc'=>'Buy produce directly from farmers through verified dealers at transparent prices.', 'link'=>'/KrishiDisha/user/marketplace.php'],
-                ['icon'=>'fa-bug',           'color'=>'#dc2626','bg'=>'#fee2e2','title'=>'Disease Detection',     'desc'=>'Identify crop diseases from a curated database of symptoms and proven solutions.', 'link'=>'/KrishiDisha/modules/disease.php'],
+                ['icon'=>'fa-bug',           'color'=>'#dc2626','bg'=>'#fee2e2','title'=>'Disease Reference',     'desc'=>'Browse crop symptoms and reviewed reference information; seek expert help for diagnosis.', 'link'=>'/KrishiDisha/modules/disease.php'],
                 ['icon'=>'fa-seedling',      'color'=>'#059669','bg'=>'#d1fae5','title'=>'Crop Recommendation',  'desc'=>'Get the best crop suggestions based on your region, soil type, and season.', 'link'=>'/KrishiDisha/modules/recommend.php'],
                 ['icon'=>'fa-apple-whole',   'color'=>'#ea580c','bg'=>'#ffedd5','title'=>'Nutrition Guide',      'desc'=>'Track nutrient retention percentages across different cooking methods.', 'link'=>'/KrishiDisha/modules/nutrition.php'],
                 ['icon'=>'fa-umbrella-beach','color'=>'#0891b2','bg'=>'#cffafe','title'=>'Agri-Tourism',         'desc'=>'Book farm visits, hire local guides, and order authentic farm-fresh food.', 'link'=>'/KrishiDisha/modules/tourism.php'],
-                ['icon'=>'fa-user-doctor',   'color'=>'#7c3aed','bg'=>'#ede9fe','title'=>'Expert Consultation',  'desc'=>'Schedule paid advisory sessions with certified agricultural experts.', 'link'=>'/KrishiDisha/modules/consultation.php'],
+                ['icon'=>'fa-user-doctor',   'color'=>'#7c3aed','bg'=>'#ede9fe','title'=>'Expert Consultation',  'desc'=>'Schedule paid advisory sessions with approved providers; confirm qualifications with the platform.', 'link'=>'/KrishiDisha/modules/consultation.php'],
                 ['icon'=>'fa-calculator',    'color'=>'#b45309','bg'=>'#fef3c7','title'=>'Profit Calculator',    'desc'=>'Estimate your gross revenue and profit based on land, yield, and market price.', 'link'=>'/KrishiDisha/modules/calculator.php'],
             ];
             foreach ($modules as $i => $m):
             ?>
             <div class="col-md-6 col-lg-3 fade-up" style="transition-delay:<?= $i * 0.07 ?>s">
-                <a href="<?= $m['link'] ?>" style="display:block; text-decoration:none;">
+                <a href="<?= e($m['link']) ?>" style="display:block; text-decoration:none;">
                     <div class="module-card">
-                        <div class="module-icon" style="background:<?= $m['bg'] ?>; color:<?= $m['color'] ?>;">
-                            <i class="fa-solid <?= $m['icon'] ?>"></i>
+                        <div class="module-icon" style="background:<?= e($m['bg']) ?>; color:<?= e($m['color']) ?>;">
+                            <i class="fa-solid <?= e($m['icon']) ?>"></i>
                         </div>
-                        <h5><?= $m['title'] ?></h5>
-                        <p><?= $m['desc'] ?></p>
+                        <h5><?= e($m['title']) ?></h5>
+                        <p><?= e($m['desc']) ?></p>
                     </div>
                 </a>
             </div>
@@ -196,9 +201,9 @@ $page_title = 'Home — Agricultural Intelligence Platform';
             ?>
             <div class="col-6 col-md-3 fade-up" style="transition-delay:<?= $i * 0.06 ?>s">
                 <div class="role-card">
-                    <div class="role-icon"><?= $r['icon'] ?></div>
-                    <h6><?= $r['title'] ?></h6>
-                    <p><?= $r['desc'] ?></p>
+                    <div class="role-icon"><?= e($r['icon']) ?></div>
+                    <h6><?= e($r['title']) ?></h6>
+                    <p><?= e($r['desc']) ?></p>
                 </div>
             </div>
             <?php endforeach; ?>
@@ -239,7 +244,7 @@ $page_title = 'Home — Agricultural Intelligence Platform';
                 <h6 style="color:#fff; font-family:'Nunito',sans-serif; margin-bottom:14px;">Quick Links</h6>
                 <div style="display:flex; flex-direction:column; gap:6px; font-size:13px;">
                     <a href="/KrishiDisha/modules/encyclopedia.php" style="color:rgba(255,255,255,0.6);">Crop Encyclopedia</a>
-                    <a href="/KrishiDisha/modules/disease.php" style="color:rgba(255,255,255,0.6);">Disease Detection</a>
+                    <a href="/KrishiDisha/modules/disease.php" style="color:rgba(255,255,255,0.6);">Disease Reference</a>
                     <a href="/KrishiDisha/modules/calculator.php" style="color:rgba(255,255,255,0.6);">Profit Calculator</a>
                     <a href="/KrishiDisha/modules/tourism.php" style="color:rgba(255,255,255,0.6);">Agri-Tourism</a>
                 </div>

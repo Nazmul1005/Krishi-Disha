@@ -4,19 +4,25 @@ require_once __DIR__ . '/../config/db.php';
 requireAuth(['admin']);
 
 // Handle approve/suspend/delete actions
-if (isset($_GET['approve'])) {
-    $pdo->prepare("UPDATE USER SET status='approved' WHERE id=?")->execute([(int)$_GET['approve']]);
-    header('Location: users.php?msg=approved'); exit;
+if($_SERVER['REQUEST_METHOD']==='POST') {
+    try {
+        $action=null;$id=0;
+        foreach(['approve','suspend','delete','reject'] as $candidate) if(isset($_POST[$candidate])) { $action=$candidate;$id=(int)$_POST[$candidate];break; }
+        if(!$action) throw new InvalidArgumentException('Select an action.');
+        transaction($pdo,function()use($pdo,$action,$id) {
+            $stmt=$pdo->prepare('SELECT * FROM USER WHERE id=? FOR UPDATE');$stmt->execute([$id]);$user=$stmt->fetch();
+            if(!$user || $user['role']==='admin') throw new InvalidArgumentException('Administrator accounts must be managed through the secure CLI.');
+            if($action==='approve' && !(int)$user['email_verified']) throw new InvalidArgumentException('Email must be verified before approval.');
+            $status=$action==='approve' ? 'approved' : 'suspended';
+            if($action==='approve') {
+                $notes=textInput($_POST['review_notes'] ?? '',3000);if(($_POST['review_ack'] ?? '')!=='1') throw new InvalidArgumentException('Confirm identity/qualification review.');
+                $pdo->prepare('UPDATE USER SET status=?,auth_version=auth_version+1,approval_notes=?,approved_by=?,approved_at=NOW() WHERE id=?')->execute([$status,$notes,$_SESSION['user_id'],$id]);
+            } else $pdo->prepare('UPDATE USER SET status=?,auth_version=auth_version+1 WHERE id=?')->execute([$status,$id]);
+            audit($pdo,'account.'.$action,'USER',$id,['previous'=>$user['status'],'status'=>$status]);
+        });flash('success','Account updated. Records have been retained.');
+    } catch(Throwable $e) { flash('error',$e instanceof InvalidArgumentException ? $e->getMessage() : 'Account could not be updated.'); }
+    header('Location: users.php');exit;
 }
-if (isset($_GET['suspend'])) {
-    $pdo->prepare("UPDATE USER SET status='suspended' WHERE id=?")->execute([(int)$_GET['suspend']]);
-    header('Location: users.php?msg=suspended'); exit;
-}
-if (isset($_GET['delete'])) {
-    $pdo->prepare("DELETE FROM USER WHERE id=? AND role != 'admin'")->execute([(int)$_GET['delete']]);
-    header('Location: users.php?msg=deleted'); exit;
-}
-
 $role_filter   = $_GET['role']   ?? '';
 $status_filter = $_GET['status'] ?? '';
 $search        = trim($_GET['q'] ?? '');
@@ -38,14 +44,14 @@ $page_title = 'Manage Users';
 <?php include __DIR__ . '/../includes/header.php'; ?>
 <div class="layout-wrapper">
 <?php include __DIR__ . '/../includes/sidebar.php'; ?>
-<div class="main-content">
+<div class="main-content" id="main-content" tabindex="-1">
     <div class="topbar">
         <div class="d-flex align-items-center gap-3">
-            <button id="sidebarToggle" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
+            <button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
             <div class="topbar-title">Manage Users</div>
         </div>
     </div>
-    <div class="page-body">
+    <div class="page-body"><?= renderFlash() ?>
         <?php if ($msg): ?>
         <div class="alert-kd alert-kd-success" data-autohide="3000"><i class="fa-solid fa-check"></i> <?= $msg ?></div>
         <?php endif; ?>
@@ -56,7 +62,7 @@ $page_title = 'Manage Users';
             <select name="role">
                 <option value="">All Roles</option>
                 <?php foreach (['admin','farmer','dealer','tourist','cook','expert','guide','general'] as $r): ?>
-                <option value="<?= $r ?>" <?= $role_filter===$r?'selected':'' ?>><?= ucfirst($r) ?></option>
+                <option value="<?= $r ?>" <?= $role_filter===$r?'selected':'' ?>><?= e(ucfirst($r)) ?></option>
                 <?php endforeach; ?>
             </select>
             <select name="status">
@@ -79,28 +85,28 @@ $page_title = 'Manage Users';
                     <tbody>
                     <?php foreach ($users as $u): ?>
                     <tr>
-                        <td style="color:var(--text-muted); font-size:12px;"><?= $u['id'] ?></td>
+                        <td style="color:var(--text-muted); font-size:12px;"><?= e($u['id']) ?></td>
                         <td>
                             <div style="font-weight:600;"><?= htmlspecialchars($u['name']) ?></div>
                             <div style="font-size:12px; color:var(--text-muted);"><?= htmlspecialchars($u['email']) ?></div>
                         </td>
-                        <td><span class="badge-kd badge-info"><?= ucfirst($u['role']) ?></span></td>
+                        <td><span class="badge-kd badge-info"><?= e(ucfirst($u['role'])) ?></span></td>
                         <td style="font-size:13px;"><?= htmlspecialchars($u['phone'] ?? '—') ?></td>
                         <td>
                             <?php $cls = ['approved'=>'badge-success','pending'=>'badge-warning','suspended'=>'badge-danger']; ?>
-                            <span class="badge-kd <?= $cls[$u['status']] ?? 'badge-muted' ?>"><?= ucfirst($u['status']) ?></span>
+                            <span class="badge-kd <?= $cls[$u['status']] ?? 'badge-muted' ?>"><?= e(ucfirst($u['status'])) ?></span>
                         </td>
                         <td style="font-size:12px; color:var(--text-muted);"><?= date('d M Y', strtotime($u['created_at'])) ?></td>
                         <td>
                             <div style="display:flex; gap:6px; flex-wrap:wrap;">
                                 <?php if ($u['status'] !== 'approved'): ?>
-                                <a href="?approve=<?= $u['id'] ?>" class="btn-kd btn-kd-primary" style="padding:4px 10px; font-size:11px;" data-confirm="Approve this user?"><i class="fa-solid fa-check"></i></a>
+                                <form method="POST" action="" style="display:inline"><?= csrfField() ?><?= requestKeyField() ?><input type="hidden" name="approve" value="<?= e($u['id']) ?>"><label>Review notes</label><input class="form-control" name="review_notes" maxlength="3000" required><label><input type="checkbox" name="review_ack" value="1" required> Identity/qualification checked</label><button type="submit" class="btn-kd btn-kd-primary" style="padding:4px 10px; font-size:11px;" data-confirm="Approve this user?"><i class="fa-solid fa-check"></i></button></form>
                                 <?php endif; ?>
                                 <?php if ($u['status'] !== 'suspended' && $u['role'] !== 'admin'): ?>
-                                <a href="?suspend=<?= $u['id'] ?>" class="btn-kd btn-kd-gold" style="padding:4px 10px; font-size:11px; color:#fff;" data-confirm="Suspend this user?"><i class="fa-solid fa-ban"></i></a>
+                                <form method="POST" action="" style="display:inline"><?= csrfField() ?><?= requestKeyField() ?><input type="hidden" name="suspend" value="<?= e($u['id']) ?>"><button type="submit" class="btn-kd btn-kd-gold" style="padding:4px 10px; font-size:11px; color:#fff;" data-confirm="Suspend this user?"><i class="fa-solid fa-ban"></i></button></form>
                                 <?php endif; ?>
                                 <?php if ($u['role'] !== 'admin'): ?>
-                                <a href="?delete=<?= $u['id'] ?>" class="btn-kd btn-kd-danger" style="padding:4px 10px; font-size:11px;" data-confirm="DELETE this user? This cannot be undone."><i class="fa-solid fa-trash"></i></a>
+                                <form method="POST" action="" style="display:inline"><?= csrfField() ?><?= requestKeyField() ?><input type="hidden" name="delete" value="<?= e($u['id']) ?>"><button type="submit" class="btn-kd btn-kd-danger" style="padding:4px 10px; font-size:11px;" data-confirm="DELETE this user? This cannot be undone."><i class="fa-solid fa-trash"></i></button></form>
                                 <?php endif; ?>
                             </div>
                         </td>

@@ -20,10 +20,10 @@ $page_title = 'Guide Dashboard';
 <?php include __DIR__ . '/../includes/header.php'; ?>
 <div class="layout-wrapper">
 <?php include __DIR__ . '/../includes/sidebar.php'; ?>
-<div class="main-content">
+<div class="main-content" id="main-content" tabindex="-1">
     <div class="topbar">
         <div class="d-flex align-items-center gap-3">
-            <button id="sidebarToggle" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
+            <button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
             <div class="topbar-title">🗺️ Guide Dashboard</div>
         </div>
     </div>
@@ -42,8 +42,8 @@ $page_title = 'Guide Dashboard';
                     <tr>
                         <td style="font-weight:600;"><?= htmlspecialchars($b['tourist_name']) ?></td>
                         <td><?= htmlspecialchars($b['title']) ?></td>
-                        <td style="font-size:12px;"><?= $b['start_date'] ?> → <?= $b['end_date'] ?></td>
-                        <td><?php $sc=['pending'=>'badge-warning','confirmed'=>'badge-info','completed'=>'badge-success','cancelled'=>'badge-danger']; ?><span class="badge-kd <?= $sc[$b['status']]??'badge-muted' ?>"><?= ucfirst($b['status']) ?></span></td>
+                        <td style="font-size:12px;"><?= e($b['start_date']) ?> → <?= e($b['end_date']) ?></td>
+                        <td><?php $sc=['pending'=>'badge-warning','confirmed'=>'badge-info','completed'=>'badge-success','cancelled'=>'badge-danger']; ?><span class="badge-kd <?= $sc[$b['status']]??'badge-muted' ?>"><?= e(ucfirst($b['status'])) ?></span></td>
                     </tr>
                     <?php endforeach; ?>
                     <?php if (empty($upcoming)): ?><tr><td colspan="4" class="text-center py-4" style="color:var(--text-muted);">No bookings yet.</td></tr><?php endif; ?>

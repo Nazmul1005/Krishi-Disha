@@ -62,32 +62,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => el.remove(), parseInt(el.dataset.autohide) || 4000);
   });
 
-  // ── Profit Calculator ─────────────────────────────────
-  const calcForm = document.getElementById('profitCalcForm');
-  if (calcForm) {
-    calcForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const area         = parseFloat(document.getElementById('land_area').value)    || 0;
-      const investment   = parseFloat(document.getElementById('investment').value)   || 0;
-      const yield_kg     = parseFloat(document.getElementById('yield_kg').value)     || 0;
-      const market_price = parseFloat(document.getElementById('market_price').value) || 0;
-
-      const gross    = yield_kg * market_price;
-      const profit   = gross - investment;
-      const roi      = investment > 0 ? ((profit / investment) * 100).toFixed(1) : 0;
-      const per_acre = area > 0 ? (profit / area).toFixed(0) : 0;
-
-      document.getElementById('result_gross').textContent  = '৳ ' + gross.toLocaleString('en-BD');
-      document.getElementById('result_profit').textContent = '৳ ' + profit.toLocaleString('en-BD');
-      document.getElementById('result_roi').textContent    = roi + '%';
-      document.getElementById('result_acre').textContent   = '৳ ' + parseInt(per_acre).toLocaleString('en-BD');
-
-      const resultBox = document.getElementById('calcResults');
-      if (resultBox) { resultBox.style.display = 'block'; resultBox.classList.add('fade-up', 'visible'); }
-      document.getElementById('result_profit').style.color = profit >= 0 ? '#10b981' : '#ef4444';
-    });
-  }
-
   // ── Nutrition retention chart (simple bars) ───────────
   document.querySelectorAll('.retention-bar').forEach(bar => {
     const pct = parseFloat(bar.dataset.pct) || 0;
@@ -117,4 +91,36 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!valid) e.preventDefault();
     });
   });
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('[data-filter-table]').forEach(input => input.addEventListener('input', () => {
+    document.querySelectorAll('#' + input.dataset.filterTable + ' tbody tr').forEach(row => { row.hidden = !row.textContent.toLowerCase().includes(input.value.toLowerCase()); });
+  }));
+  const modeInput = document.getElementById('modeInput');
+  const setMode = mode => {
+    if (!modeInput) return;
+    modeInput.value = mode;
+    document.getElementById('regionFields').style.display = mode === 'region' ? 'block' : 'none';
+    document.getElementById('vitaminFields').style.display = mode === 'vitamin' ? 'block' : 'none';
+    document.querySelectorAll('[data-mode]').forEach(button => { button.setAttribute('aria-pressed', String(button.dataset.mode === mode)); });
+  };
+  if (modeInput) setMode(modeInput.value);
+  document.querySelectorAll('[data-mode]').forEach(button => button.addEventListener('click', () => setMode(button.dataset.mode)));
+  document.querySelectorAll('[data-reject-id]').forEach(button => button.addEventListener('click', () => {
+    document.getElementById('rejectId').value = button.dataset.rejectId;
+    document.getElementById('rejectModal').style.display = 'flex';
+    document.querySelector('#rejectModal textarea').focus();
+  }));
+  document.querySelectorAll('[data-close-reject]').forEach(button => button.addEventListener('click', () => { document.getElementById('rejectModal').style.display = 'none'; }));
+  const cook = document.getElementById('cook_sel');
+  if (cook) cook.addEventListener('change', () => {
+    const select = document.querySelector('[name="recipe_id"]'); select.value = '';
+    select.querySelectorAll('option[data-cook]').forEach(option => { option.hidden = !!cook.value && option.dataset.cook !== cook.value; option.disabled = option.hidden; });
+  });
+  const chatBody = document.getElementById('chatBody');
+  if (chatBody) chatBody.scrollTop = chatBody.scrollHeight;
+  const chat = document.querySelector('.chat-input textarea');
+  if (chat) chat.addEventListener('keydown', event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); chat.form.requestSubmit(); } });
+  document.querySelectorAll('[data-close-detail]').forEach(button => button.addEventListener('click', () => document.getElementById('cropDetailModal')?.remove()));
 });

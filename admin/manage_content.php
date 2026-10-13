@@ -2,24 +2,23 @@
 require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/../config/db.php';
 requireAuth(['admin']);
+require_once __DIR__.'/../includes/content.php';
+foreach(['add_crop','edit_crop','add_disease','edit_disease'] as $editAction) if(isset($_POST[$editAction])) {
+    $source=sourceUrl($_POST['source_url'] ?? '');
+    if(($_POST['review_ack'] ?? '')!=='1') throw new InvalidArgumentException('Confirm you reviewed this reference.');
+    validateProposal(str_contains($editAction,'crop')?'crop':'disease',$_POST);
+}
+function markReviewed(PDO $pdo,string $table,int $id): void {
+    $pdo->prepare("UPDATE `$table` SET source_url=?,review_status='reviewed',reviewed_by=?,reviewed_at=NOW() WHERE id=?")->execute([sourceUrl($_POST['source_url'] ?? ''),$_SESSION['user_id'],$id]);
+    audit($pdo,'content.reviewed',$table,$id);
+}
+
 
 $tab = $_GET['tab'] ?? 'crops';
 $msg = ''; $err = '';
 
 // ─── Upload helper ─────────────────────────────────────────────────────────
-function handleUpload($field, $subfolder = 'crops') {
-    if (!isset($_FILES[$field]) || $_FILES[$field]['error'] !== UPLOAD_ERR_OK) return null;
-    $f   = $_FILES[$field];
-    $ext = strtolower(pathinfo($f['name'], PATHINFO_EXTENSION));
-    if (!in_array($ext, ['jpg','jpeg','png','webp','gif'])) return null;
-    $dir = __DIR__ . '/../assets/images/uploads/' . $subfolder . '/';
-    if (!is_dir($dir)) mkdir($dir, 0755, true);
-    $fname = uniqid('img_', true) . '.' . $ext;
-    if (move_uploaded_file($f['tmp_name'], $dir . $fname)) {
-        return 'assets/images/uploads/' . $subfolder . '/' . $fname;
-    }
-    return null;
-}
+function handleUpload($field,$subfolder="crops") { return saveImage($field,true); }
 
 // ══════════════════════════════════════════════════════════════════════════════
 // CROPS TAB CRUD
@@ -36,6 +35,7 @@ if ($tab === 'crops') {
                 $_POST['trade_status'], $_POST['season'], trim($_POST['category']),
                 $img ?? 'assets/images/uploads/crops/default.jpg'
             ]);
+        markReviewed($pdo,'CROP',(int)$pdo->lastInsertId());
         $msg = 'Crop added successfully!';
     }
     // Edit crop
@@ -49,11 +49,12 @@ if ($tab === 'crops') {
                 trim($_POST['origin']), trim($_POST['history']),
                 $_POST['trade_status'], $_POST['season'], trim($_POST['category']), $img, $id
             ]);
+        markReviewed($pdo,'CROP',$id);
         $msg = 'Crop updated!';
     }
     // Delete crop
-    if (isset($_GET['delete_crop'])) {
-        $pdo->prepare("DELETE FROM CROP WHERE id=?")->execute([(int)$_GET['delete_crop']]);
+    if (isset($_POST['delete_crop'])) {
+        $pdo->prepare("DELETE FROM CROP WHERE id=?")->execute([(int)$_POST['delete_crop']]);
         header('Location: manage_content.php?tab=crops&msg=deleted'); exit;
     }
     if (isset($_GET['msg']) && $_GET['msg'] === 'deleted') $msg = 'Crop deleted.';
@@ -72,10 +73,12 @@ if ($tab === 'diseases') {
         $img = handleUpload('disease_image', 'diseases');
         $pdo->prepare("INSERT INTO DISEASE (name,symptoms,solution,affected_part,image) VALUES (?,?,?,?,?)")
             ->execute([trim($_POST['name']), trim($_POST['symptoms']), trim($_POST['solution']), trim($_POST['affected_part']), $img]);
+        $newDisease=(int)$pdo->lastInsertId();
+        markReviewed($pdo,'DISEASE',$newDisease);
         $msg = 'Disease added!';
         // Link to crop if provided
         if (!empty($_POST['crop_ids'])) {
-            $did = $pdo->lastInsertId();
+            $did = $newDisease;
             foreach ((array)$_POST['crop_ids'] as $cid) {
                 $pdo->prepare("INSERT IGNORE INTO CROP_DISEASE (crop_id,disease_id) VALUES (?,?)")->execute([(int)$cid, $did]);
             }
@@ -93,10 +96,11 @@ if ($tab === 'diseases') {
                 $pdo->prepare("INSERT IGNORE INTO CROP_DISEASE (crop_id,disease_id) VALUES (?,?)")->execute([(int)$cid, $id]);
             }
         }
+        markReviewed($pdo,'DISEASE',$id);
         $msg = 'Disease updated!';
     }
-    if (isset($_GET['delete_disease'])) {
-        $pdo->prepare("DELETE FROM DISEASE WHERE id=?")->execute([(int)$_GET['delete_disease']]);
+    if (isset($_POST['delete_disease'])) {
+        $pdo->prepare("DELETE FROM DISEASE WHERE id=?")->execute([(int)$_POST['delete_disease']]);
         header('Location: manage_content.php?tab=diseases&msg=deleted'); exit;
     }
     if (isset($_GET['msg']) && $_GET['msg'] === 'deleted') $msg = 'Disease deleted.';
@@ -128,8 +132,8 @@ if ($tab === 'tours') {
             ->execute([trim($_POST['title']), trim($_POST['description']), trim($_POST['location']), (int)$_POST['capacity'], (float)$_POST['price_per_day'], $img, $_POST['status'], $id]);
         $msg = 'Farm tour updated!';
     }
-    if (isset($_GET['delete_tour'])) {
-        $pdo->prepare("DELETE FROM FARM_TOUR WHERE id=?")->execute([(int)$_GET['delete_tour']]);
+    if (isset($_POST['delete_tour'])) {
+        $pdo->prepare("UPDATE FARM_TOUR SET status='inactive' WHERE id=?")->execute([(int)$_POST['delete_tour']]);
         header('Location: manage_content.php?tab=tours&msg=deleted'); exit;
     }
     if (isset($_GET['msg']) && $_GET['msg'] === 'deleted') $msg = 'Tour deleted.';
@@ -153,12 +157,12 @@ if ($tab === 'marketplace') {
             ->execute([(float)$_POST['quantity_kg'], (float)$_POST['price_per_kg'], trim($_POST['description']), $_POST['status'], $img, $id]);
         $msg = 'Product updated!';
     }
-    if (isset($_GET['approve_product'])) {
-        $pdo->prepare("UPDATE PRODUCT SET status='available' WHERE id=?")->execute([(int)$_GET['approve_product']]);
+    if (isset($_POST['approve_product'])) {
+        $pdo->prepare("UPDATE PRODUCT SET status='available' WHERE id=?")->execute([(int)$_POST['approve_product']]);
         header('Location: manage_content.php?tab=marketplace&msg=approved'); exit;
     }
-    if (isset($_GET['delete_product'])) {
-        $pdo->prepare("DELETE FROM PRODUCT WHERE id=?")->execute([(int)$_GET['delete_product']]);
+    if (isset($_POST['delete_product'])) {
+        $pdo->prepare("UPDATE PRODUCT SET status='pending' WHERE id=?")->execute([(int)$_POST['delete_product']]);
         header('Location: manage_content.php?tab=marketplace&msg=deleted'); exit;
     }
     if (isset($_GET['msg'])) { $mmap=['approved'=>'Product approved!','deleted'=>'Product deleted.']; $msg=$mmap[$_GET['msg']]??''; }
@@ -174,11 +178,11 @@ $page_title = 'Manage Content';
 <?php include __DIR__ . '/../includes/header.php'; ?>
 <div class="layout-wrapper">
 <?php include __DIR__ . '/../includes/sidebar.php'; ?>
-<div class="main-content">
+<div class="main-content" id="main-content" tabindex="-1">
 
 <div class="topbar">
     <div class="d-flex align-items-center gap-3">
-        <button id="sidebarToggle" class="btn btn-sm d-lg-none" style="border:none;font-size:20px;"><i class="fa-solid fa-bars"></i></button>
+        <button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none;font-size:20px;"><i class="fa-solid fa-bars"></i></button>
         <div class="topbar-title"><i class="fa-solid fa-pen-to-square me-2" style="color:var(--primary);"></i>Manage Content</div>
     </div>
     <div class="topbar-actions">
@@ -223,8 +227,8 @@ $page_title = 'Manage Content';
                 <?php if ($edit_crop): ?><a href="?tab=crops" class="btn-kd btn-kd-outline" style="padding:4px 10px;font-size:11px;">Cancel</a><?php endif; ?>
             </div>
             <div class="card-body-kd">
-                <form method="POST" enctype="multipart/form-data" class="form-kd" data-validate>
-                    <?php if ($edit_crop): ?><input type="hidden" name="crop_id" value="<?= $edit_crop['id'] ?>"><?php endif; ?>
+                <form method="POST" enctype="multipart/form-data" class="form-kd" data-validate><?= csrfField() ?><?= requestKeyField() ?>
+                    <?php if ($edit_crop): ?><input type="hidden" name="crop_id" value="<?= e($edit_crop['id']) ?>"><?php endif; ?>
                     <div class="form-group"><label>Crop Name <span style="color:red">*</span></label><input type="text" name="name" class="form-control" value="<?= htmlspecialchars($edit_crop['name']??'') ?>" required></div>
                     <div class="form-group"><label>Scientific Name</label><input type="text" name="scientific_name" class="form-control" value="<?= htmlspecialchars($edit_crop['scientific_name']??'') ?>"></div>
                     <div class="form-group"><label>Local Name (বাংলা)</label><input type="text" name="local_name" class="form-control" value="<?= htmlspecialchars($edit_crop['local_name']??'') ?>"></div>
@@ -236,24 +240,24 @@ $page_title = 'Manage Content';
                     <div class="form-group"><label>Season</label>
                         <select name="season" class="form-control">
                             <?php foreach (['summer','winter','rainy','all'] as $s): ?>
-                            <option value="<?= $s ?>" <?= ($edit_crop['season']??'')===$s?'selected':'' ?>><?= ucfirst($s) ?></option>
+                            <option value="<?= $s ?>" <?= ($edit_crop['season']??'')===$s?'selected':'' ?>><?= e(ucfirst($s)) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="form-group"><label>Trade Status</label>
                         <select name="trade_status" class="form-control">
                             <?php foreach (['local','export','both'] as $t): ?>
-                            <option value="<?= $t ?>" <?= ($edit_crop['trade_status']??'')===$t?'selected':'' ?>><?= ucfirst($t) ?></option>
+                            <option value="<?= $t ?>" <?= ($edit_crop['trade_status']??'')===$t?'selected':'' ?>><?= e(ucfirst($t)) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="form-group"><label>History / Description</label><textarea name="history" class="form-control" rows="4"><?= htmlspecialchars($edit_crop['history']??'') ?></textarea></div>
                     <div class="form-group">
                         <label>Crop Photo</label>
-                        <?php if (!empty($edit_crop['image']) && file_exists(__DIR__.'/../'.$edit_crop['image'])): ?>
-                        <img src="/KrishiDisha/<?= htmlspecialchars($edit_crop['image']) ?>" style="width:100%;height:100px;object-fit:cover;border-radius:8px;margin-bottom:8px;">
+                        <?php if (!empty($edit_crop['image']) && mediaAvailable($edit_crop['image'])): ?>
+                        <img alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($edit_crop['image']) ?>" style="width:100%;height:100px;object-fit:cover;border-radius:8px;margin-bottom:8px;">
                         <?php endif; ?>
-                        <input type="file" name="crop_image" class="form-control" accept="image/*">
+                        <label>Reference source URL</label><input class="form-control" type="url" name="source_url" value="<?= e($edit_crop['source_url'] ?? '') ?>" required><label><input type="checkbox" name="review_ack" value="1" required> I reviewed this source and its agricultural accuracy.</label><input type="file" name="crop_image" class="form-control" accept="image/*">
                         <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">JPG, PNG, WebP accepted</div>
                     </div>
                     <button type="submit" name="<?= $edit_crop ? 'edit_crop' : 'add_crop' ?>" class="btn-kd btn-kd-primary w-100 justify-content-center">
@@ -269,7 +273,7 @@ $page_title = 'Manage Content';
         <div class="card-kd">
             <div class="card-header-kd">
                 <h5>All Crops (<?= count($crops) ?>)</h5>
-                <input type="text" id="cropSearch" placeholder="Filter..." onkeyup="filterTable(this,'cropTable')" style="padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;outline:none;width:180px;">
+                <input type="text" id="cropSearch" placeholder="Filter..." data-filter-table="cropTable" style="padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;outline:none;width:180px;">
             </div>
             <div class="card-body-kd p-0">
                 <table class="table-kd" id="cropTable">
@@ -278,8 +282,8 @@ $page_title = 'Manage Content';
                     <?php foreach ($crops as $c): ?>
                     <tr>
                         <td>
-                            <?php if (!empty($c['image']) && file_exists(__DIR__.'/../'.$c['image'])): ?>
-                            <img src="/KrishiDisha/<?= htmlspecialchars($c['image']) ?>" style="width:48px;height:40px;object-fit:cover;border-radius:6px;">
+                            <?php if (!empty($c['image']) && mediaAvailable($c['image'])): ?>
+                            <img alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($c['image']) ?>" style="width:48px;height:40px;object-fit:cover;border-radius:6px;">
                             <?php else: ?>
                             <div style="width:48px;height:40px;background:var(--surface3);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px;">
                                 <?php $icons=['Grain'=>'🌾','Vegetable'=>'🥕','Fruit'=>'🍎','Fiber'=>'🪢','Oilseed'=>'🌻','Legume'=>'🫘','Cash Crop'=>'💰']; echo $icons[$c['category']]??'🌱'; ?>
@@ -290,13 +294,13 @@ $page_title = 'Manage Content';
                             <div style="font-weight:600;"><?= htmlspecialchars($c['name']) ?></div>
                             <div style="font-size:11px;color:var(--text-muted);font-style:italic;"><?= htmlspecialchars($c['scientific_name']??'') ?></div>
                         </td>
-                        <td><span class="badge-kd badge-info" style="font-size:10px;"><?= $c['category'] ?></span></td>
-                        <td><span class="badge-kd badge-success" style="font-size:10px;"><?= ucfirst($c['season']) ?></span></td>
-                        <td><span class="badge-kd badge-muted" style="font-size:10px;"><?= ucfirst($c['trade_status']) ?></span></td>
+                        <td><span class="badge-kd badge-info" style="font-size:10px;"><?= e($c['category']) ?></span></td>
+                        <td><span class="badge-kd badge-success" style="font-size:10px;"><?= e(ucfirst($c['season'])) ?></span></td>
+                        <td><span class="badge-kd badge-muted" style="font-size:10px;"><?= e(ucfirst($c['trade_status'])) ?></span></td>
                         <td>
                             <div style="display:flex;gap:4px;">
-                                <a href="?tab=crops&edit=<?= $c['id'] ?>" class="btn-kd btn-kd-outline" style="padding:4px 8px;font-size:11px;"><i class="fa-solid fa-pen"></i></a>
-                                <a href="?tab=crops&delete_crop=<?= $c['id'] ?>" class="btn-kd btn-kd-danger" style="padding:4px 8px;font-size:11px;" data-confirm="Delete crop '<?= htmlspecialchars($c['name']) ?>'?"><i class="fa-solid fa-trash"></i></a>
+                                <a href="?tab=crops&edit=<?= e($c['id']) ?>" class="btn-kd btn-kd-outline" style="padding:4px 8px;font-size:11px;"><i class="fa-solid fa-pen"></i></a>
+                                <form method="POST" action="?tab=crops" style="display:inline"><?= csrfField() ?><?= requestKeyField() ?><input type="hidden" name="delete_crop" value="<?= e($c['id']) ?>"><button type="submit" class="btn-kd btn-kd-danger" style="padding:4px 8px;font-size:11px;" data-confirm="Delete crop '<?= htmlspecialchars($c['name']) ?>'?"><i class="fa-solid fa-trash"></i></button></form>
                             </div>
                         </td>
                     </tr>
@@ -319,8 +323,8 @@ $page_title = 'Manage Content';
                 <?php if ($edit_disease): ?><a href="?tab=diseases" class="btn-kd btn-kd-outline" style="padding:4px 10px;font-size:11px;">Cancel</a><?php endif; ?>
             </div>
             <div class="card-body-kd">
-                <form method="POST" enctype="multipart/form-data" class="form-kd">
-                    <?php if ($edit_disease): ?><input type="hidden" name="disease_id" value="<?= $edit_disease['id'] ?>"><?php endif; ?>
+                <form method="POST" enctype="multipart/form-data" class="form-kd"><?= csrfField() ?><?= requestKeyField() ?>
+                    <?php if ($edit_disease): ?><input type="hidden" name="disease_id" value="<?= e($edit_disease['id']) ?>"><?php endif; ?>
                     <div class="form-group"><label>Disease Name <span style="color:red">*</span></label><input type="text" name="name" class="form-control" value="<?= htmlspecialchars($edit_disease['name']??'') ?>" required></div>
                     <div class="form-group"><label>Affected Plant Part</label><input type="text" name="affected_part" class="form-control" value="<?= htmlspecialchars($edit_disease['affected_part']??'') ?>" placeholder="e.g. Leaves, Stems"></div>
                     <div class="form-group"><label>Symptoms</label><textarea name="symptoms" class="form-control" rows="3"><?= htmlspecialchars($edit_disease['symptoms']??'') ?></textarea></div>
@@ -329,17 +333,17 @@ $page_title = 'Manage Content';
                         <label>Affects Crops (multi-select)</label>
                         <select name="crop_ids[]" class="form-control" multiple size="5">
                             <?php foreach ($all_crops as $c): ?>
-                            <option value="<?= $c['id'] ?>" <?= (isset($edit_disease['crop_ids']) && in_array($c['id'], $edit_disease['crop_ids']))?'selected':'' ?>><?= htmlspecialchars($c['name']) ?></option>
+                            <option value="<?= e($c['id']) ?>" <?= (isset($edit_disease['crop_ids']) && in_array($c['id'], $edit_disease['crop_ids']))?'selected':'' ?>><?= htmlspecialchars($c['name']) ?></option>
                             <?php endforeach; ?>
                         </select>
                         <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Hold Ctrl/Cmd to select multiple</div>
                     </div>
                     <div class="form-group">
                         <label>Disease Photo</label>
-                        <?php if (!empty($edit_disease['image']) && file_exists(__DIR__.'/../'.$edit_disease['image'])): ?>
-                        <img src="/KrishiDisha/<?= htmlspecialchars($edit_disease['image']) ?>" style="width:100%;height:90px;object-fit:cover;border-radius:8px;margin-bottom:8px;">
+                        <?php if (!empty($edit_disease['image']) && mediaAvailable($edit_disease['image'])): ?>
+                        <img alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($edit_disease['image']) ?>" style="width:100%;height:90px;object-fit:cover;border-radius:8px;margin-bottom:8px;">
                         <?php endif; ?>
-                        <input type="file" name="disease_image" class="form-control" accept="image/*">
+                        <label>Reference source URL</label><input class="form-control" type="url" name="source_url" value="<?= e($edit_disease['source_url'] ?? '') ?>" required><label><input type="checkbox" name="review_ack" value="1" required> I reviewed this treatment with a qualified local expert and current labels.</label><input type="file" name="disease_image" class="form-control" accept="image/*">
                     </div>
                     <button type="submit" name="<?= $edit_disease ? 'edit_disease' : 'add_disease' ?>" class="btn-kd btn-kd-danger w-100 justify-content-center">
                         <i class="fa-solid <?= $edit_disease ? 'fa-save' : 'fa-plus' ?>"></i> <?= $edit_disease ? 'Save Changes' : 'Add Disease' ?>
@@ -358,8 +362,8 @@ $page_title = 'Manage Content';
                     <?php foreach ($diseases as $d): ?>
                     <tr>
                         <td>
-                            <?php if (!empty($d['image']) && file_exists(__DIR__.'/../'.$d['image'])): ?>
-                            <img src="/KrishiDisha/<?= htmlspecialchars($d['image']) ?>" style="width:48px;height:40px;object-fit:cover;border-radius:6px;">
+                            <?php if (!empty($d['image']) && mediaAvailable($d['image'])): ?>
+                            <img alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($d['image']) ?>" style="width:48px;height:40px;object-fit:cover;border-radius:6px;">
                             <?php else: ?>
                             <div style="width:48px;height:40px;background:#fee2e2;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px;">🦠</div>
                             <?php endif; ?>
@@ -369,8 +373,8 @@ $page_title = 'Manage Content';
                         <td style="font-size:11px;color:var(--text-muted);"><?= htmlspecialchars($d['crops']??'—') ?></td>
                         <td>
                             <div style="display:flex;gap:4px;">
-                                <a href="?tab=diseases&edit=<?= $d['id'] ?>" class="btn-kd btn-kd-outline" style="padding:4px 8px;font-size:11px;"><i class="fa-solid fa-pen"></i></a>
-                                <a href="?tab=diseases&delete_disease=<?= $d['id'] ?>" class="btn-kd btn-kd-danger" style="padding:4px 8px;font-size:11px;" data-confirm="Delete this disease?"><i class="fa-solid fa-trash"></i></a>
+                                <a href="?tab=diseases&edit=<?= e($d['id']) ?>" class="btn-kd btn-kd-outline" style="padding:4px 8px;font-size:11px;"><i class="fa-solid fa-pen"></i></a>
+                                <form method="POST" action="?tab=diseases" style="display:inline"><?= csrfField() ?><?= requestKeyField() ?><input type="hidden" name="delete_disease" value="<?= e($d['id']) ?>"><button type="submit" class="btn-kd btn-kd-danger" style="padding:4px 8px;font-size:11px;" data-confirm="Delete this disease?"><i class="fa-solid fa-trash"></i></button></form>
                             </div>
                         </td>
                     </tr>
@@ -393,13 +397,13 @@ $page_title = 'Manage Content';
                 <?php if ($edit_tour): ?><a href="?tab=tours" class="btn-kd btn-kd-outline" style="padding:4px 10px;font-size:11px;">Cancel</a><?php endif; ?>
             </div>
             <div class="card-body-kd">
-                <form method="POST" enctype="multipart/form-data" class="form-kd">
-                    <?php if ($edit_tour): ?><input type="hidden" name="tour_id" value="<?= $edit_tour['id'] ?>"><?php endif; ?>
+                <form method="POST" enctype="multipart/form-data" class="form-kd"><?= csrfField() ?><?= requestKeyField() ?>
+                    <?php if ($edit_tour): ?><input type="hidden" name="tour_id" value="<?= e($edit_tour['id']) ?>"><?php endif; ?>
                     <?php if (!$edit_tour): ?>
                     <div class="form-group"><label>Farmer <span style="color:red">*</span></label>
                         <select name="farmer_id" class="form-control" required>
                             <option value="">Select farmer</option>
-                            <?php foreach ($farmers as $fm): ?><option value="<?= $fm['id'] ?>"><?= htmlspecialchars($fm['name']) ?></option><?php endforeach; ?>
+                            <?php foreach ($farmers as $fm): ?><option value="<?= e($fm['id']) ?>"><?= htmlspecialchars($fm['name']) ?></option><?php endforeach; ?>
                         </select>
                     </div>
                     <?php endif; ?>
@@ -407,20 +411,20 @@ $page_title = 'Manage Content';
                     <div class="form-group"><label>Description</label><textarea name="description" class="form-control" rows="3"><?= htmlspecialchars($edit_tour['description']??'') ?></textarea></div>
                     <div class="form-group"><label>Location</label><input type="text" name="location" class="form-control" value="<?= htmlspecialchars($edit_tour['location']??'') ?>"></div>
                     <div class="form-group"><label>Max Capacity</label><input type="number" name="capacity" class="form-control" value="<?= $edit_tour['capacity']??10 ?>" min="1"></div>
-                    <div class="form-group"><label>Price per Day (৳)</label><input type="number" name="price_per_day" step="50" class="form-control" value="<?= $edit_tour['price_per_day']??'' ?>"></div>
+                    <div class="form-group"><label>Group price per day (৳)</label><input type="number" name="price_per_day" step="50" class="form-control" value="<?= $edit_tour['price_per_day']??'' ?>"></div>
                     <?php if ($edit_tour): ?>
                     <div class="form-group"><label>Status</label>
                         <select name="status" class="form-control">
                             <?php foreach (['active','inactive','pending'] as $st): ?>
-                            <option value="<?= $st ?>" <?= ($edit_tour['status']??'')===$st?'selected':'' ?>><?= ucfirst($st) ?></option>
+                            <option value="<?= $st ?>" <?= ($edit_tour['status']??'')===$st?'selected':'' ?>><?= e(ucfirst($st)) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                     <?php endif; ?>
                     <div class="form-group">
                         <label>Tour Photo</label>
-                        <?php if (!empty($edit_tour['image']) && file_exists(__DIR__.'/../'.$edit_tour['image'])): ?>
-                        <img src="/KrishiDisha/<?= htmlspecialchars($edit_tour['image']) ?>" style="width:100%;height:100px;object-fit:cover;border-radius:8px;margin-bottom:8px;">
+                        <?php if (!empty($edit_tour['image']) && mediaAvailable($edit_tour['image'])): ?>
+                        <img alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($edit_tour['image']) ?>" style="width:100%;height:100px;object-fit:cover;border-radius:8px;margin-bottom:8px;">
                         <?php endif; ?>
                         <input type="file" name="tour_image" class="form-control" accept="image/*">
                     </div>
@@ -441,8 +445,8 @@ $page_title = 'Manage Content';
                     <?php foreach ($tours as $t): ?>
                     <tr>
                         <td>
-                            <?php if (!empty($t['image']) && file_exists(__DIR__.'/../'.$t['image'])): ?>
-                            <img src="/KrishiDisha/<?= htmlspecialchars($t['image']) ?>" style="width:56px;height:42px;object-fit:cover;border-radius:6px;">
+                            <?php if (!empty($t['image']) && mediaAvailable($t['image'])): ?>
+                            <img alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($t['image']) ?>" style="width:56px;height:42px;object-fit:cover;border-radius:6px;">
                             <?php else: ?>
                             <div style="width:56px;height:42px;background:linear-gradient(135deg,#0c4a6e,#0891b2);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px;">🌿</div>
                             <?php endif; ?>
@@ -453,12 +457,12 @@ $page_title = 'Manage Content';
                         <td style="font-weight:700;color:var(--primary);">৳<?= number_format($t['price_per_day']) ?></td>
                         <td>
                             <?php $sc=['active'=>'badge-success','inactive'=>'badge-muted','pending'=>'badge-warning']; ?>
-                            <span class="badge-kd <?= $sc[$t['status']]??'badge-muted' ?>" style="font-size:10px;"><?= ucfirst($t['status']) ?></span>
+                            <span class="badge-kd <?= $sc[$t['status']]??'badge-muted' ?>" style="font-size:10px;"><?= e(ucfirst($t['status'])) ?></span>
                         </td>
                         <td>
                             <div style="display:flex;gap:4px;">
-                                <a href="?tab=tours&edit=<?= $t['id'] ?>" class="btn-kd btn-kd-outline" style="padding:4px 8px;font-size:11px;"><i class="fa-solid fa-pen"></i></a>
-                                <a href="?tab=tours&delete_tour=<?= $t['id'] ?>" class="btn-kd btn-kd-danger" style="padding:4px 8px;font-size:11px;" data-confirm="Delete this tour?"><i class="fa-solid fa-trash"></i></a>
+                                <a href="?tab=tours&edit=<?= e($t['id']) ?>" class="btn-kd btn-kd-outline" style="padding:4px 8px;font-size:11px;"><i class="fa-solid fa-pen"></i></a>
+                                <form method="POST" action="?tab=tours" style="display:inline"><?= csrfField() ?><?= requestKeyField() ?><input type="hidden" name="delete_tour" value="<?= e($t['id']) ?>"><button type="submit" class="btn-kd btn-kd-danger" style="padding:4px 8px;font-size:11px;" data-confirm="Delete this tour?"><i class="fa-solid fa-trash"></i></button></form>
                             </div>
                         </td>
                     </tr>
@@ -482,23 +486,23 @@ $page_title = 'Manage Content';
                 <a href="?tab=marketplace" class="btn-kd btn-kd-outline" style="padding:4px 10px;font-size:11px;">Cancel</a>
             </div>
             <div class="card-body-kd">
-                <form method="POST" enctype="multipart/form-data" class="form-kd">
-                    <input type="hidden" name="product_id" value="<?= $edit_product['id'] ?>">
+                <form method="POST" enctype="multipart/form-data" class="form-kd"><?= csrfField() ?><?= requestKeyField() ?>
+                    <input type="hidden" name="product_id" value="<?= e($edit_product['id']) ?>">
                     <div class="form-group"><label>Crop</label><input type="text" class="form-control" value="<?= htmlspecialchars($edit_product['crop_name']) ?>" readonly></div>
-                    <div class="form-group"><label>Quantity (kg)</label><input type="number" name="quantity_kg" step="0.01" class="form-control" value="<?= $edit_product['quantity_kg'] ?>"></div>
-                    <div class="form-group"><label>Price per kg (৳)</label><input type="number" name="price_per_kg" step="0.01" class="form-control" value="<?= $edit_product['price_per_kg'] ?>"></div>
+                    <div class="form-group"><label>Quantity (kg)</label><input type="number" name="quantity_kg" step="0.01" class="form-control" value="<?= e($edit_product['quantity_kg']) ?>"></div>
+                    <div class="form-group"><label>Price per kg (৳)</label><input type="number" name="price_per_kg" step="0.01" class="form-control" value="<?= e($edit_product['price_per_kg']) ?>"></div>
                     <div class="form-group"><label>Description</label><textarea name="description" class="form-control" rows="3"><?= htmlspecialchars($edit_product['description']??'') ?></textarea></div>
                     <div class="form-group"><label>Status</label>
                         <select name="status" class="form-control">
                             <?php foreach (['available','pending','sold'] as $st): ?>
-                            <option value="<?= $st ?>" <?= ($edit_product['status']??'')===$st?'selected':'' ?>><?= ucfirst($st) ?></option>
+                            <option value="<?= $st ?>" <?= ($edit_product['status']??'')===$st?'selected':'' ?>><?= e(ucfirst($st)) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="form-group">
                         <label>Product Photo</label>
-                        <?php if (!empty($edit_product['image']) && file_exists(__DIR__.'/../'.$edit_product['image'])): ?>
-                        <img src="/KrishiDisha/<?= htmlspecialchars($edit_product['image']) ?>" style="width:100%;height:90px;object-fit:cover;border-radius:8px;margin-bottom:8px;">
+                        <?php if (!empty($edit_product['image']) && mediaAvailable($edit_product['image'])): ?>
+                        <img alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($edit_product['image']) ?>" style="width:100%;height:90px;object-fit:cover;border-radius:8px;margin-bottom:8px;">
                         <?php endif; ?>
                         <input type="file" name="product_image" class="form-control" accept="image/*">
                     </div>
@@ -512,7 +516,7 @@ $page_title = 'Manage Content';
 <div class="card-kd">
     <div class="card-header-kd">
         <h5>All Marketplace Products (<?= count($products) ?>)</h5>
-        <input type="text" id="prodSearch" placeholder="Filter..." onkeyup="filterTable(this,'prodTable')" style="padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;outline:none;width:180px;">
+        <input type="text" id="prodSearch" placeholder="Filter..." data-filter-table="prodTable" style="padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;outline:none;width:180px;">
     </div>
     <div class="card-body-kd p-0">
         <table class="table-kd" id="prodTable">
@@ -521,8 +525,8 @@ $page_title = 'Manage Content';
             <?php foreach ($products as $p): ?>
             <tr>
                 <td>
-                    <?php if (!empty($p['image']) && file_exists(__DIR__.'/../'.$p['image'])): ?>
-                    <img src="/KrishiDisha/<?= htmlspecialchars($p['image']) ?>" style="width:56px;height:42px;object-fit:cover;border-radius:6px;">
+                    <?php if (!empty($p['image']) && mediaAvailable($p['image'])): ?>
+                    <img alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($p['image']) ?>" style="width:56px;height:42px;object-fit:cover;border-radius:6px;">
                     <?php else: ?>
                     <?php $icons=['Grain'=>'🌾','Vegetable'=>'🥕','Fruit'=>'🍎','Fiber'=>'🪢','Oilseed'=>'🌻','Legume'=>'🫘','Cash Crop'=>'💰']; ?>
                     <div style="width:56px;height:42px;background:var(--surface3);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px;"><?= $icons[$p['category']]??'🌱' ?></div>
@@ -530,20 +534,20 @@ $page_title = 'Manage Content';
                 </td>
                 <td style="font-weight:600;"><?= htmlspecialchars($p['crop_name']) ?></td>
                 <td style="font-size:12px;color:var(--text-muted);"><?= htmlspecialchars($p['farmer_name']) ?></td>
-                <td><?= $p['quantity_kg'] ?> kg</td>
-                <td style="font-weight:700;color:var(--primary);">৳<?= $p['price_per_kg'] ?></td>
+                <td><?= e($p['quantity_kg']) ?> kg</td>
+                <td style="font-weight:700;color:var(--primary);">৳<?= e($p['price_per_kg']) ?></td>
                 <td>
                     <?php $sc=['available'=>'badge-success','pending'=>'badge-warning','sold'=>'badge-muted']; ?>
-                    <span class="badge-kd <?= $sc[$p['status']]??'badge-muted' ?>" style="font-size:10px;"><?= ucfirst($p['status']) ?></span>
+                    <span class="badge-kd <?= $sc[$p['status']]??'badge-muted' ?>" style="font-size:10px;"><?= e(ucfirst($p['status'])) ?></span>
                 </td>
                 <td style="font-size:11px;color:var(--text-muted);"><?= date('d M Y',strtotime($p['created_at'])) ?></td>
                 <td>
                     <div style="display:flex;gap:4px;">
                         <?php if ($p['status']==='pending'): ?>
-                        <a href="?tab=marketplace&approve_product=<?= $p['id'] ?>" class="btn-kd btn-kd-primary" style="padding:4px 8px;font-size:11px;" data-confirm="Approve this product?"><i class="fa-solid fa-check"></i></a>
+                        <form method="POST" action="?tab=marketplace" style="display:inline"><?= csrfField() ?><?= requestKeyField() ?><input type="hidden" name="approve_product" value="<?= e($p['id']) ?>"><button type="submit" class="btn-kd btn-kd-primary" style="padding:4px 8px;font-size:11px;" data-confirm="Approve this product?"><i class="fa-solid fa-check"></i></button></form>
                         <?php endif; ?>
-                        <a href="?tab=marketplace&edit=<?= $p['id'] ?>" class="btn-kd btn-kd-outline" style="padding:4px 8px;font-size:11px;"><i class="fa-solid fa-pen"></i></a>
-                        <a href="?tab=marketplace&delete_product=<?= $p['id'] ?>" class="btn-kd btn-kd-danger" style="padding:4px 8px;font-size:11px;" data-confirm="Delete this product?"><i class="fa-solid fa-trash"></i></a>
+                        <a href="?tab=marketplace&edit=<?= e($p['id']) ?>" class="btn-kd btn-kd-outline" style="padding:4px 8px;font-size:11px;"><i class="fa-solid fa-pen"></i></a>
+                        <form method="POST" action="?tab=marketplace" style="display:inline"><?= csrfField() ?><?= requestKeyField() ?><input type="hidden" name="delete_product" value="<?= e($p['id']) ?>"><button type="submit" class="btn-kd btn-kd-danger" style="padding:4px 8px;font-size:11px;" data-confirm="Delete this product?"><i class="fa-solid fa-trash"></i></button></form>
                     </div>
                 </td>
             </tr>
@@ -558,12 +562,5 @@ $page_title = 'Manage Content';
 </div><!-- main-content -->
 </div><!-- layout-wrapper -->
 
-<script>
-function filterTable(input, tableId) {
-    const val = input.value.toLowerCase();
-    document.querySelectorAll('#' + tableId + ' tbody tr').forEach(row => {
-        row.style.display = row.textContent.toLowerCase().includes(val) ? '' : 'none';
-    });
-}
-</script>
+
 <?php include __DIR__ . '/../includes/footer.php'; ?>

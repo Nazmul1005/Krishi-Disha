@@ -1,7 +1,31 @@
 <?php
-session_start();
 
 require_once __DIR__ . '/helpers.php';
+require_once __DIR__ . '/../config/db.php';
+
+if (PHP_SAPI !== 'cli') {
+    header('Cache-Control: no-store');
+    if (!in_array($_SERVER['REQUEST_METHOD'], ['GET','POST','HEAD'], true)) { http_response_code(405); exit; }
+    foreach (['delete','approve','reject','settle','toggle','suspend','delete_crop','delete_disease','delete_tour','delete_product','approve_product'] as $mutation) {
+        if (isset($_GET[$mutation])) { http_response_code(405); die('Use the protected action form.'); }
+    }
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') verifyCsrf();
+    if (isset($_SESSION['user_id'])) {
+        $check=$pdo->prepare('SELECT id,name,role,status,email_verified,auth_version FROM USER WHERE id=?');
+        $check->execute([$_SESSION['user_id']]); $account=$check->fetch();
+        if (!$account || $account['status'] !== 'approved' || !(int)$account['email_verified'] || (int)$account['auth_version'] !== (int)($_SESSION['auth_version'] ?? -1) || time() - (int)($_SESSION['last_seen'] ?? 0) > 1800 || time() - (int)($_SESSION['login_at'] ?? 0) > 43200) {
+            destroyLogin();
+        } else {
+            $_SESSION['role']=$account['role']; $_SESSION['status']=$account['status']; $_SESSION['name']=$account['name']; $_SESSION['last_seen']=time();
+        }
+    }
+}
+function establishLogin(array $user): void {
+    session_regenerate_id(true);
+    $language=$_SESSION['language'] ?? 'bn';
+    $_SESSION=['language'=>$language,'user_id'=>(int)$user['id'], 'role'=>$user['role'], 'name'=>$user['name'], 'status'=>$user['status'], 'auth_version'=>(int)$user['auth_version'], 'login_at'=>time(), 'last_seen'=>time()];
+}
+
 
 function requireAuth(array $allowed_roles = []) {
     if (!isset($_SESSION['user_id'])) {
@@ -12,7 +36,7 @@ function requireAuth(array $allowed_roles = []) {
         header('Location: /KrishiDisha/index.php?error=unauthorized');
         exit;
     }
-    if ($_SESSION['status'] !== 'approved' && $_SESSION['role'] !== 'admin') {
+    if ($_SESSION['status'] !== 'approved') {
         header('Location: /KrishiDisha/auth/login.php?error=pending');
         exit;
     }

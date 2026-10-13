@@ -1,8 +1,9 @@
 <?php
+require_once __DIR__ . '/app.php';
 define('DB_HOST', getenv('DB_HOST') ?: 'localhost');   // 'localhost' for XAMPP, 'db' injected via Docker
-define('DB_USER', 'root');
-define('DB_PASS', '');
-define('DB_NAME', 'krishidisha');
+define('DB_USER', env('DB_USER', 'krishidisha_app'));
+define('DB_PASS', env('DB_PASSWORD'));
+define('DB_NAME', env('DB_NAME', 'krishidisha'));
 
 try {
     $pdo = new PDO(

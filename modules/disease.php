@@ -1,10 +1,11 @@
 <?php
 require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__.'/../includes/content.php';
 
 $search = trim($_GET['q'] ?? '');
-$where  = $search ? "WHERE d.name LIKE ? OR d.symptoms LIKE ? OR d.affected_part LIKE ?" : "";
-$params = $search ? ["%$search%","%$search%","%$search%"] : [];
+$where = "WHERE d.review_status='reviewed'" . ($search ? " AND (d.name LIKE ? OR d.symptoms LIKE ? OR d.affected_part LIKE ? OR c.name LIKE ? OR c.local_name LIKE ?)" : "");
+$params = $search ? array_fill(0,5,"%$search%") : [];
 
 $stmt = $pdo->prepare("
     SELECT d.*, GROUP_CONCAT(c.name SEPARATOR ', ') as affected_crops
@@ -18,14 +19,14 @@ $stmt = $pdo->prepare("
 $stmt->execute($params);
 $diseases = $stmt->fetchAll();
 
-$page_title = 'Disease Detection';
+$page_title = 'Disease Reference';
 ?>
 <?php include __DIR__ . '/../includes/header.php'; ?>
 <?php $isAuth = isLoggedIn(); ?>
 <?php if ($isAuth): ?>
 <div class="layout-wrapper">
 <?php include __DIR__ . '/../includes/sidebar.php'; ?>
-<div class="main-content">
+<div class="main-content" id="main-content" tabindex="-1">
 <?php else: ?>
 <nav class="kd-navbar"><div class="container"><div class="d-flex align-items-center justify-content-between"><a href="/KrishiDisha/index.php" class="navbar-brand" style="display:flex;align-items:center;gap:10px;font-family:'Nunito',sans-serif;font-size:20px;font-weight:800;color:#fff;"><div style="width:34px;height:34px;background:linear-gradient(135deg,#52b788,#2d6a4f);border-radius:8px;display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-leaf" style="color:#fff;font-size:15px;"></i></div>KrishiDisha</a><a href="/KrishiDisha/auth/login.php" class="btn-kd btn-kd-primary" style="padding:8px 18px;font-size:13px;">Login</a></div></div></nav>
 <div style="padding-top:70px;">
@@ -33,8 +34,8 @@ $page_title = 'Disease Detection';
 
 <div class="topbar">
     <div class="d-flex align-items-center gap-3">
-        <?php if ($isAuth): ?><button id="sidebarToggle" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button><?php endif; ?>
-        <div class="topbar-title"><i class="fa-solid fa-bug me-2" style="color:var(--danger);"></i>Crop Disease Detection</div>
+        <?php if ($isAuth): ?><button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button><?php endif; ?>
+        <div class="topbar-title"><i class="fa-solid fa-bug me-2" style="color:var(--danger);"></i>Crop disease reference</div>
     </div>
     <div class="topbar-actions">
         <span class="badge-kd badge-danger"><?= count($diseases) ?> diseases tracked</span>
@@ -50,7 +51,7 @@ $page_title = 'Disease Detection';
     </div>
 </div>
 
-<div class="page-body">
+<div class="page-body"><?= knowledgeNotice() ?><p>This catalog is not a diagnosis. For suspected disease, contact an approved expert. Chemical treatment needs current local product labels, dose, protective equipment and harvest intervals. <a href="https://prism.dae.gov.bd/pesticide-list" rel="noopener" target="_blank">DAE pesticide information</a></p>
     <form class="filter-bar" method="GET">
         <input type="text" name="q" placeholder="Search disease name, symptoms, affected part..." value="<?= htmlspecialchars($search) ?>" style="flex:2;">
         <button type="submit" class="btn-kd btn-kd-primary"><i class="fa-solid fa-search"></i> Search</button>
@@ -62,14 +63,14 @@ $page_title = 'Disease Detection';
         <div class="col-md-6 col-lg-4">
             <div class="card-kd" style="border-left:4px solid var(--danger);">
                 <div class="card-body-kd">
-                    <!-- Disease photo or emoji -->
-                    <?php if (!empty($d['image']) && file_exists(__DIR__.'/../'.$d['image'])): ?>
+                    <p class="small">Source: <a href="<?= e($d['source_url']) ?>" target="_blank" rel="noopener">Reference</a> · Reviewed <?= e($d['reviewed_at']) ?></p><!-- Disease photo or emoji -->
+                    <?php if (!empty($d['image']) && mediaAvailable($d['image'])): ?>
                     <div style="height:150px;overflow:hidden;border-radius:10px;margin-bottom:16px;">
-                        <img src="/KrishiDisha/<?= htmlspecialchars($d['image']) ?>" style="width:100%;height:150px;object-fit:cover;">
+                        <img alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($d['image']) ?>" style="width:100%;height:150px;object-fit:cover;">
                     </div>
                     <?php endif; ?>
                     <div class="d-flex align-items-start gap-3 mb-3">
-                        <?php if (empty($d['image']) || !file_exists(__DIR__.'/../'.$d['image'])): ?>
+                        <?php if (empty($d['image']) || !mediaAvailable($d['image'])): ?>
                         <div style="width:48px;height:48px;background:#fee2e2;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🦠</div>
                         <?php endif; ?>
                         <div style="flex:1;">
@@ -78,8 +79,8 @@ $page_title = 'Disease Detection';
                         </div>
                         <?php if ($isAuth && currentRole() === 'admin'): ?>
                         <div style="display:flex;gap:4px;flex-shrink:0;">
-                            <a href="/KrishiDisha/admin/manage_content.php?tab=diseases&edit=<?= $d['id'] ?>" class="btn-kd btn-kd-outline" style="padding:3px 7px;font-size:10px;"><i class="fa-solid fa-pen"></i></a>
-                            <a href="/KrishiDisha/admin/manage_content.php?tab=diseases&delete_disease=<?= $d['id'] ?>" class="btn-kd btn-kd-danger" style="padding:3px 7px;font-size:10px;" data-confirm="Delete this disease?"><i class="fa-solid fa-trash"></i></a>
+                            <a href="/KrishiDisha/admin/manage_content.php?tab=diseases&edit=<?= e($d['id']) ?>" class="btn-kd btn-kd-outline" style="padding:3px 7px;font-size:10px;"><i class="fa-solid fa-pen"></i></a>
+                            <form method="POST" action="/KrishiDisha/admin/manage_content.php?tab=diseases" style="display:inline"><?= csrfField() ?><?= requestKeyField() ?><input type="hidden" name="delete_disease" value="<?= e($d['id']) ?>"><button type="submit" class="btn-kd btn-kd-danger" style="padding:3px 7px;font-size:10px;" data-confirm="Delete this disease?"><i class="fa-solid fa-trash"></i></button></form>
                         </div>
                         <?php endif; ?>
                     </div>

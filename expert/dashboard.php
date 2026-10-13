@@ -11,7 +11,7 @@ $eid = $ex['id'] ?? 0;
 $total_sessions   = $pdo->prepare("SELECT COUNT(*) FROM CONSULTATION WHERE provider_id=?"); $total_sessions->execute([$_SESSION['user_id']]); $ts = $total_sessions->fetchColumn();
 $completed        = $pdo->prepare("SELECT COUNT(*) FROM CONSULTATION WHERE provider_id=? AND status='completed'"); $completed->execute([$_SESSION['user_id']]); $cs = $completed->fetchColumn();
 $pending_sessions = $pdo->prepare("SELECT COUNT(*) FROM CONSULTATION WHERE provider_id=? AND status='pending'"); $pending_sessions->execute([$_SESSION['user_id']]); $ps = $pending_sessions->fetchColumn();
-$earned           = $pdo->prepare("SELECT COALESCE(SUM(fee),0) FROM CONSULTATION WHERE provider_id=? AND status='completed'"); $earned->execute([$_SESSION['user_id']]); $earn = $earned->fetchColumn();
+$earned=$pdo->prepare("SELECT COALESCE(SUM(ps.net_amount),0) FROM PAYMENT_SHARE ps JOIN PAYMENT p ON ps.payment_id=p.id WHERE ps.payee_id=? AND p.status='completed' AND p.verified_at IS NOT NULL AND p.refund_requested_at IS NULL");$earned->execute([$_SESSION['user_id']]);$earn=$earned->fetchColumn();
 
 $upcoming = $pdo->prepare("SELECT c.*, u.name as client_name, u.role as client_role FROM CONSULTATION c JOIN USER u ON c.client_id=u.id WHERE c.provider_id=? AND c.status IN ('pending','confirmed') ORDER BY c.scheduled_date ASC LIMIT 5");
 $upcoming->execute([$_SESSION['user_id']]);
@@ -22,10 +22,10 @@ $page_title = 'Expert Dashboard';
 <?php include __DIR__ . '/../includes/header.php'; ?>
 <div class="layout-wrapper">
 <?php include __DIR__ . '/../includes/sidebar.php'; ?>
-<div class="main-content">
+<div class="main-content" id="main-content" tabindex="-1">
     <div class="topbar">
         <div class="d-flex align-items-center gap-3">
-            <button id="sidebarToggle" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
+            <button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
             <div class="topbar-title">🔬 Expert Dashboard</div>
         </div>
         <div class="topbar-actions">
@@ -61,12 +61,12 @@ $page_title = 'Expert Dashboard';
                     <tbody>
                     <?php foreach ($upcoming as $s): ?>
                     <tr>
-                        <td style="font-weight:600;"><?= htmlspecialchars($s['client_name']) ?> <span class="badge-kd badge-muted" style="font-size:10px"><?= ucfirst($s['client_role']) ?></span></td>
+                        <td style="font-weight:600;"><?= htmlspecialchars($s['client_name']) ?> <span class="badge-kd badge-muted" style="font-size:10px"><?= e(ucfirst($s['client_role'])) ?></span></td>
                         <td style="font-size:13px;"><?= htmlspecialchars($s['topic']) ?></td>
-                        <td><?= $s['scheduled_date'] ?></td>
-                        <td><?= $s['duration_hours'] ?> hr</td>
+                        <td><?= e($s['scheduled_date']) ?></td>
+                        <td><?= e($s['duration_hours']) ?> hr</td>
                         <td style="color:#7c3aed; font-weight:700;">৳<?= number_format($s['fee']) ?></td>
-                        <td><?php $sc=['pending'=>'badge-warning','confirmed'=>'badge-info','completed'=>'badge-success','cancelled'=>'badge-danger']; ?><span class="badge-kd <?= $sc[$s['status']]??'badge-muted' ?>"><?= ucfirst($s['status']) ?></span></td>
+                        <td><?php $sc=['pending'=>'badge-warning','confirmed'=>'badge-info','completed'=>'badge-success','cancelled'=>'badge-danger']; ?><span class="badge-kd <?= $sc[$s['status']]??'badge-muted' ?>"><?= e(ucfirst($s['status'])) ?></span></td>
                     </tr>
                     <?php endforeach; ?>
                     <?php if (empty($upcoming)): ?><tr><td colspan="6" class="text-center py-4" style="color:var(--text-muted);">No upcoming sessions.</td></tr><?php endif; ?>

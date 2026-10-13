@@ -17,11 +17,7 @@ $oc = $pdo->prepare("SELECT COUNT(*) FROM `ORDER` o
 $oc->execute([$did]);
 $order_count = (int)$oc->fetchColumn();
 
-$rev = $pdo->prepare("SELECT COALESCE(SUM(o.total_price),0) FROM `ORDER` o
-    JOIN DEALER_INVENTORY di ON di.id = o.dealer_inventory_id AND di.dealer_id = ?
-    WHERE o.status <> 'cancelled'");
-$rev->execute([$did]);
-$revenue = (float)$rev->fetchColumn();
+$rev=$pdo->prepare("SELECT COALESCE(SUM(ps.net_amount),0) FROM PAYMENT_SHARE ps JOIN PAYMENT p ON ps.payment_id=p.id WHERE ps.payee_id=? AND p.status='completed' AND p.verified_at IS NOT NULL AND p.refund_requested_at IS NULL");$rev->execute([$_SESSION['user_id']]);$revenue=(float)$rev->fetchColumn();
 
 $ro = $pdo->prepare("SELECT o.id, o.quantity_kg, o.total_price, o.status,
         u.name AS buyer, c.name AS crop_name
@@ -39,10 +35,10 @@ $page_title = 'Dealer Dashboard';
 <?php include __DIR__ . '/../includes/header.php'; ?>
 <div class="layout-wrapper">
 <?php include __DIR__ . '/../includes/sidebar.php'; ?>
-<div class="main-content">
+<div class="main-content" id="main-content" tabindex="-1">
     <div class="topbar">
         <div class="d-flex align-items-center gap-3">
-            <button id="sidebarToggle" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
+            <button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
             <div class="topbar-title">🏪 Dealer Dashboard</div>
         </div>
         <div class="topbar-actions"><span style="font-size:13px; color:var(--text-muted);"><?= htmlspecialchars($d['business_name'] ?? '') ?></span></div>
@@ -52,7 +48,7 @@ $page_title = 'Dealer Dashboard';
             <div class="col-6 col-md-3"><div class="stat-card blue"><div class="stat-icon blue"><i class="fa-solid fa-boxes-stacked"></i></div><div><div class="stat-value"><?= $inv ?></div><div class="stat-label">Inventory Items</div></div></div></div>
             <div class="col-6 col-md-3"><div class="stat-card green"><div class="stat-icon green"><i class="fa-solid fa-weight-hanging"></i></div><div><div class="stat-value"><?= number_format($st,0) ?> kg</div><div class="stat-label">Stock Remaining</div></div></div></div>
             <div class="col-6 col-md-3"><div class="stat-card gold"><div class="stat-icon gold"><i class="fa-solid fa-cart-shopping"></i></div><div><div class="stat-value"><?= $order_count ?></div><div class="stat-label">Total Orders</div></div></div></div>
-            <div class="col-6 col-md-3"><div class="stat-card green"><div class="stat-icon green"><i class="fa-solid fa-coins"></i></div><div><div class="stat-value">৳<?= number_format($revenue) ?></div><div class="stat-label">Revenue</div></div></div></div>
+            <div class="col-6 col-md-3"><div class="stat-card green"><div class="stat-icon green"><i class="fa-solid fa-coins"></i></div><div><div class="stat-value">৳<?= number_format($revenue) ?></div><div class="stat-label">Collected net sales</div></div></div></div>
         </div>
 
         <div class="row g-4">
@@ -70,9 +66,9 @@ $page_title = 'Dealer Dashboard';
                             <tr>
                                 <td style="font-weight:600;"><?= htmlspecialchars($o['buyer']) ?></td>
                                 <td><?= htmlspecialchars($o['crop_name']) ?></td>
-                                <td><?= $o['quantity_kg'] ?> kg</td>
+                                <td><?= e($o['quantity_kg']) ?> kg</td>
                                 <td style="color:var(--primary); font-weight:700;">৳<?= number_format($o['total_price']) ?></td>
-                                <td><?php $sc=['pending'=>'badge-warning','confirmed'=>'badge-info','delivered'=>'badge-success','cancelled'=>'badge-danger']; ?><span class="badge-kd <?= $sc[$o['status']]??'badge-muted' ?>"><?= ucfirst($o['status']) ?></span></td>
+                                <td><?php $sc=['pending'=>'badge-warning','confirmed'=>'badge-info','delivered'=>'badge-success','cancelled'=>'badge-danger']; ?><span class="badge-kd <?= $sc[$o['status']]??'badge-muted' ?>"><?= e(ucfirst($o['status'])) ?></span></td>
                             </tr>
                             <?php endforeach; ?>
                             <?php if (empty($recent_orders)): ?><tr><td colspan="5" class="text-center py-4" style="color:var(--text-muted);">No orders yet.</td></tr><?php endif; ?>

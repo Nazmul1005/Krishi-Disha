@@ -51,11 +51,18 @@ $navMap = [
     ],
 ];
 
+$navMap['admin'][]=['icon'=>'fa-book','label'=>'Review References','href'=>'/KrishiDisha/admin/knowledge.php'];
+$navMap['farmer'][]=['icon'=>'fa-receipt','label'=>'Orders','href'=>'/KrishiDisha/farmer/orders.php'];
+$navMap['farmer'][]=['icon'=>'fa-calendar','label'=>'Tour Bookings','href'=>'/KrishiDisha/farmer/bookings.php'];
 $sharedNav = [
+    ['icon'=>'fa-list','label'=>'Order History','href'=>'/KrishiDisha/modules/orders.php'],
+    ['icon'=>'fa-money-bill','label'=>'Payments','href'=>'/KrishiDisha/modules/payments.php'],
+    ['icon'=>'fa-bell','label'=>'Notifications','href'=>'/KrishiDisha/modules/notifications.php'],
+    ['icon'=>'fa-life-ring','label'=>'Support','href'=>'/KrishiDisha/modules/support.php'],
     ['icon'=>'fa-store',        'label'=>'Marketplace',       'href'=>'/KrishiDisha/user/marketplace.php'],
     ['icon'=>'fa-book-atlas',   'label'=>'Crop Encyclopedia', 'href'=>'/KrishiDisha/modules/encyclopedia.php'],
-    ['icon'=>'fa-bug',          'label'=>'Disease Detection', 'href'=>'/KrishiDisha/modules/disease.php'],
-    ['icon'=>'fa-seedling',     'label'=>'Crop Recommender',  'href'=>'/KrishiDisha/modules/recommend.php'],
+    ['icon'=>'fa-bug',          'label'=>'Disease Reference', 'href'=>'/KrishiDisha/modules/disease.php'],
+    ['icon'=>'fa-seedling',     'label'=>'Crop Reference Matches',  'href'=>'/KrishiDisha/modules/recommend.php'],
     ['icon'=>'fa-leaf',         'label'=>'Nutrition Guide',   'href'=>'/KrishiDisha/modules/nutrition.php'],
     ['icon'=>'fa-umbrella-beach','label'=>'Agri-Tourism',     'href'=>'/KrishiDisha/modules/tourism.php'],
     ['icon'=>'fa-calculator',   'label'=>'Profit Calculator', 'href'=>'/KrishiDisha/modules/calculator.php'],
@@ -76,24 +83,24 @@ $currentPath = $_SERVER['REQUEST_URI'];
         <div class="user-avatar"><i class="fa-solid fa-circle-user"></i></div>
         <div class="user-info">
             <span class="user-name"><?= htmlspecialchars($userName) ?></span>
-            <span class="user-role badge"><?= ucfirst($role) ?></span>
+            <span class="user-role badge"><?= e(ucfirst($role)) ?></span>
         </div>
     </div>
 
     <nav class="sidebar-nav">
         <div class="nav-section-label">My Panel</div>
         <?php foreach ($sidebarItems as $item): ?>
-        <a href="<?= $item['href'] ?>" class="nav-item <?= (strpos($currentPath, basename($item['href'], '.php')) !== false) ? 'active' : '' ?>">
-            <i class="fa-solid <?= $item['icon'] ?>"></i>
-            <span><?= $item['label'] ?></span>
+        <a href="<?= e($item['href']) ?>" class="nav-item <?= (strpos($currentPath, basename($item['href'], '.php')) !== false) ? 'active' : '' ?>">
+            <i class="fa-solid <?= e($item['icon']) ?>"></i>
+            <span><?= t($item['label']) ?></span>
         </a>
         <?php endforeach; ?>
 
         <div class="nav-section-label mt-3">Explore</div>
         <?php foreach ($sharedNav as $item): ?>
-        <a href="<?= $item['href'] ?>" class="nav-item <?= (strpos($currentPath, basename($item['href'], '.php')) !== false) ? 'active' : '' ?>">
-            <i class="fa-solid <?= $item['icon'] ?>"></i>
-            <span><?= $item['label'] ?></span>
+        <a href="<?= e($item['href']) ?>" class="nav-item <?= (strpos($currentPath, basename($item['href'], '.php')) !== false) ? 'active' : '' ?>">
+            <i class="fa-solid <?= e($item['icon']) ?>"></i>
+            <span><?= t($item['label']) ?></span>
         </a>
         <?php endforeach; ?>
     </nav>
@@ -101,11 +108,8 @@ $currentPath = $_SERVER['REQUEST_URI'];
     <div class="sidebar-footer">
         <a href="/KrishiDisha/modules/profile.php" class="nav-item <?= strpos($currentPath, 'profile.php') !== false ? 'active' : '' ?>">
             <i class="fa-solid fa-id-card"></i>
-            <span>My Profile</span>
+            <span><?= t('My Profile') ?></span>
         </a>
-        <a href="/KrishiDisha/auth/logout.php" class="nav-item text-danger">
-            <i class="fa-solid fa-right-from-bracket"></i>
-            <span>Logout</span>
-        </a>
+        <form method="POST" action="/KrishiDisha/auth/logout.php"><?= csrfField() ?><?= requestKeyField() ?><button class="nav-item text-danger" type="submit"><i class="fa-solid fa-right-from-bracket"></i> <?= t('Logout') ?></button></form>
     </div>
 </aside>

@@ -3,14 +3,16 @@ require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/../config/db.php';
 
 $token  = $_GET['token'] ?? '';
-$userId = consumeAuthToken($pdo, $token, 'email_verify');
-$ok     = false;
-
-if ($userId !== null) {
-    $pdo->prepare("UPDATE USER SET email_verified = 1 WHERE id = ?")->execute([$userId]);
-    $ok = true;
+$ok=false;
+if ($_SERVER['REQUEST_METHOD']==='POST') {
+    $token=$_POST['token'] ?? '';
+    $ok=transaction($pdo,function()use($pdo,$token) {
+        $id=consumeAuthToken($pdo,$token,'email_verify');
+        if($id===null) return false;
+        $pdo->prepare('UPDATE USER SET email_verified=1 WHERE id=?')->execute([$id]);
+        return true;
+    });
 }
-
 $page_title = 'Email Verification';
 ?>
 <?php include __DIR__ . '/../includes/header.php'; ?>
@@ -20,7 +22,10 @@ $page_title = 'Email Verification';
             <div class="logo-icon"><i class="fa-solid fa-envelope-circle-check"></i></div>
             <span class="logo-name">KrishiDisha</span>
         </div>
-        <?php if ($ok): ?>
+        <?php if ($_SERVER['REQUEST_METHOD']==='GET'): ?>
+            <h2>Verify your email</h2>
+            <form method="POST"><?= csrfField() ?><input type="hidden" name="token" value="<?= e($token) ?>"><button class="btn-kd btn-kd-primary">Confirm email</button></form>
+        <?php elseif ($ok): ?>
             <div style="font-size:56px;margin:10px 0;">✅</div>
             <h2>Email verified!</h2>
             <p class="sub">Your email has been confirmed. You can now log in to your account.</p>

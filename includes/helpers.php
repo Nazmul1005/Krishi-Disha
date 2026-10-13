@@ -6,6 +6,11 @@
  * Assumes a session has already been started (see auth_check.php).
  */
 
+require_once __DIR__ . '/../config/app.php';
+require_once __DIR__ . '/security.php';
+require_once __DIR__ . '/uploads.php';
+require_once __DIR__ . '/i18n.php';
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -37,9 +42,8 @@ function verifyCsrf(): void
 {
     $sent = $_POST['csrf_token'] ?? '';
     if (!is_string($sent) || $sent === '' || !hash_equals($_SESSION['csrf_token'] ?? '', $sent)) {
-        flash('error', 'Security check failed. Please try again.');
-        $back = $_SERVER['HTTP_REFERER'] ?? '/KrishiDisha/index.php';
-        header('Location: ' . $back);
+        http_response_code(403);
+        die('Security check failed. Reload the form and try again.');
         exit;
     }
 }
@@ -84,7 +88,7 @@ function renderFlash(): string
 /** Escape a value for safe HTML output. */
 function e($value): string
 {
-    return htmlspecialchars((string)($value ?? ''), ENT_QUOTES, 'UTF-8');
+    return htmlspecialchars((string)($value ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
 /** Format an amount as Bangladeshi Taka. */
@@ -115,6 +119,8 @@ function emptyState(string $title, string $subtitle = '', string $icon = '📭')
  */
 function createAuthToken(PDO $pdo, int $userId, string $type, int $ttlMinutes = 60): string
 {
+    if(!$pdo->inTransaction()) throw new LogicException('Token creation requires a transaction.');
+    $lock=$pdo->prepare('SELECT id FROM USER WHERE id=? FOR UPDATE');$lock->execute([$userId]);if(!$lock->fetchColumn()) throw new InvalidArgumentException('Account not found.');
     $raw  = bin2hex(random_bytes(32));
     $hash = hash('sha256', $raw);
     // Invalidate any previous unused tokens of the same type for this user.
@@ -132,26 +138,18 @@ function createAuthToken(PDO $pdo, int $userId, string $type, int $ttlMinutes = 
  */
 function consumeAuthToken(PDO $pdo, string $rawToken, string $type): ?int
 {
-    if ($rawToken === '') {
-        return null;
-    }
-    $hash = hash('sha256', $rawToken);
-    $stmt = $pdo->prepare("SELECT id, user_id FROM AUTH_TOKEN
-                           WHERE token_hash = ? AND type = ? AND used = 0 AND expires_at > NOW()
-                           LIMIT 1");
-    $stmt->execute([$hash, $type]);
-    $row = $stmt->fetch();
-    if (!$row) {
-        return null;
-    }
-    $pdo->prepare("UPDATE AUTH_TOKEN SET used = 1 WHERE id = ?")->execute([$row['id']]);
+    if (!preg_match('/^[a-f0-9]{64}$/D', $rawToken)) return null;
+    if (!$pdo->inTransaction()) throw new LogicException('Token consumption requires a transaction.');
+    $stmt=$pdo->prepare('SELECT id,user_id FROM AUTH_TOKEN WHERE token_hash=? AND type=? AND used=0 AND expires_at>NOW() FOR UPDATE');
+    $stmt->execute([hash('sha256',$rawToken),$type]);
+    $row=$stmt->fetch();
+    if (!$row) return null;
+    $pdo->prepare('UPDATE AUTH_TOKEN SET used=1 WHERE id=? AND used=0')->execute([$row['id']]);
     return (int)$row['user_id'];
 }
 
 /** Build an absolute base URL (scheme://host) for links in emails/messages. */
 function baseUrl(): string
 {
-    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-    $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
-    return $scheme . '://' . $host;
+    return APP_URL;
 }

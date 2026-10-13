@@ -11,7 +11,7 @@ $fid = $f['id'] ?? 0;
 $products    = $pdo->prepare("SELECT COUNT(*) FROM PRODUCT WHERE farmer_id=?"); $products->execute([$fid]); $pc = $products->fetchColumn();
 $tours       = $pdo->prepare("SELECT COUNT(*) FROM FARM_TOUR WHERE farmer_id=?"); $tours->execute([$fid]); $tc = $tours->fetchColumn();
 $consults    = $pdo->prepare("SELECT COUNT(*) FROM CONSULTATION WHERE client_id=?"); $consults->execute([$_SESSION['user_id']]); $cc = $consults->fetchColumn();
-$revenue     = $pdo->prepare("SELECT COALESCE(SUM(price_per_kg * quantity_kg),0) FROM PRODUCT WHERE farmer_id=? AND status='sold'"); $revenue->execute([$fid]); $rev = $revenue->fetchColumn();
+$revenue=$pdo->prepare("SELECT COALESCE(SUM(ps.net_amount),0) FROM PAYMENT_SHARE ps JOIN PAYMENT p ON ps.payment_id=p.id WHERE ps.payee_id=? AND p.status='completed' AND p.verified_at IS NOT NULL AND p.refund_requested_at IS NULL");$revenue->execute([$_SESSION['user_id']]);$rev=$revenue->fetchColumn();
 
 $recent_products = $pdo->prepare("SELECT p.*, c.name as crop_name FROM PRODUCT p JOIN CROP c ON p.crop_id=c.id WHERE p.farmer_id=? ORDER BY p.created_at DESC LIMIT 5");
 $recent_products->execute([$fid]);
@@ -22,10 +22,10 @@ $page_title = 'Farmer Dashboard';
 <?php include __DIR__ . '/../includes/header.php'; ?>
 <div class="layout-wrapper">
 <?php include __DIR__ . '/../includes/sidebar.php'; ?>
-<div class="main-content">
+<div class="main-content" id="main-content" tabindex="-1">
     <div class="topbar">
         <div class="d-flex align-items-center gap-3">
-            <button id="sidebarToggle" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
+            <button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
             <div class="topbar-title">🧑‍🌾 Farmer Dashboard</div>
         </div>
         <div class="topbar-actions">
@@ -65,7 +65,7 @@ $page_title = 'Farmer Dashboard';
             <div class="col-6 col-md-3">
                 <div class="stat-card gold">
                     <div class="stat-icon gold"><i class="fa-solid fa-coins"></i></div>
-                    <div><div class="stat-value">৳<?= number_format($rev) ?></div><div class="stat-label">Total Revenue</div></div>
+                    <div><div class="stat-value">৳<?= number_format($rev) ?></div><div class="stat-label">Net proceeds collected</div></div>
                 </div>
             </div>
             <div class="col-6 col-md-3">
@@ -96,9 +96,9 @@ $page_title = 'Farmer Dashboard';
                             <?php foreach ($recent_products as $p): ?>
                             <tr>
                                 <td style="font-weight:600;"><?= htmlspecialchars($p['crop_name']) ?></td>
-                                <td><?= $p['quantity_kg'] ?> kg</td>
-                                <td style="color:var(--primary); font-weight:700;">৳<?= $p['price_per_kg'] ?></td>
-                                <td><?php $sc=['available'=>'badge-success','sold'=>'badge-muted','pending'=>'badge-warning']; ?><span class="badge-kd <?= $sc[$p['status']]??'badge-muted' ?>"><?= ucfirst($p['status']) ?></span></td>
+                                <td><?= e($p['quantity_kg']) ?> kg</td>
+                                <td style="color:var(--primary); font-weight:700;">৳<?= e($p['price_per_kg']) ?></td>
+                                <td><?php $sc=['available'=>'badge-success','sold'=>'badge-muted','pending'=>'badge-warning']; ?><span class="badge-kd <?= $sc[$p['status']]??'badge-muted' ?>"><?= e(ucfirst($p['status'])) ?></span></td>
                             </tr>
                             <?php endforeach; ?>
                             <?php if (empty($recent_products)): ?>

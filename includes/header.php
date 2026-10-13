@@ -3,17 +3,14 @@ $page_title = $page_title ?? 'KrishiDisha';
 $current_page = basename($_SERVER['PHP_SELF'], '.php');
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= e($_SESSION['language'] ?? 'bn') ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="KrishiDisha - Bangladesh's premier agricultural intelligence platform connecting farmers, dealers, tourists and experts.">
     <title><?= htmlspecialchars($page_title) ?> | KrishiDisha</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="/KrishiDisha/assets/vendor/bootstrap/bootstrap.min.css">
+    <link rel="stylesheet" href="/KrishiDisha/assets/vendor/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="/KrishiDisha/assets/css/style.css">
 </head>
 <?php
@@ -37,3 +34,5 @@ if (isset($role_themes[$session_role])) {
 }
 ?>
 <body <?= $theme_style ?>>
+<a class="skip-link" href="#main-content">মূল বিষয়ে যান / Skip to content</a>
+<form method="POST" action="/KrishiDisha/auth/language.php" class="language-switch"><?= csrfField() ?><input type="hidden" name="return_to" value="<?= e($_SERVER['REQUEST_URI']) ?>"><label for="language">Language / ভাষা</label><select id="language" name="language"><option value="bn" <?= ($_SESSION['language'] ?? 'bn')==='bn'?'selected':'' ?>>বাংলা</option><option value="en" <?= ($_SESSION['language'] ?? '')==='en'?'selected':'' ?>>English</option></select><button type="submit">Apply / চালু</button></form>

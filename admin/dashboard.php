@@ -7,7 +7,7 @@ $stats = [
     'total_users'    => $pdo->query("SELECT COUNT(*) FROM USER")->fetchColumn(),
     'pending'        => $pdo->query("SELECT COUNT(*) FROM USER WHERE status='pending'")->fetchColumn(),
     'total_orders'   => $pdo->query("SELECT COUNT(*) FROM `ORDER`")->fetchColumn(),
-    'total_commission'=> $pdo->query("SELECT COALESCE(SUM(commission_amount),0) FROM ADMIN_COMMISSION")->fetchColumn(),
+    'total_commission'=> $pdo->query("SELECT COALESCE(SUM(ac.commission_amount),0) FROM ADMIN_COMMISSION ac JOIN PAYMENT p ON p.id=ac.payment_id WHERE p.verified_at IS NOT NULL AND p.status='completed' AND p.refund_requested_at IS NULL AND ac.reversed=0")->fetchColumn(),
     'crops'          => $pdo->query("SELECT COUNT(*) FROM CROP")->fetchColumn(),
     'products'       => $pdo->query("SELECT COUNT(*) FROM PRODUCT WHERE status='available'")->fetchColumn(),
 ];
@@ -20,10 +20,10 @@ $page_title = 'Admin Dashboard';
 <?php include __DIR__ . '/../includes/header.php'; ?>
 <div class="layout-wrapper">
 <?php include __DIR__ . '/../includes/sidebar.php'; ?>
-<div class="main-content">
+<div class="main-content" id="main-content" tabindex="-1">
     <div class="topbar">
         <div class="d-flex align-items-center gap-3">
-            <button id="sidebarToggle" class="btn btn-sm d-lg-none" style="border:none; font-size:20px; color:var(--primary);">
+            <button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px; color:var(--primary);">
                 <i class="fa-solid fa-bars"></i>
             </button>
             <div class="topbar-title"><i class="fa-solid fa-gauge-high me-2" style="color:var(--primary);"></i>Admin Dashboard</div>
@@ -39,19 +39,19 @@ $page_title = 'Admin Dashboard';
             <div class="col-6 col-md-4 col-xl-2">
                 <div class="stat-card green">
                     <div class="stat-icon green"><i class="fa-solid fa-users"></i></div>
-                    <div><div class="stat-value"><?= $stats['total_users'] ?></div><div class="stat-label">Total Users</div></div>
+                    <div><div class="stat-value"><?= e($stats['total_users']) ?></div><div class="stat-label">Total Users</div></div>
                 </div>
             </div>
             <div class="col-6 col-md-4 col-xl-2">
                 <div class="stat-card gold">
                     <div class="stat-icon gold"><i class="fa-solid fa-clock"></i></div>
-                    <div><div class="stat-value"><?= $stats['pending'] ?></div><div class="stat-label">Pending Approval</div></div>
+                    <div><div class="stat-value"><?= e($stats['pending']) ?></div><div class="stat-label">Pending Approval</div></div>
                 </div>
             </div>
             <div class="col-6 col-md-4 col-xl-2">
                 <div class="stat-card blue">
                     <div class="stat-icon blue"><i class="fa-solid fa-cart-shopping"></i></div>
-                    <div><div class="stat-value"><?= $stats['total_orders'] ?></div><div class="stat-label">Total Orders</div></div>
+                    <div><div class="stat-value"><?= e($stats['total_orders']) ?></div><div class="stat-label">Total Orders</div></div>
                 </div>
             </div>
             <div class="col-6 col-md-4 col-xl-2">
@@ -63,13 +63,13 @@ $page_title = 'Admin Dashboard';
             <div class="col-6 col-md-4 col-xl-2">
                 <div class="stat-card blue">
                     <div class="stat-icon blue"><i class="fa-solid fa-seedling"></i></div>
-                    <div><div class="stat-value"><?= $stats['crops'] ?></div><div class="stat-label">Crop Entries</div></div>
+                    <div><div class="stat-value"><?= e($stats['crops']) ?></div><div class="stat-label">Crop Entries</div></div>
                 </div>
             </div>
             <div class="col-6 col-md-4 col-xl-2">
                 <div class="stat-card gold">
                     <div class="stat-icon gold"><i class="fa-solid fa-boxes-stacked"></i></div>
-                    <div><div class="stat-value"><?= $stats['products'] ?></div><div class="stat-label">Active Products</div></div>
+                    <div><div class="stat-value"><?= e($stats['products']) ?></div><div class="stat-label">Active Products</div></div>
                 </div>
             </div>
         </div>
@@ -92,18 +92,18 @@ $page_title = 'Admin Dashboard';
                                     <div style="font-weight:600;"><?= htmlspecialchars($u['name']) ?></div>
                                     <div style="font-size:12px; color:var(--text-muted);"><?= htmlspecialchars($u['email']) ?></div>
                                 </td>
-                                <td><span class="badge-kd badge-info"><?= ucfirst($u['role']) ?></span></td>
+                                <td><span class="badge-kd badge-info"><?= e(ucfirst($u['role'])) ?></span></td>
                                 <td>
                                     <?php
                                     $cls = ['approved'=>'badge-success','pending'=>'badge-warning','suspended'=>'badge-danger'];
                                     $cls2 = $cls[$u['status']] ?? 'badge-muted';
                                     ?>
-                                    <span class="badge-kd <?= $cls2 ?>"><?= ucfirst($u['status']) ?></span>
+                                    <span class="badge-kd <?= $cls2 ?>"><?= e(ucfirst($u['status'])) ?></span>
                                 </td>
                                 <td style="font-size:12px; color:var(--text-muted);"><?= date('d M Y', strtotime($u['created_at'])) ?></td>
                                 <td>
                                     <?php if ($u['status'] === 'pending'): ?>
-                                    <a href="/KrishiDisha/admin/approvals.php?approve=<?= $u['id'] ?>" class="btn-kd btn-kd-primary" style="padding:4px 10px; font-size:11px;" data-confirm="Approve this user?">Approve</a>
+                                    <a class="btn-kd btn-kd-outline" href="approvals.php">Review application</a>
                                     <?php endif; ?>
                                 </td>
                             </tr>
@@ -132,7 +132,7 @@ $page_title = 'Admin Dashboard';
                                 <td style="font-weight:700; color:var(--primary);">৳<?= number_format($p['amount']) ?></td>
                                 <td>
                                     <?php $pc = ['completed'=>'badge-success','pending'=>'badge-warning','failed'=>'badge-danger']; ?>
-                                    <span class="badge-kd <?= $pc[$p['status']] ?? 'badge-muted' ?>"><?= ucfirst($p['status']) ?></span>
+                                    <span class="badge-kd <?= $pc[$p['status']] ?? 'badge-muted' ?>"><?= e(ucfirst($p['status'])) ?></span>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -147,7 +147,7 @@ $page_title = 'Admin Dashboard';
                     <div class="card-body-kd">
                         <div style="display:flex; flex-direction:column; gap:10px;">
                             <a href="/KrishiDisha/admin/approvals.php" class="btn-kd btn-kd-primary w-100 justify-content-center">
-                                <i class="fa-solid fa-user-check"></i> Review Pending (<?= $stats['pending'] ?>)
+                                <i class="fa-solid fa-user-check"></i> Review Pending (<?= e($stats['pending']) ?>)
                             </a>
                             <a href="/KrishiDisha/admin/users.php" class="btn-kd btn-kd-outline w-100 justify-content-center">
                                 <i class="fa-solid fa-users"></i> Manage All Users

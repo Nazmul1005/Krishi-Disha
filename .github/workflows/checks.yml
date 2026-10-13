@@ -1,0 +1,31 @@
+name: Checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  application:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - run: npm ci && npm test && npm audit
+      - run: python3 bin/configure.py
+      - run: docker compose --progress quiet up -d --build
+      - run: docker compose exec -T web sh -c 'find . -name "*.php" -not -path "./vendor/*" -print0 | xargs -0 -n1 php -l'
+      - run: docker compose run --rm --no-deps migrate php tests/run.php
+      - run: docker compose exec -T web composer audit --no-dev
+      - name: Scan fixable high and critical image vulnerabilities
+        run: docker run --rm -v /var/run/docker.sock:/var/run/docker.sock:ro aquasec/trivy:0.75.0 image --scanners vuln --ignore-unfixed --severity HIGH,CRITICAL --exit-code 1 krishi-disha-web:latest
+      - name: Scan database image
+        run: docker run --rm -v /var/run/docker.sock:/var/run/docker.sock:ro aquasec/trivy:0.75.0 image --scanners vuln --ignore-unfixed --severity HIGH,CRITICAL --exit-code 1 krishidisha-mysql:8.4
+      - name: Prepare isolated browser database
+        run: docker compose run --rm --no-deps -v "$PWD:/app" migrate php tests/browser-fixtures.php
+      - name: Start isolated browser app
+        run: BROWSER_DB="$(node -p "require('./.browser-fixtures.json').database")" docker compose --profile tests up -d browser
+      - run: PLAYWRIGHT_SKIP_BROWSER_GC=1 npx playwright install --with-deps chromium
+      - run: npm run test:browser
+      - if: always()
+        run: docker compose stop browser && docker compose run --rm --no-deps -v "$PWD:/app" migrate php tests/cleanup-browser.php
+      - if: always()
+        run: docker compose logs --tail=100 web migrate

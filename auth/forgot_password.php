@@ -4,26 +4,23 @@ require_once __DIR__ . '/../config/db.php';
 
 if (isLoggedIn()) { redirectToDashboard(); }
 
-$done = false;
-$reset_link = '';
-
+require_once __DIR__ . '/../includes/mail.php';
+$done=false;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    verifyCsrf();
-    $email = trim($_POST['email'] ?? '');
-    $done  = true; // always show the same confirmation (avoid user enumeration)
-
-    if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $stmt = $pdo->prepare("SELECT id FROM USER WHERE email = ?");
-        $stmt->execute([$email]);
-        $user = $stmt->fetch();
-        if ($user) {
-            $token = createAuthToken($pdo, (int)$user['id'], 'password_reset', 60);
-            // No SMTP in this environment — surface the link directly (dev mode).
-            $reset_link = baseUrl() . '/KrishiDisha/auth/reset_password.php?token=' . $token;
+    $done=true;
+    try {
+        $email=textInput($_POST['email'] ?? '',150);
+        throttle($pdo,'recovery-ip',$_SERVER['REMOTE_ADDR'] ?? '',10);
+        throttle($pdo,'recovery-account',$email,3);
+        if(emailConfigured() && filter_var($email,FILTER_VALIDATE_EMAIL)) {
+            $stmt=$pdo->prepare('SELECT id FROM USER WHERE email=?'); $stmt->execute([$email]); $user=$stmt->fetch();
+            if($user) {
+                $token=transaction($pdo,fn()=>createAuthToken($pdo,(int)$user['id'],'password_reset',60));
+                sendAccountEmail($email,$token,'password_reset');
+            }
         }
-    }
+    } catch(Throwable $e) { error_log('Recovery request could not be delivered'); }
 }
-
 $page_title = 'Forgot Password';
 ?>
 <?php include __DIR__ . '/../includes/header.php'; ?>
@@ -36,17 +33,7 @@ $page_title = 'Forgot Password';
 
         <?php if ($done): ?>
             <h2>Check your inbox</h2>
-            <p class="sub">If an account exists for that email, we've sent a link to reset the password. The link expires in 1 hour.</p>
-
-            <?php if ($reset_link): ?>
-            <div class="alert-kd alert-kd-info" style="font-size:12px;word-break:break-all;">
-                <i class="fa-solid fa-flask"></i>
-                <div>
-                    <strong>Development mode:</strong> email delivery isn't configured, so use this link:
-                    <br><a href="<?= e($reset_link) ?>" style="color:var(--primary);font-weight:600;"><?= e($reset_link) ?></a>
-                </div>
-            </div>
-            <?php endif; ?>
+            <p class="sub">If an account exists for that email, a reset link will be sent when email delivery is available. The link expires in 1 hour.</p>
 
             <div class="divider"></div>
             <p class="text-center" style="font-size:14px;color:var(--text-muted)">
@@ -55,7 +42,7 @@ $page_title = 'Forgot Password';
         <?php else: ?>
             <h2>Forgot your password?</h2>
             <p class="sub">Enter your account email and we'll send you a reset link.</p>
-            <form method="POST" class="form-kd" data-validate>
+            <form method="POST" class="form-kd" data-validate><?= csrfField() ?><?= requestKeyField() ?>
                 <?= csrfField() ?>
                 <div class="form-group">
                     <label for="email"><i class="fa-solid fa-envelope me-1"></i>Email Address</label>

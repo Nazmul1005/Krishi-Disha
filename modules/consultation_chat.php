@@ -7,10 +7,10 @@ $cid = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $uid = $_SESSION['user_id'];
 
 // Check if user is part of this consultation
-$consult = $pdo->prepare("SELECT c.*, u1.name as client_name, u2.name as provider_name 
-    FROM CONSULTATION c 
-    JOIN USER u1 ON c.client_id=u1.id 
-    JOIN USER u2 ON c.provider_id=u2.id 
+$consult = $pdo->prepare("SELECT c.*, u1.name as client_name, u2.name as provider_name
+    FROM CONSULTATION c
+    JOIN USER u1 ON c.client_id=u1.id
+    JOIN USER u2 ON c.provider_id=u2.id
     WHERE c.id=?");
 $consult->execute([$cid]);
 $c = $consult->fetch();
@@ -21,7 +21,9 @@ if (!$c || ($c['client_id'] !== $uid && $c['provider_id'] !== $uid)) {
 
 // Handle sending message
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['message'])) {
-    $msg = trim($_POST['message']);
+    if(!in_array($c['status'],['pending','confirmed'],true)) { http_response_code(409);die('This consultation is closed.'); }
+    throttle($pdo,'chat-user',(string)$uid,30,60);
+    $msg = textInput($_POST['message'],4000);
     if ($msg) {
         $stmt = $pdo->prepare("INSERT INTO CONSULTATION_MESSAGE (consultation_id, sender_id, message) VALUES (?, ?, ?)");
         $stmt->execute([$cid, $uid, $msg]);
@@ -31,9 +33,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['message'])) {
 }
 
 // Fetch messages
-$msgs = $pdo->prepare("SELECT m.*, u.name, u.role, u.profile_image FROM CONSULTATION_MESSAGE m JOIN USER u ON m.sender_id=u.id WHERE m.consultation_id=? ORDER BY m.created_at ASC");
+$msgs = $pdo->prepare("SELECT m.*, u.name, u.role, u.profile_image FROM CONSULTATION_MESSAGE m JOIN USER u ON m.sender_id=u.id WHERE m.consultation_id=? ORDER BY m.created_at DESC,m.id DESC LIMIT 100");
 $msgs->execute([$cid]);
-$messages = $msgs->fetchAll();
+$messages = array_reverse($msgs->fetchAll());
 
 $page_title = 'Consultation Chat';
 $other_party_name = ($c['client_id'] === $uid) ? $c['provider_name'] : $c['client_name'];
@@ -60,14 +62,14 @@ $other_party_name = ($c['client_id'] === $uid) ? $c['provider_name'] : $c['clien
 
 <div class="layout-wrapper">
 <?php include __DIR__ . '/../includes/sidebar.php'; ?>
-<div class="main-content">
+<div class="main-content" id="main-content" tabindex="-1">
     <div class="topbar">
         <div class="d-flex align-items-center gap-3">
-            <button id="sidebarToggle" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
+            <button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
             <div class="topbar-title"><i class="fa-solid fa-comments me-2" style="color:#7c3aed;"></i>Discussion</div>
         </div>
         <div>
-            <?php 
+            <?php
                 $backUrl = '/KrishiDisha/index.php';
                 if ($_SESSION['role'] === 'expert') $backUrl = '/KrishiDisha/expert/sessions.php';
                 else if ($_SESSION['role'] === 'guide') $backUrl = '/KrishiDisha/guide/sessions.php';
@@ -76,7 +78,7 @@ $other_party_name = ($c['client_id'] === $uid) ? $c['provider_name'] : $c['clien
             <a href="<?= $backUrl ?>" class="btn-kd btn-kd-outline"><i class="fa-solid fa-arrow-left"></i> Back to Sessions</a>
         </div>
     </div>
-    
+
     <div class="page-body">
         <div class="chat-container">
             <div class="chat-header">
@@ -87,10 +89,10 @@ $other_party_name = ($c['client_id'] === $uid) ? $c['provider_name'] : $c['clien
                     </div>
                 </div>
                 <div class="badge-kd badge-<?= $c['status']=='completed'?'success':($c['status']=='confirmed'?'info':'warning') ?>">
-                    <?= ucfirst($c['status']) ?>
+                    <?= e(ucfirst($c['status'])) ?>
                 </div>
             </div>
-            
+
             <div class="chat-body" id="chatBody">
                 <?php if (empty($messages)): ?>
                 <div class="text-center" style="margin-top:auto; margin-bottom:auto; color:#94a3b8;">
@@ -98,7 +100,7 @@ $other_party_name = ($c['client_id'] === $uid) ? $c['provider_name'] : $c['clien
                     <p>No messages yet.<br>Start the discussion by sending a message below.</p>
                 </div>
                 <?php endif; ?>
-                
+
                 <?php foreach ($messages as $m): $isMe = ($m['sender_id'] === $uid); ?>
                 <div class="chat-msg <?= $isMe ? 'me' : 'them' ?>">
                     <div class="msg-bubble"><?= nl2br(htmlspecialchars($m['message'])) ?></div>
@@ -109,27 +111,15 @@ $other_party_name = ($c['client_id'] === $uid) ? $c['provider_name'] : $c['clien
                 </div>
                 <?php endforeach; ?>
             </div>
-            
-            <form method="POST" class="chat-input" style="margin:0;">
+
+            <form method="POST" class="chat-input" style="margin:0;"><?= csrfField() ?><?= requestKeyField() ?>
                 <textarea name="message" placeholder="Type your message here..." required></textarea>
-                <button type="submit" class="btn-send"><i class="fa-solid fa-paper-plane"></i></button>
+                <button type="submit" class="btn-send" aria-label="Send message"><i class="fa-solid fa-paper-plane"></i></button>
             </form>
         </div>
     </div>
 </div>
 </div>
 
-<script>
-// Auto scroll to bottom
-const cb = document.getElementById('chatBody');
-if (cb) cb.scrollTop = cb.scrollHeight;
 
-// Submit on enter
-document.querySelector('.chat-input textarea').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        this.closest('form').submit();
-    }
-});
-</script>
 <?php include __DIR__ . '/../includes/footer.php'; ?>

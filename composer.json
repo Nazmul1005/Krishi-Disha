@@ -1,0 +1,9 @@
+{
+  "name": "nazmul1005/krishi-disha",
+  "description": "Agricultural marketplace and reviewed reference tools",
+  "type": "project",
+  "license": "MIT",
+  "require": {"php": "^8.4", "ext-pdo": "*", "ext-pdo_mysql": "*", "ext-mbstring": "*", "ext-sodium": "*", "ext-gd": "*", "phpmailer/phpmailer": "^7.0"},
+  "config": {"sort-packages": true},
+  "scripts": {"test": "php tests/run.php"}
+}

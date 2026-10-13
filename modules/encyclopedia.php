@@ -6,7 +6,7 @@ $search   = trim($_GET['q'] ?? '');
 $season   = trim($_GET['season'] ?? '');
 $category = trim($_GET['category'] ?? '');
 
-$where = ['1=1']; $params = [];
+$where = ["c.review_status='reviewed'"]; $params = [];
 if ($search)   { $where[] = '(c.name LIKE ? OR c.scientific_name LIKE ? OR c.local_name LIKE ? OR c.history LIKE ?)'; $p="%$search%"; $params=array_merge($params,[$p,$p,$p,$p]); }
 if ($season)   { $where[] = 'c.season=?';   $params[] = $season; }
 if ($category) { $where[] = 'c.category=?'; $params[] = $category; }
@@ -21,7 +21,7 @@ $page_title = 'Crop Encyclopedia';
 <?php if (isLoggedIn()): ?>
 <div class="layout-wrapper">
 <?php include __DIR__ . '/../includes/sidebar.php'; ?>
-<div class="main-content">
+<div class="main-content" id="main-content" tabindex="-1">
 <?php else: ?>
 <nav class="kd-navbar">
     <div class="container">
@@ -38,7 +38,7 @@ $page_title = 'Crop Encyclopedia';
 
 <div class="topbar">
     <div class="d-flex align-items-center gap-3">
-        <?php if (isLoggedIn()): ?><button id="sidebarToggle" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button><?php endif; ?>
+        <?php if (isLoggedIn()): ?><button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button><?php endif; ?>
         <div class="topbar-title"><i class="fa-solid fa-book-atlas me-2" style="color:var(--primary);"></i>Crop Encyclopedia</div>
     </div>
     <div class="topbar-actions">
@@ -64,7 +64,7 @@ $page_title = 'Crop Encyclopedia';
     </select>
     <select name="season" class="form-control" style="flex:1;max-width:130px;">
         <option value="">All Seasons</option>
-        <?php foreach (['summer','winter','rainy','all'] as $s): ?><option value="<?= $s ?>" <?= $season===$s?'selected':'' ?>><?= ucfirst($s) ?></option><?php endforeach; ?>
+        <?php foreach (['summer','winter','rainy','all'] as $s): ?><option value="<?= $s ?>" <?= $season===$s?'selected':'' ?>><?= e(ucfirst($s)) ?></option><?php endforeach; ?>
     </select>
     <button type="submit" class="btn-kd btn-kd-primary"><i class="fa-solid fa-search"></i> Search</button>
     <a href="encyclopedia.php" class="btn-kd btn-kd-outline">Reset</a>
@@ -81,14 +81,14 @@ $page_title = 'Crop Encyclopedia';
             <div class="crop-card" style="position:relative;">
                 <?php if (isLoggedIn() && currentRole() === 'admin'): ?>
                 <div style="position:absolute;top:8px;right:8px;z-index:10;display:flex;gap:4px;">
-                    <a href="/KrishiDisha/admin/manage_content.php?tab=crops&edit=<?= $crop['id'] ?>" class="btn-kd btn-kd-outline" style="padding:3px 8px;font-size:10px;background:rgba(255,255,255,0.9);"><i class="fa-solid fa-pen"></i></a>
-                    <a href="/KrishiDisha/admin/manage_content.php?tab=crops&delete_crop=<?= $crop['id'] ?>" class="btn-kd btn-kd-danger" style="padding:3px 8px;font-size:10px;opacity:0.85;" data-confirm="Delete <?= htmlspecialchars($crop['name']) ?>?"><i class="fa-solid fa-trash"></i></a>
+                    <a href="/KrishiDisha/admin/manage_content.php?tab=crops&edit=<?= e($crop['id']) ?>" class="btn-kd btn-kd-outline" style="padding:3px 8px;font-size:10px;background:rgba(255,255,255,0.9);"><i class="fa-solid fa-pen"></i></a>
+                    <form method="POST" action="/KrishiDisha/admin/manage_content.php?tab=crops" style="display:inline"><?= csrfField() ?><?= requestKeyField() ?><input type="hidden" name="delete_crop" value="<?= e($crop['id']) ?>"><button type="submit" class="btn-kd btn-kd-danger" style="padding:3px 8px;font-size:10px;opacity:0.85;" data-confirm="Delete <?= htmlspecialchars($crop['name']) ?>?"><i class="fa-solid fa-trash"></i></button></form>
                 </div>
                 <?php endif; ?>
-                <a href="encyclopedia.php?detail=<?= $crop['id'] ?>" style="display:block; text-decoration:none;color:inherit;">
+                <a href="encyclopedia.php?detail=<?= e($crop['id']) ?>" style="display:block; text-decoration:none;color:inherit;">
                     <div style="height:180px; overflow:hidden; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--surface3),var(--accent3));">
-                        <?php if (!empty($crop['image']) && file_exists(__DIR__.'/../'.$crop['image'])): ?>
-                        <img src="/KrishiDisha/<?= htmlspecialchars($crop['image']) ?>" alt="<?= htmlspecialchars($crop['name']) ?>" style="width:100%;height:180px;object-fit:cover;">
+                        <?php if (!empty($crop['image']) && mediaAvailable($crop['image'])): ?>
+                        <img alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($crop['image']) ?>" alt="<?= htmlspecialchars($crop['name']) ?>" style="width:100%;height:180px;object-fit:cover;">
                         <?php else: ?>
                         <div style="font-size:72px;"><?php $icons=['Grain'=>'🌾','Vegetable'=>'🥕','Fruit'=>'🍎','Fiber'=>'🪢','Oilseed'=>'🌻','Legume'=>'🫘','Cash Crop'=>'💰']; echo $icons[$crop['category']]??'🌱'; ?></div>
                         <?php endif; ?>
@@ -97,9 +97,9 @@ $page_title = 'Crop Encyclopedia';
                         <h5><?= htmlspecialchars($crop['name']) ?></h5>
                         <div class="scientific"><?= htmlspecialchars($crop['scientific_name'] ?? '') ?> · <?= htmlspecialchars($crop['local_name'] ?? '') ?></div>
                         <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">
-                            <span class="badge-kd badge-success" style="font-size:10px;"><?= ucfirst($crop['season']) ?></span>
-                            <span class="badge-kd badge-info" style="font-size:10px;"><?= $crop['category'] ?></span>
-                            <span class="badge-kd badge-muted" style="font-size:10px;"><?= ucfirst($crop['trade_status']) ?></span>
+                            <span class="badge-kd badge-success" style="font-size:10px;"><?= e(ucfirst($crop['season'])) ?></span>
+                            <span class="badge-kd badge-info" style="font-size:10px;"><?= e($crop['category']) ?></span>
+                            <span class="badge-kd badge-muted" style="font-size:10px;"><?= e(ucfirst($crop['trade_status'])) ?></span>
                         </div>
                         <p><?= mb_substr(strip_tags($crop['history'] ?? ''), 0, 90) ?>...</p>
                     </div>
@@ -113,17 +113,17 @@ $page_title = 'Crop Encyclopedia';
     <?php
     // Detail view
     if (isset($_GET['detail'])) {
-        $detail = $pdo->prepare("SELECT * FROM CROP WHERE id=?");
+        $detail = $pdo->prepare("SELECT * FROM CROP WHERE id=? AND review_status='reviewed'");
         $detail->execute([(int)$_GET['detail']]);
         $detail = $detail->fetch();
         if ($detail) {
-            $vitamins  = $pdo->prepare("SELECT v.name, v.unit, cv.amount_per_100g FROM CROP_VITAMIN cv JOIN VITAMIN v ON cv.vitamin_id=v.id WHERE cv.crop_id=?");
+            $vitamins  = $pdo->prepare("SELECT v.name, v.unit, cv.amount_per_100g FROM CROP_VITAMIN cv JOIN VITAMIN v ON cv.vitamin_id=v.id WHERE cv.crop_id=? AND cv.review_status='reviewed'");
             $vitamins->execute([$detail['id']]); $vitamins = $vitamins->fetchAll();
-            $diseases  = $pdo->prepare("SELECT d.* FROM CROP_DISEASE cd JOIN DISEASE d ON cd.disease_id=d.id WHERE cd.crop_id=?");
+            $diseases  = $pdo->prepare("SELECT d.* FROM CROP_DISEASE cd JOIN DISEASE d ON cd.disease_id=d.id WHERE cd.crop_id=? AND d.review_status='reviewed'");
             $diseases->execute([$detail['id']]); $diseases = $diseases->fetchAll();
             $varieties = $pdo->prepare("SELECT * FROM CROP_VARIETY WHERE crop_id=?");
             $varieties->execute([$detail['id']]); $varieties = $varieties->fetchAll();
-            $regions   = $pdo->prepare("SELECT * FROM REGION_CROP WHERE crop_id=? ORDER BY suitability_score DESC");
+            $regions   = $pdo->prepare("SELECT * FROM REGION_CROP WHERE crop_id=? AND review_status='reviewed' ORDER BY suitability_score DESC");
             $regions->execute([$detail['id']]); $regions = $regions->fetchAll();
     ?>
     <!-- Modal-style detail panel -->
@@ -135,9 +135,9 @@ $page_title = 'Crop Encyclopedia';
                         <h2 style="color:#fff;margin-bottom:6px;"><?= htmlspecialchars($detail['name']) ?></h2>
                         <div style="font-style:italic;color:rgba(255,255,255,0.75);font-size:14px;"><?= htmlspecialchars($detail['scientific_name'] ?? '') ?></div>
                         <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
-                            <span class="badge-kd" style="background:rgba(255,255,255,0.2);color:#fff;"><?= $detail['category'] ?></span>
-                            <span class="badge-kd" style="background:rgba(255,255,255,0.2);color:#fff;"><?= ucfirst($detail['season']) ?> season</span>
-                            <span class="badge-kd" style="background:rgba(255,255,255,0.2);color:#fff;"><?= ucfirst($detail['trade_status']) ?> trade</span>
+                            <span class="badge-kd" style="background:rgba(255,255,255,0.2);color:#fff;"><?= e($detail['category']) ?></span>
+                            <span class="badge-kd" style="background:rgba(255,255,255,0.2);color:#fff;"><?= e(ucfirst($detail['season'])) ?> season</span>
+                            <span class="badge-kd" style="background:rgba(255,255,255,0.2);color:#fff;"><?= e(ucfirst($detail['trade_status'])) ?> trade</span>
                         </div>
                     </div>
                     <a href="encyclopedia.php" style="color:rgba(255,255,255,0.8);font-size:24px;text-decoration:none;">&times;</a>
@@ -146,7 +146,7 @@ $page_title = 'Crop Encyclopedia';
             <div style="padding:30px 36px;">
                 <h6 style="color:var(--primary-dark);font-weight:700;margin-bottom:10px;">Origin & History</h6>
                 <p style="font-size:14px;line-height:1.7;color:var(--text-muted);margin-bottom:24px;">
-                    <strong>Origin:</strong> <?= htmlspecialchars($detail['origin'] ?? 'N/A') ?><br><br>
+                    <p>Source: <a href="<?= e($detail['source_url']) ?>" target="_blank" rel="noopener">Reference</a> · Reviewed <?= e($detail['reviewed_at']) ?></p><strong>Origin:</strong> <?= htmlspecialchars($detail['origin'] ?? 'N/A') ?><br><br>
                     <?= nl2br(htmlspecialchars($detail['history'] ?? '')) ?>
                 </p>
 
@@ -155,7 +155,7 @@ $page_title = 'Crop Encyclopedia';
                 <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px;">
                     <?php foreach ($vitamins as $v): ?>
                     <div style="background:var(--surface3);border-radius:10px;padding:10px 16px;text-align:center;">
-                        <div style="font-weight:700;color:var(--primary);"><?= $v['amount_per_100g'] ?> <?= $v['unit'] ?></div>
+                        <div style="font-weight:700;color:var(--primary);"><?= e($v['amount_per_100g']) ?> <?= e($v['unit']) ?></div>
                         <div style="font-size:12px;color:var(--text-muted);"><?= htmlspecialchars($v['name']) ?></div>
                     </div>
                     <?php endforeach; ?>
@@ -180,13 +180,13 @@ $page_title = 'Crop Encyclopedia';
                     <tr>
                         <td style="font-weight:600;"><?= htmlspecialchars($r['region']) ?></td>
                         <td><?= htmlspecialchars($r['soil_type']) ?></td>
-                        <td><?= ucfirst($r['season']) ?></td>
+                        <td><?= e(ucfirst($r['season'])) ?></td>
                         <td>
                             <div style="display:flex;align-items:center;gap:8px;">
                                 <div style="flex:1;height:8px;background:#e5e7eb;border-radius:4px;overflow:hidden;">
                                     <div style="width:<?= ($r['suitability_score']/10*100) ?>%;height:100%;background:linear-gradient(90deg,var(--primary),var(--primary-light));border-radius:4px;"></div>
                                 </div>
-                                <span style="font-size:12px;font-weight:700;color:var(--primary);"><?= $r['suitability_score'] ?>/10</span>
+                                <span style="font-size:12px;font-weight:700;color:var(--primary);"><?= e($r['suitability_score']) ?>/10</span>
                             </div>
                         </td>
                     </tr>

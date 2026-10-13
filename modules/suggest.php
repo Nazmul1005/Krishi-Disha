@@ -6,41 +6,32 @@ requireAuth();
 $section = $_GET['section'] ?? 'crop';
 $msg = ''; $err = '';
 
-function handleUploadSuggest($field, $subfolder = 'crops') {
-    if (!isset($_FILES[$field]) || $_FILES[$field]['error'] !== UPLOAD_ERR_OK) return null;
-    $f   = $_FILES[$field];
-    $ext = strtolower(pathinfo($f['name'], PATHINFO_EXTENSION));
-    if (!in_array($ext, ['jpg','jpeg','png','webp','gif'])) return null;
-    $dir = __DIR__ . '/../assets/images/uploads/' . $subfolder . '/';
-    if (!is_dir($dir)) mkdir($dir, 0755, true);
-    $fname = uniqid('sugg_', true) . '.' . $ext;
-    if (move_uploaded_file($f['tmp_name'], $dir . $fname)) {
-        return 'assets/images/uploads/' . $subfolder . '/' . $fname;
-    }
-    return null;
-}
+function handleUploadSuggest($field,$subfolder="crops") { return saveImage($field,false); }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $section = $_POST['section'] ?? 'crop';
     $uid = $_SESSION['user_id'];
-    $data = $_POST;
+    $allowed=['name','scientific_name','local_name','origin','history','trade_status','season','category','symptoms','solution','affected_part','crop_names','crop_id','region','soil_type','suitability_score','vitamin_id','method_id','retention_percentage','preparation_notes','source_url'];
+    $data=array_intersect_key($_POST,array_flip($allowed));
+    throttle($pdo,'proposal-user',(string)$uid,10,3600);
     $title = '';
 
     if ($section === 'crop') {
         $title = trim($_POST['name'] ?? 'New Crop');
         $img = handleUploadSuggest('crop_image', 'crops');
         if ($img) $data['image'] = $img;
-        unset($data['crop_image']);
+
     } elseif ($section === 'disease') {
         $title = trim($_POST['name'] ?? 'New Disease');
         $img = handleUploadSuggest('disease_image', 'diseases');
         if ($img) $data['image'] = $img;
-        unset($data['disease_image']);
+
     } else {
         $title = trim($_POST['title'] ?? 'New Suggestion');
     }
 
-    if ($title) {
+    if (!in_array($section,['crop','disease','recommender','nutrition'],true)) { http_response_code(400);die('Invalid suggestion type.'); }
+    if ($title && strlen(json_encode($data)) <= 30000) {
         $pdo->prepare("INSERT INTO DATA_PROPOSAL (user_id, section, action, title, proposed_data) VALUES (?, ?, 'create', ?, ?)")
             ->execute([$uid, $section, $title, json_encode($data)]);
         $msg = 'Your suggestion has been submitted for admin review. Thank you!';
@@ -58,11 +49,11 @@ $page_title = 'Suggest Content';
 $isAuth = isLoggedIn();
 ?>
 <?php include __DIR__ . '/../includes/header.php'; ?>
-<?php if ($isAuth): ?><div class="layout-wrapper"><?php include __DIR__ . '/../includes/sidebar.php'; ?><div class="main-content"><?php endif; ?>
+<?php if ($isAuth): ?><div class="layout-wrapper"><?php include __DIR__ . '/../includes/sidebar.php'; ?><div class="main-content" id="main-content" tabindex="-1"><?php endif; ?>
 
 <div class="topbar">
     <div class="d-flex align-items-center gap-3">
-        <?php if ($isAuth): ?><button id="sidebarToggle" class="btn btn-sm d-lg-none" style="border:none;font-size:20px;"><i class="fa-solid fa-bars"></i></button><?php endif; ?>
+        <?php if ($isAuth): ?><button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none;font-size:20px;"><i class="fa-solid fa-bars"></i></button><?php endif; ?>
         <div class="topbar-title"><i class="fa-solid fa-lightbulb me-2" style="color:var(--gold);"></i>Suggest Content</div>
     </div>
     <div class="topbar-actions">
@@ -123,7 +114,7 @@ $isAuth = isLoggedIn();
                 <h5><i class="fa-solid fa-seedling me-2" style="color:#2d6a4f;"></i>Suggest a New Crop</h5>
             </div>
             <div class="card-body-kd">
-                <form method="POST" enctype="multipart/form-data" class="form-kd" data-validate>
+                <form method="POST" enctype="multipart/form-data" class="form-kd" data-validate><?= csrfField() ?><?= requestKeyField() ?>
                     <input type="hidden" name="section" value="crop">
                     <div class="row g-3">
                         <div class="col-md-6"><div class="form-group"><label>Crop Name <span style="color:red">*</span></label><input type="text" name="name" class="form-control" required placeholder="e.g. Garlic"></div></div>
@@ -136,7 +127,7 @@ $isAuth = isLoggedIn();
                         </div></div>
                         <div class="col-md-4"><div class="form-group"><label>Season</label>
                             <select name="season" class="form-control">
-                                <?php foreach (['summer','winter','rainy','all'] as $s): ?><option value="<?= $s ?>"><?= ucfirst($s) ?></option><?php endforeach; ?>
+                                <?php foreach (['summer','winter','rainy','all'] as $s): ?><option value="<?= $s ?>"><?= e(ucfirst($s)) ?></option><?php endforeach; ?>
                             </select>
                         </div></div>
                         <div class="col-md-4"><div class="form-group"><label>Trade Status</label>
@@ -151,7 +142,7 @@ $isAuth = isLoggedIn();
                             <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">JPG, PNG or WebP — max 5MB</div>
                         </div></div>
                     </div>
-                    <button type="submit" class="btn-kd btn-kd-primary mt-2 justify-content-center" style="min-width:200px;">
+                    <label>Reference source URL (required for publication)</label><input class="form-control" type="url" name="source_url" maxlength="500" required><button type="submit" class="btn-kd btn-kd-primary mt-2 justify-content-center" style="min-width:200px;">
                         <i class="fa-solid fa-paper-plane"></i> Submit for Review
                     </button>
                 </form>
@@ -162,7 +153,7 @@ $isAuth = isLoggedIn();
                 <h5><i class="fa-solid fa-bug me-2" style="color:#dc2626;"></i>Suggest a New Disease / Pest</h5>
             </div>
             <div class="card-body-kd">
-                <form method="POST" enctype="multipart/form-data" class="form-kd" data-validate>
+                <form method="POST" enctype="multipart/form-data" class="form-kd" data-validate><?= csrfField() ?><?= requestKeyField() ?>
                     <input type="hidden" name="section" value="disease">
                     <div class="row g-3">
                         <div class="col-md-8"><div class="form-group"><label>Disease / Pest Name <span style="color:red">*</span></label><input type="text" name="name" class="form-control" required placeholder="e.g. Wheat Stem Fly"></div></div>
@@ -178,7 +169,7 @@ $isAuth = isLoggedIn();
                             <input type="file" name="disease_image" class="form-control" accept="image/*">
                         </div></div>
                     </div>
-                    <button type="submit" class="btn-kd btn-kd-danger mt-2 justify-content-center" style="min-width:200px;">
+                    <label>Reference source URL (required for publication)</label><input class="form-control" type="url" name="source_url" maxlength="500" required><button type="submit" class="btn-kd btn-kd-danger mt-2 justify-content-center" style="min-width:200px;">
                         <i class="fa-solid fa-paper-plane"></i> Submit for Review
                     </button>
                 </form>
@@ -189,27 +180,27 @@ $isAuth = isLoggedIn();
                 <h5><i class="fa-solid fa-map-pin me-2" style="color:#059669;"></i>Suggest Region Suitability Data</h5>
             </div>
             <div class="card-body-kd">
-                <form method="POST" class="form-kd" data-validate>
+                <form method="POST" class="form-kd" data-validate><?= csrfField() ?><?= requestKeyField() ?>
                     <input type="hidden" name="section" value="recommender">
                     <input type="hidden" name="title" value="Region Suitability Suggestion">
                     <div class="row g-3">
                         <div class="col-md-6"><div class="form-group"><label>Crop <span style="color:red">*</span></label>
                             <select name="crop_id" class="form-control" required>
                                 <option value="">Select crop</option>
-                                <?php foreach ($crops as $c): ?><option value="<?= $c['id'] ?>"><?= htmlspecialchars($c['name']) ?></option><?php endforeach; ?>
+                                <?php foreach ($crops as $c): ?><option value="<?= e($c['id']) ?>"><?= htmlspecialchars($c['name']) ?></option><?php endforeach; ?>
                             </select>
                         </div></div>
                         <div class="col-md-6"><div class="form-group"><label>Region / District <span style="color:red">*</span></label><input type="text" name="region" class="form-control" list="reglist" required placeholder="e.g. Khulna"><datalist id="reglist"><?php foreach ($regions as $r): ?><option value="<?= $r ?>"><?php endforeach; ?></datalist></div></div>
                         <div class="col-md-4"><div class="form-group"><label>Soil Type</label><input type="text" name="soil_type" class="form-control" placeholder="e.g. Loamy"></div></div>
                         <div class="col-md-4"><div class="form-group"><label>Season</label>
                             <select name="season" class="form-control">
-                                <?php foreach (['summer','winter','rainy','all'] as $s): ?><option value="<?= $s ?>"><?= ucfirst($s) ?></option><?php endforeach; ?>
+                                <?php foreach (['summer','winter','rainy','all'] as $s): ?><option value="<?= $s ?>"><?= e(ucfirst($s)) ?></option><?php endforeach; ?>
                             </select>
                         </div></div>
                         <div class="col-md-4"><div class="form-group"><label>Suitability Score (1-10)</label><input type="number" name="suitability_score" min="1" max="10" class="form-control" value="7"></div></div>
                         <div class="col-12"><div class="form-group"><label>Notes</label><textarea name="notes" class="form-control" rows="3" placeholder="Additional context..."></textarea></div></div>
                     </div>
-                    <button type="submit" class="btn-kd btn-kd-primary mt-2 justify-content-center" style="min-width:200px;background:linear-gradient(135deg,#059669,#34d399);">
+                    <label>Reference source URL (required for publication)</label><input class="form-control" type="url" name="source_url" maxlength="500" required><button type="submit" class="btn-kd btn-kd-primary mt-2 justify-content-center" style="min-width:200px;background:linear-gradient(135deg,#059669,#34d399);">
                         <i class="fa-solid fa-paper-plane"></i> Submit for Review
                     </button>
                 </form>
@@ -220,32 +211,32 @@ $isAuth = isLoggedIn();
                 <h5><i class="fa-solid fa-flask me-2" style="color:#ea580c;"></i>Suggest Nutrient Retention Data</h5>
             </div>
             <div class="card-body-kd">
-                <form method="POST" class="form-kd" data-validate>
-                    <input type="hidden" name="section" value="nutrition">
+                <form method="POST" class="form-kd" data-validate><?= csrfField() ?><?= requestKeyField() ?>
+                    <input type="hidden" name="section" value="nutrition"><label>Preparation conditions, time, water and source basis</label><textarea class="form-control" name="preparation_notes" maxlength="3000" required></textarea>
                     <input type="hidden" name="title" value="Nutrient Retention Suggestion">
                     <div class="row g-3">
                         <div class="col-md-4"><div class="form-group"><label>Crop <span style="color:red">*</span></label>
                             <select name="crop_id" class="form-control" required>
                                 <option value="">Select crop</option>
-                                <?php foreach ($crops as $c): ?><option value="<?= $c['id'] ?>"><?= htmlspecialchars($c['name']) ?></option><?php endforeach; ?>
+                                <?php foreach ($crops as $c): ?><option value="<?= e($c['id']) ?>"><?= htmlspecialchars($c['name']) ?></option><?php endforeach; ?>
                             </select>
                         </div></div>
                         <div class="col-md-4"><div class="form-group"><label>Vitamin / Nutrient <span style="color:red">*</span></label>
                             <select name="vitamin_id" class="form-control" required>
                                 <option value="">Select vitamin</option>
-                                <?php foreach ($vitamins as $v): ?><option value="<?= $v['id'] ?>"><?= htmlspecialchars($v['name']) ?> (<?= $v['unit'] ?>)</option><?php endforeach; ?>
+                                <?php foreach ($vitamins as $v): ?><option value="<?= e($v['id']) ?>"><?= htmlspecialchars($v['name']) ?> (<?= e($v['unit']) ?>)</option><?php endforeach; ?>
                             </select>
                         </div></div>
                         <div class="col-md-4"><div class="form-group"><label>Cooking Method <span style="color:red">*</span></label>
                             <select name="method_id" class="form-control" required>
                                 <option value="">Select method</option>
-                                <?php foreach ($methods as $m): ?><option value="<?= $m['id'] ?>"><?= htmlspecialchars($m['name']) ?></option><?php endforeach; ?>
+                                <?php foreach ($methods as $m): ?><option value="<?= e($m['id']) ?>"><?= htmlspecialchars($m['name']) ?></option><?php endforeach; ?>
                             </select>
                         </div></div>
                         <div class="col-md-6"><div class="form-group"><label>Retention % (0-100) <span style="color:red">*</span></label><input type="number" name="retention_percentage" min="0" max="100" step="0.1" class="form-control" required placeholder="e.g. 75.5"></div></div>
                         <div class="col-md-6"><div class="form-group"><label>Source / Reference</label><input type="text" name="source" class="form-control" placeholder="e.g. USDA, research paper"></div></div>
                     </div>
-                    <button type="submit" class="btn-kd btn-kd-primary mt-2 justify-content-center" style="min-width:200px;background:linear-gradient(135deg,#ea580c,#fb923c);">
+                    <label>Reference source URL (required for publication)</label><input class="form-control" type="url" name="source_url" maxlength="500" required><button type="submit" class="btn-kd btn-kd-primary mt-2 justify-content-center" style="min-width:200px;background:linear-gradient(135deg,#ea580c,#fb923c);">
                         <i class="fa-solid fa-paper-plane"></i> Submit for Review
                     </button>
                 </form>

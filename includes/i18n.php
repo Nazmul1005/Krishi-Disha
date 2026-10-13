@@ -1,0 +1,6 @@
+<?php
+function t(string $english,string $bangla=''): string {
+    if(($_SESSION['language'] ?? 'bn')!=='bn') return e($english);
+    $map=['Dashboard'=>'ড্যাশবোর্ড','Users'=>'ব্যবহারকারী','Approvals'=>'অনুমোদন','Manage Content'=>'তথ্য পরিচালনা','Proposals'=>'প্রস্তাব','Commissions'=>'কমিশন','My Produce'=>'আমার ফসল','Farm Lands'=>'খামার ও পর্যটন','Consultations'=>'বিশেষজ্ঞের পরামর্শ','Suggest Content'=>'তথ্য প্রস্তাব','Inventory'=>'মজুত','Sales'=>'বিক্রয়','Farm Tours'=>'খামার ভ্রমণ','Food Orders'=>'খাবারের অর্ডার','Recipes'=>'রেসিপি','Orders'=>'অর্ডার','Bookings'=>'বুকিং','Sessions'=>'পরামর্শ সেশন','Nutrition'=>'পুষ্টি','Marketplace'=>'ফসলের বাজার','Crop Encyclopedia'=>'ফসলের তথ্য','Disease Reference'=>'রোগের তথ্য','Crop Reference Matches'=>'ফসলের উপযোগিতা','Nutrition Guide'=>'পুষ্টির তথ্য','Agri-Tourism'=>'কৃষি পর্যটন','Profit Calculator'=>'লাভের হিসাব','My Profile'=>'আমার পরিচিতি','Payments'=>'পেমেন্ট','Order History'=>'অর্ডারের ইতিহাস','Notifications'=>'বিজ্ঞপ্তি','Support'=>'সহায়তা','Tour Bookings'=>'ভ্রমণ বুকিং','Full Name'=>'পুরো নাম','Email'=>'ইমেইল','Email Address'=>'ইমেইল','Phone'=>'ফোন','Password'=>'পাসওয়ার্ড','Confirm Password'=>'পাসওয়ার্ড নিশ্চিত করুন','Create Account'=>'নিবন্ধন','Sign In'=>'প্রবেশ করুন','Welcome Back'=>'স্বাগতম','Logout'=>'বের হন'];
+    return e($bangla ?: ($map[$english] ?? $english));
+}

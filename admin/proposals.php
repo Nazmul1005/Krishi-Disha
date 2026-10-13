@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/../config/db.php';
 requireAuth(['admin']);
+require_once __DIR__.'/../includes/content.php';
 
 $msg = ''; $err = '';
 $filter = $_GET['filter'] ?? 'pending';
@@ -10,11 +11,13 @@ $filter = $_GET['filter'] ?? 'pending';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['approve'])) {
     verifyCsrf();
     $id  = (int)$_POST['approve'];
-    $row = $pdo->prepare("SELECT * FROM DATA_PROPOSAL WHERE id=?"); $row->execute([$id]); $row = $row->fetch();
+    $row = $pdo->prepare("SELECT * FROM DATA_PROPOSAL WHERE id=? AND status='pending'"); $row->execute([$id]); $row = $row->fetch();
     if ($row) {
         $data = json_decode($row['proposed_data'], true);
         try {
             $pdo->beginTransaction();
+            $lock=$pdo->prepare("SELECT id FROM DATA_PROPOSAL WHERE id=? AND status='pending' FOR UPDATE");$lock->execute([$id]);if(!$lock->fetchColumn()) throw new InvalidArgumentException('Proposal already processed.');
+            validateProposal($row['section'],$data);
             if ($row['section'] === 'crop') {
                 $pdo->prepare("INSERT INTO CROP (name,scientific_name,local_name,origin,history,trade_status,season,category,image)
                                VALUES (?,?,?,?,?,?,?,?,?)")
@@ -26,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['approve'])) {
             } elseif ($row['section'] === 'disease') {
                 $pdo->prepare("INSERT INTO DISEASE (name,symptoms,solution,affected_part,image) VALUES (?,?,?,?,?)")
                     ->execute([$data['name']??'', $data['symptoms']??'', $data['solution']??'', $data['affected_part']??'', $data['image']??null]);
-                $did = $pdo->lastInsertId();
+                $target = $did = (int)$pdo->lastInsertId();
                 // Link crops by name if provided
                 if (!empty($data['crop_names'])) {
                     foreach (explode(',', $data['crop_names']) as $cname) {
@@ -39,9 +42,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['approve'])) {
                     ->execute([$data['crop_id']??0, $data['region']??'', $data['soil_type']??'', $data['season']??'all', $data['suitability_score']??5]);
             } elseif ($row['section'] === 'nutrition') {
                 // Nutrient retention data belongs in NUTRIENT_RETENTION, not CROP_VITAMIN.
-                $pdo->prepare("INSERT INTO NUTRIENT_RETENTION (crop_id,vitamin_id,method_id,retention_percentage) VALUES (?,?,?,?)")
-                    ->execute([$data['crop_id']??0, $data['vitamin_id']??0, $data['method_id']??0, $data['retention_percentage']??0]);
+                $pdo->prepare("INSERT INTO NUTRIENT_RETENTION (crop_id,vitamin_id,method_id,retention_percentage,preparation_notes) VALUES (?,?,?,?,?)")
+                    ->execute([$data['crop_id']??0, $data['vitamin_id']??0, $data['method_id']??0, $data['retention_percentage']??0,$data['preparation_notes']??'']);
             }
+            if($row['section']!=='disease') $target=(int)$pdo->lastInsertId();
+            $table=['crop'=>'CROP','disease'=>'DISEASE','recommender'=>'REGION_CROP','nutrition'=>'NUTRIENT_RETENTION'][$row['section']];
+            $pdo->prepare("UPDATE `$table` SET source_url=?,review_status='reviewed',reviewed_by=?,reviewed_at=NOW() WHERE id=?")->execute([$data['source_url'],$_SESSION['user_id'],$target]);
+            if(!empty($data['image']) && preg_match('/^media\.php\?id=([a-f0-9]{32})$/D',$data['image'],$media)) $pdo->prepare("UPDATE MEDIA SET status='approved' WHERE id=? AND owner_id=?")->execute([$media[1],$row['user_id']]);
+            audit($pdo,'proposal.approved','DATA_PROPOSAL',$id);
             $pdo->prepare("UPDATE DATA_PROPOSAL SET status='approved', reviewed_by=?, reviewed_at=NOW() WHERE id=?")
                 ->execute([$_SESSION['user_id'], $id]);
             $pdo->commit();
@@ -60,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reject'])) {
     verifyCsrf();
     $id = (int)$_POST['reject'];
     $reason = trim($_POST['reason'] ?? '');
-    $pdo->prepare("UPDATE DATA_PROPOSAL SET status='rejected', reviewed_by=?, reviewed_at=NOW(), admin_notes=? WHERE id=?")
+    $pdo->prepare("UPDATE DATA_PROPOSAL SET status='rejected', reviewed_by=?, reviewed_at=NOW(), admin_notes=? WHERE id=? AND status='pending'")
         ->execute([$_SESSION['user_id'], $reason, $id]);
     flash('warning', 'Proposal rejected.');
     header('Location: proposals.php?filter=' . urlencode($filter));
@@ -84,11 +92,11 @@ $page_title = 'Content Proposals';
 <?php include __DIR__ . '/../includes/header.php'; ?>
 <div class="layout-wrapper">
 <?php include __DIR__ . '/../includes/sidebar.php'; ?>
-<div class="main-content">
+<div class="main-content" id="main-content" tabindex="-1">
 
 <div class="topbar">
     <div class="d-flex align-items-center gap-3">
-        <button id="sidebarToggle" class="btn btn-sm d-lg-none" style="border:none;font-size:20px;"><i class="fa-solid fa-bars"></i></button>
+        <button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none;font-size:20px;"><i class="fa-solid fa-bars"></i></button>
         <div class="topbar-title"><i class="fa-solid fa-inbox me-2" style="color:var(--primary);"></i>Content Proposals</div>
     </div>
     <div class="topbar-actions">
@@ -134,9 +142,9 @@ $page_title = 'Content Proposals';
                 <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;">
                     <!-- Photo preview -->
                     <?php $imgKey = $p['section']==='crop' ? 'image' : ($p['section']==='disease' ? 'image' : null); ?>
-                    <?php if ($imgKey && !empty($data[$imgKey]) && file_exists(__DIR__.'/../'.$data[$imgKey])): ?>
+                    <?php if ($imgKey && !empty($data[$imgKey]) && mediaAvailable($data[$imgKey])): ?>
                     <div style="flex-shrink:0;">
-                        <img src="/KrishiDisha/<?= htmlspecialchars($data[$imgKey]) ?>" style="width:90px;height:70px;object-fit:cover;border-radius:10px;">
+                        <img alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($data[$imgKey]) ?>" style="width:90px;height:70px;object-fit:cover;border-radius:10px;">
                     </div>
                     <?php endif; ?>
 
@@ -146,7 +154,7 @@ $page_title = 'Content Proposals';
                             <?php $secIcons = ['crop'=>'🌱','disease'=>'🦠','recommender'=>'📍','nutrition'=>'🧪']; ?>
                             <span style="font-size:20px;"><?= $secIcons[$p['section']]??'📝' ?></span>
                             <div style="font-weight:700;font-size:15px;"><?= htmlspecialchars($p['title']) ?></div>
-                            <span class="badge-kd badge-info" style="font-size:10px;text-transform:capitalize;"><?= ucfirst($p['section']) ?></span>
+                            <span class="badge-kd badge-info" style="font-size:10px;text-transform:capitalize;"><?= e(ucfirst($p['section'])) ?></span>
                             <?php
                                 $sc = ['pending'=>'badge-warning','approved'=>'badge-success','rejected'=>'badge-danger'];
                                 echo "<span class=\"badge-kd {$sc[$p['status']]}\" style=\"font-size:10px;\">".ucfirst($p['status'])."</span>";
@@ -154,7 +162,7 @@ $page_title = 'Content Proposals';
                         </div>
                         <div style="font-size:12px;color:var(--text-muted);">
                             Submitted by <strong style="color:var(--text);"><?= htmlspecialchars($p['user_name']) ?></strong>
-                            (<?= $p['user_email'] ?>)
+                            (<?= e($p['user_email']) ?>)
                             · <?= date('d M Y, h:i a', strtotime($p['created_at'])) ?>
                         </div>
 
@@ -169,14 +177,14 @@ $page_title = 'Content Proposals';
                     <!-- Actions -->
                     <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0;">
                         <?php if ($p['status'] === 'pending'): ?>
-                        <form method="POST" action="proposals.php?filter=<?= e($filter) ?>" style="margin:0;">
+                        <form method="POST" action="proposals.php?filter=<?= e($filter) ?>" style="margin:0;"><?= csrfField() ?><?= requestKeyField() ?>
                             <?= csrfField() ?>
-                            <input type="hidden" name="approve" value="<?= $p['id'] ?>">
+                            <input type="hidden" name="approve" value="<?= e($p['id']) ?>">
                             <button type="submit" class="btn-kd btn-kd-primary" data-confirm="Approve and add this to the platform?" style="padding:6px 14px;font-size:12px;width:100%;justify-content:center;">
                                 <i class="fa-solid fa-check"></i> Approve
                             </button>
                         </form>
-                        <button onclick="showRejectModal(<?= $p['id'] ?>)" class="btn-kd btn-kd-danger" style="padding:6px 14px;font-size:12px;">
+                        <button data-reject-id="<?= e($p['id']) ?>" class="btn-kd btn-kd-danger" style="padding:6px 14px;font-size:12px;">
                             <i class="fa-solid fa-times"></i> Reject
                         </button>
                         <?php elseif ($p['status'] === 'approved'): ?>
@@ -202,7 +210,7 @@ $page_title = 'Content Proposals';
 
 <!-- Reject Modal -->
 <div id="rejectModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
-    <form method="POST" action="proposals.php?filter=<?= e($filter) ?>" style="background:var(--surface2);border-radius:16px;padding:28px;max-width:420px;width:90%;box-shadow:0 24px 48px rgba(0,0,0,0.3);">
+    <form method="POST" action="proposals.php?filter=<?= e($filter) ?>" style="background:var(--surface2);border-radius:16px;padding:28px;max-width:420px;width:90%;box-shadow:0 24px 48px rgba(0,0,0,0.3);"><?= csrfField() ?><?= requestKeyField() ?>
         <?= csrfField() ?>
         <input type="hidden" name="reject" id="rejectId" value="">
         <h5 style="margin-bottom:16px;"><i class="fa-solid fa-times-circle me-2" style="color:var(--danger);"></i>Reject Proposal</h5>
@@ -212,14 +220,11 @@ $page_title = 'Content Proposals';
         </div>
         <div style="display:flex;gap:10px;margin-top:16px;">
             <button type="submit" class="btn-kd btn-kd-danger" style="flex:1;justify-content:center;"><i class="fa-solid fa-times"></i> Reject</button>
-            <button type="button" onclick="closeRejectModal()" class="btn-kd btn-kd-outline" style="flex:1;justify-content:center;">Cancel</button>
+            <button type="button" data-close-reject class="btn-kd btn-kd-outline" style="flex:1;justify-content:center;">Cancel</button>
         </div>
     </form>
 </div>
 
-<script>
-function showRejectModal(id) { document.getElementById('rejectId').value = id; document.getElementById('rejectModal').style.display='flex'; }
-function closeRejectModal() { document.getElementById('rejectModal').style.display='none'; document.getElementById('rejectId').value=''; }
-</script>
+
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

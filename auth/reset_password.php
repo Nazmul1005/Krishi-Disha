@@ -24,20 +24,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['password'] ?? '';
     $confirm  = $_POST['confirm_password'] ?? '';
 
-    if (strlen($password) < 6) {
-        $error = 'Password must be at least 6 characters.';
+    if (strlen($password) < 12 || strlen($password)>72) {
+        $error = 'Password must be between 12 and 72 characters.';
     } elseif ($password !== $confirm) {
         $error = 'Passwords do not match.';
     } else {
-        $userId = consumeAuthToken($pdo, $token, 'password_reset');
-        if ($userId === null) {
-            $error = 'This reset link is invalid or has expired. Please request a new one.';
-            $token = '';
-        } else {
-            $hash = password_hash($password, PASSWORD_DEFAULT);
-            $pdo->prepare("UPDATE USER SET password_hash=? WHERE id=?")->execute([$hash, $userId]);
-            $success = 'Your password has been reset. You can now log in.';
-        }
+        throttle($pdo,'reset-ip',$_SERVER['REMOTE_ADDR'] ?? '',10);
+        $userId=transaction($pdo,function()use($pdo,$token,$password) {
+            $uid=consumeAuthToken($pdo,$token,'password_reset');
+            if($uid!==null) {
+                $pdo->prepare('UPDATE USER SET password_hash=?,auth_version=auth_version+1 WHERE id=?')->execute([password_hash($password,PASSWORD_DEFAULT),$uid]);
+                $pdo->prepare("UPDATE AUTH_TOKEN SET used=1 WHERE user_id=? AND type='password_reset'")->execute([$uid]);
+            }
+            return $uid;
+        });
+        if($userId===null) { $error='This reset link is invalid or has expired.'; $token=''; }
+        else $success='Password reset. Previous sessions have been signed out.';
     }
 }
 
@@ -66,16 +68,16 @@ $page_title  = 'Set New Password';
             </a>
         <?php else: ?>
             <h2>Choose a new password</h2>
-            <p class="sub">Make it at least 6 characters.</p>
+            <p class="sub">Make it between 12 and 72 characters.</p>
             <?php if ($error): ?>
             <div class="alert-kd alert-kd-error"><i class="fa-solid fa-circle-exclamation"></i> <?= e($error) ?></div>
             <?php endif; ?>
-            <form method="POST" class="form-kd" data-validate>
+            <form method="POST" class="form-kd" data-validate><?= csrfField() ?><?= requestKeyField() ?>
                 <?= csrfField() ?>
                 <input type="hidden" name="token" value="<?= e($token) ?>">
                 <div class="form-group">
                     <label>New Password</label>
-                    <input type="password" name="password" class="form-control" placeholder="Min 6 characters" required>
+                    <input type="password" name="password" class="form-control" placeholder="12–72 characters" required>
                 </div>
                 <div class="form-group">
                     <label>Confirm Password</label>

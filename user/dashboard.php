@@ -5,7 +5,7 @@ requireAuth(['general']);
 
 $uid = $_SESSION['user_id'];
 $orders = $pdo->prepare("SELECT COUNT(*) FROM `ORDER` WHERE user_id=?"); $orders->execute([$uid]); $oc = $orders->fetchColumn();
-$spent  = $pdo->prepare("SELECT COALESCE(SUM(total_price),0) FROM `ORDER` WHERE user_id=? AND status='delivered'"); $spent->execute([$uid]); $sp = $spent->fetchColumn();
+$spent  = $pdo->prepare("SELECT COALESCE(SUM(amount),0) FROM PAYMENT WHERE payer_id=? AND status='completed' AND verified_at IS NOT NULL AND refund_requested_at IS NULL"); $spent->execute([$uid]); $sp = $spent->fetchColumn();
 
 $my_orders = $pdo->prepare("SELECT o.*, c.name as crop_name, p.price_per_kg FROM `ORDER` o JOIN PRODUCT p ON o.product_id=p.id JOIN CROP c ON p.crop_id=c.id WHERE o.user_id=? ORDER BY o.created_at DESC LIMIT 6");
 $my_orders->execute([$uid]);
@@ -16,17 +16,17 @@ $page_title = 'My Dashboard';
 <?php include __DIR__ . '/../includes/header.php'; ?>
 <div class="layout-wrapper">
 <?php include __DIR__ . '/../includes/sidebar.php'; ?>
-<div class="main-content">
+<div class="main-content" id="main-content" tabindex="-1">
     <div class="topbar">
         <div class="d-flex align-items-center gap-3">
-            <button id="sidebarToggle" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
+            <button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
             <div class="topbar-title">👤 My Dashboard</div>
         </div>
     </div>
     <div class="page-body">
         <div class="row g-4 mb-4">
             <div class="col-md-6"><div class="stat-card blue"><div class="stat-icon blue"><i class="fa-solid fa-cart-shopping"></i></div><div><div class="stat-value"><?= $oc ?></div><div class="stat-label">My Orders</div></div></div></div>
-            <div class="col-md-6"><div class="stat-card gold"><div class="stat-icon gold"><i class="fa-solid fa-coins"></i></div><div><div class="stat-value">৳<?= number_format($sp) ?></div><div class="stat-label">Total Spent</div></div></div></div>
+            <div class="col-md-6"><div class="stat-card gold"><div class="stat-icon gold"><i class="fa-solid fa-coins"></i></div><div><div class="stat-value">৳<?= number_format($sp) ?></div><div class="stat-label">Cash paid</div></div></div></div>
         </div>
 
         <div class="row g-4">
@@ -40,9 +40,9 @@ $page_title = 'My Dashboard';
                             <?php foreach ($my_orders as $o): ?>
                             <tr>
                                 <td style="font-weight:600;"><?= htmlspecialchars($o['crop_name']) ?></td>
-                                <td><?= $o['quantity_kg'] ?> kg</td>
+                                <td><?= e($o['quantity_kg']) ?> kg</td>
                                 <td style="color:var(--primary); font-weight:700;">৳<?= number_format($o['total_price']) ?></td>
-                                <td><?php $sc=['pending'=>'badge-warning','confirmed'=>'badge-info','delivered'=>'badge-success','cancelled'=>'badge-danger']; ?><span class="badge-kd <?= $sc[$o['status']]??'badge-muted' ?>"><?= ucfirst($o['status']) ?></span></td>
+                                <td><?php $sc=['pending'=>'badge-warning','confirmed'=>'badge-info','delivered'=>'badge-success','cancelled'=>'badge-danger']; ?><span class="badge-kd <?= $sc[$o['status']]??'badge-muted' ?>"><?= e(ucfirst($o['status'])) ?></span></td>
                             </tr>
                             <?php endforeach; ?>
                             <?php if (empty($my_orders)): ?><tr><td colspan="4" class="text-center py-4" style="color:var(--text-muted);">No orders yet. <a href="/KrishiDisha/user/marketplace.php">Start shopping</a></td></tr><?php endif; ?>

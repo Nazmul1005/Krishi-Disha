@@ -1,6 +1,10 @@
 const { test, expect } = require('@playwright/test');
 const crypto = require('node:crypto');
+const { AxeBuilder } = require('@axe-core/playwright');
 const fixtures = require('../../.browser-fixtures.json');
+test.beforeAll(() => {
+  require('node:child_process').execFileSync('docker', ['compose','run','--rm','--no-deps','-v',process.cwd() + ':/app','migrate','php','tests/browser-state.php','reset_limits'], { stdio: 'pipe' });
+});
 function code(secret) {
   let bits = ''; const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
   for (const char of secret) bits += alphabet.indexOf(char).toString(2).padStart(5, '0');
@@ -32,6 +36,7 @@ test('all roles can access their pages without browser or server errors', async 
   for (const [role, paths] of Object.entries(routes)) {
     const context = await browser.newContext(info.project.use); const page = await context.newPage(); const errors = []; page.on('pageerror', error => errors.push(error.message));
     await login(page, fixtures.accounts[info.project.name][role], role);
+    if (role === 'admin') expect((await new AxeBuilder({ page }).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze()).violations).toEqual([]);
     for (const path of paths) expect((await page.goto('/KrishiDisha/' + role + '/' + path + '.php')).status()).toBe(200);
     for (const path of ['profile', 'orders', 'payments', 'notifications', 'support']) expect((await page.goto('/KrishiDisha/modules/' + path + '.php')).status()).toBe(200);
     expect(errors).toEqual([]); await context.close();
@@ -41,12 +46,12 @@ test('buyer reserves produce and farmer can fulfill it with separate cash collec
   const accounts = fixtures.accounts[info.project.name];
   const buyer = await browser.newContext(info.project.use); const page = await buyer.newPage(); await login(page, accounts.general, 'general');
   await page.goto('/KrishiDisha/user/marketplace.php'); const form = page.locator('form').filter({ has: page.locator('input[name="product_id"][value="' + accounts.product + '"]') });
-  await form.locator('[name="quantity_kg"]').fill('2'); await form.locator('[name="delivery_address"]').fill('Local test market pickup'); await form.locator('[name="contact_phone"]').fill('01700000000'); page.on('dialog', dialog => dialog.accept()); await form.locator('[name="order_farmer"]').click();
+  await form.locator('[name="quantity_kg"]').fill('2'); await form.locator('[name="delivery_address"]').fill('Local test market pickup'); await form.locator('[name="contact_phone"]').fill('01700000000'); page.on('dialog', dialog => dialog.accept()); await form.locator('[name="order_farmer"]').click(); await page.locator('#confirmDialog button[value="confirm"]').click();
   await expect(page.locator('body')).toContainText('reserved'); await page.goto('/KrishiDisha/modules/orders.php'); await expect(page.locator('body')).toContainText('2.00 kg');
   const seller = await browser.newContext(info.project.use); const farm = await seller.newPage(); await login(farm, accounts.farmer, 'farmer'); await farm.goto('/KrishiDisha/farmer/orders.php');
   await farm.locator('button[value="confirmed"]').first().click(); await farm.locator('button[value="delivered"]').first().click();
   await farm.goto('/KrishiDisha/modules/payments.php'); const collect = farm.locator('form').filter({ has: farm.locator('button[value="collect"]') }).first();
-  await collect.locator('[name="amount"]').fill('40'); await collect.locator('[name="reference"]').fill('browser-cash-receipt'); farm.on('dialog', dialog => dialog.accept()); await collect.locator('button[value="collect"]').click(); await expect(farm.locator('body')).toContainText('collection verified');
+  await collect.locator('[name="amount"]').fill('40'); await collect.locator('[name="reference"]').fill('browser-cash-receipt'); farm.on('dialog', dialog => dialog.accept()); await collect.locator('button[value="collect"]').click(); await farm.locator('#confirmDialog button[value="confirm"]').click(); await expect(farm.locator('body')).toContainText('collection verified');
   await buyer.close(); await seller.close();
 });
 test('calculator works with local units, costs and scenarios', async ({ page }, info) => {
@@ -66,5 +71,15 @@ test('suspension and password change invalidate existing sessions', async ({ bro
   const second = await browser.newContext(info.project.use); const b = await second.newPage(); await login(b, account, 'general');
   await a.goto('/KrishiDisha/modules/profile.php'); await a.locator('#current_password').fill(account.password); await a.locator('#new_password').fill('Changed-test-password-2026'); await a.locator('#confirm_password').fill('Changed-test-password-2026'); await a.locator('[name="change_password"]').click();
   await expect(a).toHaveURL(/auth\/login.php/); await b.goto('/KrishiDisha/user/dashboard.php'); await expect(b).toHaveURL(/auth\/login.php/);
+  execFileSync('docker', ['compose', 'run', '--rm', '--no-deps', '-v', process.cwd() + ':/app', 'migrate', 'php', 'tests/account-action.php', String(account.id), 'reset_password'], { stdio: 'pipe' });
   await first.close(); await second.close();
+});
+
+test('login rate limits remain enforced with an actionable message', async ({ request }) => {
+  const response = await request.get('/KrishiDisha/auth/login.php?role=general');
+  const token = (await response.text()).match(/name="csrf_token" value="([a-f0-9]+)"/)[1];
+  let attempt;
+  for (let i = 0; i < 11; i++) attempt = await request.post('/KrishiDisha/auth/login.php?role=general', { form: { csrf_token: token, role: 'general', email: 'throttle-fixture@example.test', password: 'incorrect-test-password' } });
+  expect(attempt.status()).toBe(429); expect(attempt.headers()['retry-after']).toBe('900');
+  expect(await attempt.text()).toContain('Too many sign-in attempts. Wait and try again.');
 });

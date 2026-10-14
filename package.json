@@ -1,6 +1,15 @@
 {
   "name": "krishi-disha",
   "private": true,
-  "scripts": {"test": "node tests/calculator.test.js", "test:browser": "playwright test", "assets": "node bin/assets.js"},
-  "devDependencies": {"@fortawesome/fontawesome-free": "6.7.2", "@playwright/test": "1.64.0", "bootstrap": "5.3.8"}
+  "scripts": {
+    "test": "node tests/calculator.test.js",
+    "test:browser": "playwright test",
+    "assets": "node bin/assets.js"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@fortawesome/fontawesome-free": "6.7.2",
+    "@playwright/test": "1.64.0",
+    "bootstrap": "5.3.8"
+  }
 }

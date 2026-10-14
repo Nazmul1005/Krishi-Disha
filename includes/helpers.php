@@ -10,6 +10,8 @@ require_once __DIR__ . '/../config/app.php';
 require_once __DIR__ . '/security.php';
 require_once __DIR__ . '/uploads.php';
 require_once __DIR__ . '/i18n.php';
+require_once __DIR__ . '/ui.php';
+require_once __DIR__ . '/pagination.php';
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -73,9 +75,9 @@ function renderFlash(): string
     $html = '';
     foreach ($_SESSION['flash'] as $f) {
         [$cls, $icon] = $map[$f['type']] ?? $map['info'];
-        $html .= '<div class="alert-kd ' . $cls . '" data-autohide="5000">'
-               . '<i class="fa-solid ' . $icon . '"></i> '
-               . htmlspecialchars($f['message']) . '</div>';
+        $html .= '<div class="alert-kd ' . $cls . '" role="'.($f['type']==='error'?'alert':'status').'"'.($f['type']==='success'?' data-toast="true"':'').'>'
+               . '<i class="fa-solid ' . $icon . '" aria-hidden="true"></i> '
+               . '<span>'.e($f['message']).'</span><button type="button" data-dismiss-alert aria-label="Dismiss message">×</button></div>';
     }
     unset($_SESSION['flash']);
     return $html;
@@ -102,11 +104,7 @@ function taka($amount): string
  */
 function emptyState(string $title, string $subtitle = '', string $icon = '📭'): string
 {
-    return '<div style="text-align:center;padding:60px 20px;color:var(--text-muted);">'
-         . '<div style="font-size:56px;margin-bottom:14px;">' . $icon . '</div>'
-         . '<div style="font-size:17px;font-weight:700;color:var(--text);">' . e($title) . '</div>'
-         . ($subtitle ? '<div style="font-size:14px;margin-top:6px;">' . e($subtitle) . '</div>' : '')
-         . '</div>';
+    return uiEmpty($title,$subtitle ?: 'New activity will appear here. Explore the crop library while you wait.','/KrishiDisha/modules/encyclopedia.php','Browse crops',str_starts_with($icon,'fa-')?$icon:'fa-seedling');
 }
 
 /* ============================================================

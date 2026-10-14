@@ -55,7 +55,7 @@ Server-rendered information stays visible without JavaScript. JavaScript enhance
 
 - Featured produce/tours come from approved, verified providers and published, in-stock/active records. Missing seller/host images are labeled; reference photography is never passed off as a seller's photograph.
 - Landing counts come from current database queries. Prices are seller asking prices, labeled with the listing date.
-- Dashboard money comes from verified cash records. Refund-review/refunded records are excluded. Net proceeds are after platform commission; they do not represent profit after production/procurement costs.
+- Dashboard money comes from verified cash records. Refund-review/refunded records are excluded. Allocated net proceeds are after platform commission and can include transfers still due to a payee; they do not represent money already paid to that payee or profit after production/procurement costs.
 - Consultation read positions change only through authenticated, CSRF-protected POST requests by a participant. Reading a page does not create an unprotected mutation.
 - Agricultural reference review/source/date requirements and private media validation remain in force.
 

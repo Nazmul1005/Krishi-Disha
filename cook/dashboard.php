@@ -41,7 +41,7 @@ $page_title = 'Cook Dashboard';
             <div class="col-6 col-md-3"><div class="stat-card green"><div class="stat-icon green"><i class="fa-solid fa-book-open"></i></div><div><div class="stat-value"><?= $rc ?></div><div class="stat-label">Recipes Created</div></div></div></div>
             <div class="col-6 col-md-3"><div class="stat-card blue"><div class="stat-icon blue"><i class="fa-solid fa-receipt"></i></div><div><div class="stat-value"><?= $oc ?></div><div class="stat-label">Total Orders</div></div></div></div>
             <div class="col-6 col-md-3"><div class="stat-card gold"><div class="stat-icon gold"><i class="fa-solid fa-clock"></i></div><div><div class="stat-value"><?= $pend ?></div><div class="stat-label">Pending Orders</div></div></div></div>
-            <div class="col-6 col-md-3"><div class="stat-card green"><div class="stat-icon green"><i class="fa-solid fa-coins"></i></div><div><div class="stat-value">৳<?= number_format($earn) ?></div><div class="stat-label">Earned</div></div></div></div>
+            <div class="col-6 col-md-3"><div class="stat-card green"><div class="stat-icon green"><i class="fa-solid fa-coins"></i></div><div><div class="stat-value">৳<?= number_format($earn) ?></div><div class="stat-label">Net proceeds allocated</div></div></div></div>
         </div>
 
         <div class="row g-4">

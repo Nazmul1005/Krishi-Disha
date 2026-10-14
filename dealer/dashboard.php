@@ -50,7 +50,7 @@ $page_title = 'Dealer Dashboard';
             <div class="col-6 col-md-3"><div class="stat-card blue"><div class="stat-icon blue"><i class="fa-solid fa-boxes-stacked"></i></div><div><div class="stat-value"><?= $inv ?></div><div class="stat-label">Inventory Items</div></div></div></div>
             <div class="col-6 col-md-3"><div class="stat-card green"><div class="stat-icon green"><i class="fa-solid fa-weight-hanging"></i></div><div><div class="stat-value"><?= number_format($st,0) ?> kg</div><div class="stat-label">Stock Remaining</div></div></div></div>
             <div class="col-6 col-md-3"><div class="stat-card gold"><div class="stat-icon gold"><i class="fa-solid fa-cart-shopping"></i></div><div><div class="stat-value"><?= $order_count ?></div><div class="stat-label">Total Orders</div></div></div></div>
-            <div class="col-6 col-md-3"><div class="stat-card green"><div class="stat-icon green"><i class="fa-solid fa-coins"></i></div><div><div class="stat-value">৳<?= number_format($revenue) ?></div><div class="stat-label">Collected net sales</div></div></div></div>
+            <div class="col-6 col-md-3"><div class="stat-card green"><div class="stat-icon green"><i class="fa-solid fa-coins"></i></div><div><div class="stat-value">৳<?= number_format($revenue) ?></div><div class="stat-label">Net proceeds allocated</div></div></div></div>
         </div>
 
         <div class="row g-4">

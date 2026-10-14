@@ -67,7 +67,7 @@ $page_title = 'Farmer Dashboard';
             <div class="col-6 col-md-3">
                 <div class="stat-card gold">
                     <div class="stat-icon gold"><i class="fa-solid fa-coins"></i></div>
-                    <div><div class="stat-value">৳<?= number_format($rev) ?></div><div class="stat-label">Net proceeds collected</div></div>
+                    <div><div class="stat-value">৳<?= number_format($rev) ?></div><div class="stat-label">Net proceeds allocated</div></div>
                 </div>
             </div>
             <div class="col-6 col-md-3">

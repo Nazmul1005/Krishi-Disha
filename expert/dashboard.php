@@ -51,7 +51,7 @@ $page_title = 'Expert Dashboard';
             <div class="col-6 col-md-3"><div class="stat-card blue"><div class="stat-icon blue"><i class="fa-solid fa-calendar-days"></i></div><div><div class="stat-value"><?= $ts ?></div><div class="stat-label">Total Sessions</div></div></div></div>
             <div class="col-6 col-md-3"><div class="stat-card green"><div class="stat-icon green"><i class="fa-solid fa-circle-check"></i></div><div><div class="stat-value"><?= $cs ?></div><div class="stat-label">Completed</div></div></div></div>
             <div class="col-6 col-md-3"><div class="stat-card gold"><div class="stat-icon gold"><i class="fa-solid fa-clock"></i></div><div><div class="stat-value"><?= $ps ?></div><div class="stat-label">Pending</div></div></div></div>
-            <div class="col-6 col-md-3"><div class="stat-card green"><div class="stat-icon green"><i class="fa-solid fa-coins"></i></div><div><div class="stat-value">৳<?= number_format($earn) ?></div><div class="stat-label">Earned</div></div></div></div>
+            <div class="col-6 col-md-3"><div class="stat-card green"><div class="stat-icon green"><i class="fa-solid fa-coins"></i></div><div><div class="stat-value">৳<?= number_format($earn) ?></div><div class="stat-label">Net proceeds allocated</div></div></div></div>
         </div>
 
         <div class="card-kd">

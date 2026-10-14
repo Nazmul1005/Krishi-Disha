@@ -46,7 +46,7 @@ function dashboardData(PDO $pdo,int $uid): array {
     $eligible="p.status='completed' AND p.verified_at IS NOT NULL AND p.refund_requested_at IS NULL";
     if($role==='admin') {$money="SELECT p.verified_at,ac.commission_amount AS amount FROM ADMIN_COMMISSION ac JOIN PAYMENT p ON ac.payment_id=p.id WHERE $eligible AND ac.reversed=0";$moneyParams=[];$moneyLabel='Verified commission';}
     elseif(in_array($role,['general','tourist'],true)) {$money="SELECT p.verified_at,p.amount FROM PAYMENT p WHERE p.payer_id=? AND $eligible";$moneyParams=[$uid];$moneyLabel='Cash paid';}
-    else {$money="SELECT p.verified_at,s.net_amount AS amount FROM PAYMENT_SHARE s JOIN PAYMENT p ON s.payment_id=p.id WHERE s.payee_id=? AND $eligible";$moneyParams=[$uid];$moneyLabel='Collected net proceeds';}
+    else {$money="SELECT p.verified_at,s.net_amount AS amount FROM PAYMENT_SHARE s JOIN PAYMENT p ON s.payment_id=p.id WHERE s.payee_id=? AND $eligible";$moneyParams=[$uid];$moneyLabel='Allocated net proceeds';}
     $stmt=$pdo->prepare("SELECT COALESCE(SUM(amount),0) FROM ($money) m");$stmt->execute($moneyParams);$moneyTotal=$stmt->fetchColumn();
     $stmt=$pdo->prepare("SELECT DATE_FORMAT(verified_at,'%Y-%m') AS month,SUM(amount) AS value FROM ($money) m WHERE verified_at>=? GROUP BY month ORDER BY month");$stmt->execute(array_merge($moneyParams,[$start->format('Y-m-d')]));$moneySeries=$stmt->fetchAll(PDO::FETCH_KEY_PAIR);
     $series=[];for($i=0;$i<6;$i++){$month=$start->modify("+$i months")->format('Y-m');$series[]=['month'=>$month,'activity'=>(int)($activitySeries[$month] ?? 0),'money'=>(float)($moneySeries[$month] ?? 0)];}

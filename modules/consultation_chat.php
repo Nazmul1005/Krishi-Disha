@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/../config/db.php';
 requireAuth(); // Any logged in user
+require_once __DIR__.'/../includes/dashboard.php';
 
 $cid = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $uid = $_SESSION['user_id'];
@@ -17,6 +18,11 @@ $c = $consult->fetch();
 
 if (!$c || ($c['client_id'] !== $uid && $c['provider_id'] !== $uid)) {
     die("Unauthorized access or consultation not found.");
+}
+
+if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['mark_read'])) {
+    markConsultationRead($pdo,(int)$uid,$cid,(int)($_POST['last_message_id'] ?? 0));
+    header('Location: consultation_chat.php?id='.$cid);exit;
 }
 
 // Handle sending message
@@ -37,6 +43,7 @@ $msgs = $pdo->prepare("SELECT m.*, u.name, u.role, u.profile_image FROM CONSULTA
 $msgs->execute([$cid]);
 $messages = array_reverse($msgs->fetchAll());
 
+$lastVisible=$messages ? (int)end($messages)['id'] : 0;
 $page_title = 'Consultation Chat';
 $other_party_name = ($c['client_id'] === $uid) ? $c['provider_name'] : $c['client_name'];
 ?>
@@ -51,7 +58,7 @@ $other_party_name = ($c['client_id'] === $uid) ? $c['provider_name'] : $c['clien
 .msg-bubble { padding:12px 16px; border-radius:16px; font-size:14px; line-height:1.5; }
 .chat-msg.me .msg-bubble { background:#7c3aed; color:#fff; border-bottom-right-radius:4px; }
 .chat-msg.them .msg-bubble { background:#fff; color:#334155; border:1px solid #e2e8f0; border-bottom-left-radius:4px; }
-.msg-info { font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:6px; }
+.msg-info { font-size:11px; color:#52665d; display:flex; align-items:center; gap:6px; }
 .chat-msg.me .msg-info { justify-content:flex-end; }
 .chat-input { padding:20px; background:#fff; border-top:1px solid #e2e8f0; display:flex; gap:12px; align-items:center; }
 .chat-input textarea { flex:1; resize:none; border:1px solid #cbd5e1; border-radius:24px; padding:12px 20px; font-size:14px; outline:none; transition:0.2s; height:46px; }
@@ -65,8 +72,8 @@ $other_party_name = ($c['client_id'] === $uid) ? $c['provider_name'] : $c['clien
 <div class="main-content" id="main-content" tabindex="-1">
     <div class="topbar">
         <div class="d-flex align-items-center gap-3">
-            <button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
-            <div class="topbar-title"><i class="fa-solid fa-comments me-2" style="color:#7c3aed;"></i>Discussion</div>
+
+            <h1 class="topbar-title"><i class="fa-solid fa-comments me-2" style="color:#7c3aed;"></i>Discussion</h1>
         </div>
         <div>
             <?php
@@ -79,7 +86,8 @@ $other_party_name = ($c['client_id'] === $uid) ? $c['provider_name'] : $c['clien
         </div>
     </div>
 
-    <div class="page-body">
+    <div class="page-body"><?php include __DIR__ . '/../includes/topbar.php'; ?>
+        <form method="POST" class="chat-read-form"><?= csrfField() ?><input type="hidden" name="last_message_id" value="<?= $lastVisible ?>"><button class="btn-kd btn-kd-outline" name="mark_read" value="1">Mark displayed messages read</button></form>
         <div class="chat-container">
             <div class="chat-header">
                 <div>
@@ -95,7 +103,7 @@ $other_party_name = ($c['client_id'] === $uid) ? $c['provider_name'] : $c['clien
 
             <div class="chat-body" id="chatBody">
                 <?php if (empty($messages)): ?>
-                <div class="text-center" style="margin-top:auto; margin-bottom:auto; color:#94a3b8;">
+                <div class="text-center" style="margin-top:auto; margin-bottom:auto; color:#52665d;">
                     <i class="fa-solid fa-messages" style="font-size:48px; margin-bottom:16px; opacity:0.5;"></i>
                     <p>No messages yet.<br>Start the discussion by sending a message below.</p>
                 </div>

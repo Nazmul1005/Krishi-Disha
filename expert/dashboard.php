@@ -17,6 +17,7 @@ $upcoming = $pdo->prepare("SELECT c.*, u.name as client_name, u.role as client_r
 $upcoming->execute([$_SESSION['user_id']]);
 $upcoming = $upcoming->fetchAll();
 
+require_once __DIR__.'/../includes/dashboard.php';
 $page_title = 'Expert Dashboard';
 ?>
 <?php include __DIR__ . '/../includes/header.php'; ?>
@@ -25,14 +26,15 @@ $page_title = 'Expert Dashboard';
 <div class="main-content" id="main-content" tabindex="-1">
     <div class="topbar">
         <div class="d-flex align-items-center gap-3">
-            <button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
-            <div class="topbar-title">🔬 Expert Dashboard</div>
+
+            <h1 class="topbar-title"><i aria-hidden="true" class="fa-solid fa-flask"></i> Expert Dashboard</h1>
         </div>
         <div class="topbar-actions">
             <span class="badge-kd <?= ($ex['availability']??'') === 'available' ? 'badge-success' : 'badge-warning' ?>"><?= ucfirst($ex['availability'] ?? '') ?></span>
         </div>
     </div>
-    <div class="page-body">
+    <div class="page-body"><?php include __DIR__ . '/../includes/topbar.php'; ?>
+<?php include __DIR__ . '/../includes/dashboard_view.php'; ?>
         <?php if ($ex): ?>
         <div class="card-kd mb-4" style="background:linear-gradient(135deg,#4c1d95,#7c3aed); color:#fff; border:none;">
             <div class="card-body-kd">

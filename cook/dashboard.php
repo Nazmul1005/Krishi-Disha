@@ -17,6 +17,7 @@ $recent_orders = $pdo->prepare("SELECT fo.*, r.name as recipe_name, u.name as to
 $recent_orders->execute([$cid]);
 $recent_orders = $recent_orders->fetchAll();
 
+require_once __DIR__.'/../includes/dashboard.php';
 $page_title = 'Cook Dashboard';
 ?>
 <?php include __DIR__ . '/../includes/header.php'; ?>
@@ -25,8 +26,8 @@ $page_title = 'Cook Dashboard';
 <div class="main-content" id="main-content" tabindex="-1">
     <div class="topbar">
         <div class="d-flex align-items-center gap-3">
-            <button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
-            <div class="topbar-title">👩‍🍳 Cook Dashboard</div>
+
+            <h1 class="topbar-title"><i aria-hidden="true" class="fa-solid fa-utensils"></i> Cook Dashboard</h1>
         </div>
         <div class="topbar-actions">
             <span class="badge-kd <?= ($ck['availability']??'') === 'available' ? 'badge-success' : 'badge-warning' ?>">
@@ -34,7 +35,8 @@ $page_title = 'Cook Dashboard';
             </span>
         </div>
     </div>
-    <div class="page-body">
+    <div class="page-body"><?php include __DIR__ . '/../includes/topbar.php'; ?>
+<?php include __DIR__ . '/../includes/dashboard_view.php'; ?>
         <div class="row g-4 mb-4">
             <div class="col-6 col-md-3"><div class="stat-card green"><div class="stat-icon green"><i class="fa-solid fa-book-open"></i></div><div><div class="stat-value"><?= $rc ?></div><div class="stat-label">Recipes Created</div></div></div></div>
             <div class="col-6 col-md-3"><div class="stat-card blue"><div class="stat-icon blue"><i class="fa-solid fa-receipt"></i></div><div><div class="stat-value"><?= $oc ?></div><div class="stat-label">Total Orders</div></div></div></div>

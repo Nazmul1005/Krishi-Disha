@@ -17,6 +17,7 @@ $recent_products = $pdo->prepare("SELECT p.*, c.name as crop_name FROM PRODUCT p
 $recent_products->execute([$fid]);
 $recent_products = $recent_products->fetchAll();
 
+require_once __DIR__.'/../includes/dashboard.php';
 $page_title = 'Farmer Dashboard';
 ?>
 <?php include __DIR__ . '/../includes/header.php'; ?>
@@ -25,14 +26,15 @@ $page_title = 'Farmer Dashboard';
 <div class="main-content" id="main-content" tabindex="-1">
     <div class="topbar">
         <div class="d-flex align-items-center gap-3">
-            <button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
-            <div class="topbar-title">🧑‍🌾 Farmer Dashboard</div>
+
+            <h1 class="topbar-title"><i aria-hidden="true" class="fa-solid fa-tractor"></i> Farmer Dashboard</h1>
         </div>
         <div class="topbar-actions">
             <span style="font-size:13px; color:var(--text-muted);"><?= htmlspecialchars($f['farm_name'] ?? 'My Farm') ?></span>
         </div>
     </div>
-    <div class="page-body">
+    <div class="page-body"><?php include __DIR__ . '/../includes/topbar.php'; ?>
+<?php include __DIR__ . '/../includes/dashboard_view.php'; ?>
         <?php if ($f): ?>
         <div class="card-kd mb-4" style="background:linear-gradient(135deg,var(--primary-dark),var(--primary)); color:#fff; border:none;">
             <div class="card-body-kd">

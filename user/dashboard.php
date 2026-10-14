@@ -11,6 +11,7 @@ $my_orders = $pdo->prepare("SELECT o.*, c.name as crop_name, p.price_per_kg FROM
 $my_orders->execute([$uid]);
 $my_orders = $my_orders->fetchAll();
 
+require_once __DIR__.'/../includes/dashboard.php';
 $page_title = 'My Dashboard';
 ?>
 <?php include __DIR__ . '/../includes/header.php'; ?>
@@ -19,11 +20,12 @@ $page_title = 'My Dashboard';
 <div class="main-content" id="main-content" tabindex="-1">
     <div class="topbar">
         <div class="d-flex align-items-center gap-3">
-            <button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
-            <div class="topbar-title">👤 My Dashboard</div>
+
+            <h1 class="topbar-title"><i aria-hidden="true" class="fa-solid fa-user"></i> My Dashboard</h1>
         </div>
     </div>
-    <div class="page-body">
+    <div class="page-body"><?php include __DIR__ . '/../includes/topbar.php'; ?>
+<?php include __DIR__ . '/../includes/dashboard_view.php'; ?>
         <div class="row g-4 mb-4">
             <div class="col-md-6"><div class="stat-card blue"><div class="stat-icon blue"><i class="fa-solid fa-cart-shopping"></i></div><div><div class="stat-value"><?= $oc ?></div><div class="stat-label">My Orders</div></div></div></div>
             <div class="col-md-6"><div class="stat-card gold"><div class="stat-icon gold"><i class="fa-solid fa-coins"></i></div><div><div class="stat-value">৳<?= number_format($sp) ?></div><div class="stat-label">Cash paid</div></div></div></div>

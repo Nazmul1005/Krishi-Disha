@@ -15,6 +15,7 @@ $stats = [
 $recent_users = $pdo->query("SELECT id,name,email,role,status,created_at FROM USER ORDER BY created_at DESC LIMIT 8")->fetchAll();
 $recent_payments = $pdo->query("SELECT p.*, u.name as payer_name FROM PAYMENT p JOIN USER u ON p.payer_id=u.id ORDER BY p.paid_at DESC LIMIT 6")->fetchAll();
 
+require_once __DIR__.'/../includes/dashboard.php';
 $page_title = 'Admin Dashboard';
 ?>
 <?php include __DIR__ . '/../includes/header.php'; ?>
@@ -23,17 +24,16 @@ $page_title = 'Admin Dashboard';
 <div class="main-content" id="main-content" tabindex="-1">
     <div class="topbar">
         <div class="d-flex align-items-center gap-3">
-            <button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px; color:var(--primary);">
-                <i class="fa-solid fa-bars"></i>
-            </button>
-            <div class="topbar-title"><i class="fa-solid fa-gauge-high me-2" style="color:var(--primary);"></i>Admin Dashboard</div>
+
+            <h1 class="topbar-title"><i class="fa-solid fa-gauge-high me-2" style="color:var(--primary);"></i>Admin Dashboard</h1>
         </div>
         <div class="topbar-actions">
-            <span class="badge-kd badge-success"><i class="fa-solid fa-circle" style="font-size:8px;"></i> System Online</span>
+
             <span style="font-size:14px; color:var(--text-muted);"><?= date('d M Y') ?></span>
         </div>
     </div>
-    <div class="page-body">
+    <div class="page-body"><?php include __DIR__ . '/../includes/topbar.php'; ?>
+<?php include __DIR__ . '/../includes/dashboard_view.php'; ?>
         <!-- Stats -->
         <div class="row g-4 mb-4">
             <div class="col-6 col-md-4 col-xl-2">

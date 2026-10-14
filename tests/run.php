@@ -95,5 +95,8 @@ try {
     check(decryptSecret(encryptSecret('private-secret'))==='private-secret','MFA secret encryption roundtrip');
     check(e('<img src=x onerror=alert(1)>')==='&lt;img src=x onerror=alert(1)&gt;','Hostile content is escaped');
     check(totalFor('0.25','10.50')==='2.63','Money totals round in integer cents');
+    require __DIR__.'/landing.php';
+    require __DIR__.'/pagination.php';
+    require __DIR__.'/dashboard.php';
     echo "Completed $checks integration checks.\n";
 } finally { $pdo=null;$server->exec("DROP DATABASE `$database`"); }

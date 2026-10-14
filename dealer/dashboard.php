@@ -30,6 +30,7 @@ $ro = $pdo->prepare("SELECT o.id, o.quantity_kg, o.total_price, o.status,
 $ro->execute([$did]);
 $recent_orders = $ro->fetchAll();
 
+require_once __DIR__.'/../includes/dashboard.php';
 $page_title = 'Dealer Dashboard';
 ?>
 <?php include __DIR__ . '/../includes/header.php'; ?>
@@ -38,12 +39,13 @@ $page_title = 'Dealer Dashboard';
 <div class="main-content" id="main-content" tabindex="-1">
     <div class="topbar">
         <div class="d-flex align-items-center gap-3">
-            <button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
-            <div class="topbar-title">🏪 Dealer Dashboard</div>
+
+            <h1 class="topbar-title"><i aria-hidden="true" class="fa-solid fa-store"></i> Dealer Dashboard</h1>
         </div>
         <div class="topbar-actions"><span style="font-size:13px; color:var(--text-muted);"><?= htmlspecialchars($d['business_name'] ?? '') ?></span></div>
     </div>
-    <div class="page-body">
+    <div class="page-body"><?php include __DIR__ . '/../includes/topbar.php'; ?>
+<?php include __DIR__ . '/../includes/dashboard_view.php'; ?>
         <div class="row g-4 mb-4">
             <div class="col-6 col-md-3"><div class="stat-card blue"><div class="stat-icon blue"><i class="fa-solid fa-boxes-stacked"></i></div><div><div class="stat-value"><?= $inv ?></div><div class="stat-label">Inventory Items</div></div></div></div>
             <div class="col-6 col-md-3"><div class="stat-card green"><div class="stat-icon green"><i class="fa-solid fa-weight-hanging"></i></div><div><div class="stat-value"><?= number_format($st,0) ?> kg</div><div class="stat-label">Stock Remaining</div></div></div></div>

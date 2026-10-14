@@ -16,6 +16,7 @@ $recent_bookings = $pdo->prepare("SELECT tb.*, ft.title, ft.location FROM TOUR_B
 $recent_bookings->execute([$tid]);
 $recent_bookings = $recent_bookings->fetchAll();
 
+require_once __DIR__.'/../includes/dashboard.php';
 $page_title = 'Tourist Dashboard';
 ?>
 <?php include __DIR__ . '/../includes/header.php'; ?>
@@ -24,11 +25,12 @@ $page_title = 'Tourist Dashboard';
 <div class="main-content" id="main-content" tabindex="-1">
     <div class="topbar">
         <div class="d-flex align-items-center gap-3">
-            <button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
-            <div class="topbar-title">🧳 Tourist Dashboard</div>
+
+            <h1 class="topbar-title"><i aria-hidden="true" class="fa-solid fa-suitcase"></i> Tourist Dashboard</h1>
         </div>
     </div>
-    <div class="page-body">
+    <div class="page-body"><?php include __DIR__ . '/../includes/topbar.php'; ?>
+<?php include __DIR__ . '/../includes/dashboard_view.php'; ?>
         <div class="row g-4 mb-4">
             <div class="col-md-4"><div class="stat-card blue"><div class="stat-icon blue"><i class="fa-solid fa-map"></i></div><div><div class="stat-value"><?= $bc ?></div><div class="stat-label">Farm Bookings</div></div></div></div>
             <div class="col-md-4"><div class="stat-card gold"><div class="stat-icon gold"><i class="fa-solid fa-utensils"></i></div><div><div class="stat-value"><?= $fc ?></div><div class="stat-label">Food Orders</div></div></div></div>

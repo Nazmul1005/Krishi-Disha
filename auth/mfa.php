@@ -37,7 +37,7 @@ if($_SERVER['REQUEST_METHOD']==='POST') {
 }
 $page_title='Two-factor authentication';include __DIR__.'/../includes/header.php';
 ?>
-<main class="auth-page"><div class="auth-card"><h1>Two-factor authentication</h1>
+<main id="main-content" tabindex="-1" class="auth-page"><div class="auth-card"><h1>Two-factor authentication</h1>
 <?php if($error): ?><p role="alert"><?= e($error) ?></p><?php endif; ?>
 <?php if($recovery): ?><p>Save these recovery codes privately. Each works once.</p><pre><?= e(implode("\n",$recovery)) ?></pre><a class="btn-kd btn-kd-primary" href="../admin/dashboard.php">Continue</a>
 <?php else: ?>

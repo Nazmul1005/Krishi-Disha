@@ -78,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $page_title = 'Register';
 ?>
 <?php include __DIR__ . '/../includes/header.php'; ?>
-<div class="auth-page" style="align-items:flex-start; padding-top:40px;">
+<div id="main-content" tabindex="-1" class="auth-page" style="align-items:flex-start; padding-top:40px;">
     <div class="auth-card" style="max-width:520px;">
         <div class="auth-logo">
             <div class="logo-icon"><i class="fa-solid fa-leaf"></i></div>
@@ -99,25 +99,25 @@ $page_title = 'Register';
 
         <form id="registrationForm" method="POST" class="form-kd" data-validate><?= csrfField() ?><?= requestKeyField() ?>
             <div class="form-group">
-                <label>Full Name <span style="color:red">*</span></label>
-                <input type="text" name="name" class="form-control" placeholder="Your full name" required value="<?= htmlspecialchars($_POST['name'] ?? '') ?>">
+                <?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Full Name <span style="color:red">*</span></label>
+                <input id="<?= e($fieldId) ?>" type="text" name="name" class="form-control" placeholder="Your full name" required value="<?= htmlspecialchars($_POST['name'] ?? '') ?>">
             </div>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
                 <div class="form-group">
-                    <label>Email <span style="color:red">*</span></label>
-                    <input type="email" name="email" class="form-control" placeholder="email@example.com" required value="<?= htmlspecialchars($_POST['email'] ?? '') ?>">
+                    <?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Email <span style="color:red">*</span></label>
+                    <input id="<?= e($fieldId) ?>" type="email" name="email" class="form-control" placeholder="email@example.com" required value="<?= htmlspecialchars($_POST['email'] ?? '') ?>">
                 </div>
                 <div class="form-group">
-                    <label>Phone</label>
-                    <input type="text" name="phone" class="form-control" placeholder="01XXXXXXXXX" value="<?= htmlspecialchars($_POST['phone'] ?? '') ?>">
+                    <?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Phone</label>
+                    <input id="<?= e($fieldId) ?>" type="text" name="phone" class="form-control" placeholder="01XXXXXXXXX" value="<?= htmlspecialchars($_POST['phone'] ?? '') ?>">
                 </div>
             </div>
             <div class="form-group">
-                <label>I am a... <span style="color:red">*</span></label>
-                <select name="role" class="form-control" required>
+                <?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">I am a... <span style="color:red">*</span></label>
+                <select id="<?= e($fieldId) ?>" name="role" class="form-control" required>
                     <option value="">Select your role</option>
                     <?php foreach ($roles as $r): ?>
-                    <option value="<?= $r ?>" <?= (($_POST['role'] ?? '') === $r) ? 'selected' : '' ?>>
+                    <option value="<?= $r ?>" <?= (($_POST['role'] ?? $_GET['role'] ?? '') === $r) ? 'selected' : '' ?>>
                         <?= e(ucfirst($r)) ?>
                     </option>
                     <?php endforeach; ?>
@@ -125,15 +125,15 @@ $page_title = 'Register';
             </div>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
                 <div class="form-group">
-                    <label>Password <span style="color:red">*</span></label>
-                    <input type="password" name="password" class="form-control" placeholder="12–72 characters" required>
+                    <?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Password <span style="color:red">*</span></label>
+                    <input id="<?= e($fieldId) ?>" type="password" name="password" class="form-control" placeholder="12–72 characters" required>
                 </div>
                 <div class="form-group">
-                    <label>Confirm Password <span style="color:red">*</span></label>
-                    <input type="password" name="confirm_password" class="form-control" placeholder="Repeat password" required>
+                    <?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Confirm Password <span style="color:red">*</span></label>
+                    <input id="<?= e($fieldId) ?>" type="password" name="confirm_password" class="form-control" placeholder="Repeat password" required>
                 </div>
             </div>
-<label>Farm, business or qualifications (required for provider roles)</label><textarea class="form-control" name="application_details" form="registrationForm" maxlength="5000"></textarea><p class="small">Describe your experience, qualifications or business and how the administrator can verify it. Do not submit sensitive identity numbers in this field.</p><div class="alert-kd alert-kd-info" style="font-size:12px; padding:10px 14px;">
+<?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Farm, business or qualifications (required for provider roles)</label><textarea id="<?= e($fieldId) ?>" class="form-control" name="application_details" form="registrationForm" maxlength="5000"></textarea><p class="small">Describe your experience, qualifications or business and how the administrator can verify it. Do not submit sensitive identity numbers in this field.</p><div class="alert-kd alert-kd-info" style="font-size:12px; padding:10px 14px;">
                 <i class="fa-solid fa-info-circle"></i>
                 Roles like Farmer, Dealer, Cook, Expert & Guide require admin approval before login.
             </div>

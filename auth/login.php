@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             session_regenerate_id(true); $_SESSION['mfa_pending']=['id'=>(int)$user['id'],'version'=>(int)$user['auth_version'],'expires'=>time()+300];
             header('Location: /KrishiDisha/auth/mfa.php'); exit;
         } else { establishLogin($user); redirectToDashboard(); }
-    } catch(Throwable $e) { error_log('Login attempt failed: '.get_class($e)); $error=$e instanceof InvalidArgumentException ? $e->getMessage() : 'Unable to sign in. Please try again later.'; }
+    } catch(Throwable $e) { error_log('Login attempt failed: '.get_class($e)); $error=http_response_code()===429 ? 'Too many sign-in attempts. Wait and try again.' : ($e instanceof InvalidArgumentException ? $e->getMessage() : 'Unable to sign in. Please try again later.'); }
 }
 
 $pending_msg = '';
@@ -35,7 +35,7 @@ $page_title = $selected_role ? ucfirst($selected_role) . ' Login' : 'Select Role
 ?>
 <?php include __DIR__ . '/../includes/header.php'; ?>
 
-<div class="auth-page">
+<div id="main-content" tabindex="-1" class="auth-page">
     <?php if (!$selected_role): ?>
     <!-- STEP 1: ROLE SELECTION -->
     <div style="max-width: 900px; width: 100%; position: relative; z-index: 1;">
@@ -54,17 +54,17 @@ $page_title = $selected_role ? ucfirst($selected_role) . ' Login' : 'Select Role
                 ['id'=>'admin',   'name'=>'Admin',        'icon'=>'fa-shield-halved', 'color'=>'#dc2626'],
                 ['id'=>'farmer',  'name'=>'Farmer',       'icon'=>'fa-tractor',       'color'=>'#16a34a'],
                 ['id'=>'dealer',  'name'=>'Dealer',       'icon'=>'fa-boxes-stacked', 'color'=>'#2563eb'],
-                ['id'=>'tourist', 'name'=>'Tourist',      'icon'=>'fa-umbrella-beach','color'=>'#0891b2'],
-                ['id'=>'cook',    'name'=>'Cook',         'icon'=>'fa-utensils',      'color'=>'#ea580c'],
+                ['id'=>'tourist', 'name'=>'Tourist',      'icon'=>'fa-umbrella-beach','color'=>'#126078'],
+                ['id'=>'cook',    'name'=>'Cook',         'icon'=>'fa-utensils',      'color'=>'#a4420d'],
                 ['id'=>'expert',  'name'=>'Expert',       'icon'=>'fa-user-doctor',   'color'=>'#7c3aed'],
-                ['id'=>'guide',   'name'=>'Guide',        'icon'=>'fa-route',         'color'=>'#d97706'],
+                ['id'=>'guide',   'name'=>'Guide',        'icon'=>'fa-route',         'color'=>'#87500b'],
                 ['id'=>'general', 'name'=>'General User', 'icon'=>'fa-user',          'color'=>'#475569'],
             ];
             foreach ($roles as $r):
             ?>
             <div class="col-6 col-md-3">
                 <a href="?role=<?= e($r['id']) ?>" style="display:block; text-decoration:none;">
-                    <div style="background:rgba(255,255,255,0.95); border-radius:16px; padding:24px 16px; text-align:center; transition:all 0.25s ease; border-bottom: 4px solid <?= e($r['color']) ?>; box-shadow:0 8px 24px rgba(0,0,0,0.15);" onmouseover="this.style.transform='translateY(-6px)'; this.style.boxShadow='0 12px 32px rgba(0,0,0,0.25)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 24px rgba(0,0,0,0.15)';">
+                    <div style="background:rgba(255,255,255,0.95); border-radius:16px; padding:24px 16px; text-align:center; transition:all 0.25s ease; border-bottom: 4px solid <?= e($r['color']) ?>; box-shadow:0 8px 24px rgba(0,0,0,0.15);">
                         <div style="width:56px; height:56px; margin:0 auto 16px; background:<?= e($r['color']) ?>15; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:24px; color:<?= e($r['color']) ?>;">
                             <i class="fa-solid <?= e($r['icon']) ?>"></i>
                         </div>

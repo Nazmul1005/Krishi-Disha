@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $page_title = 'Forgot Password';
 ?>
 <?php include __DIR__ . '/../includes/header.php'; ?>
-<div class="auth-page">
+<div id="main-content" tabindex="-1" class="auth-page">
     <div class="auth-card">
         <div class="auth-logo">
             <div class="logo-icon"><i class="fa-solid fa-key"></i></div>

@@ -47,7 +47,7 @@ $valid_token = !$success && tokenIsValid($pdo, $token);
 $page_title  = 'Set New Password';
 ?>
 <?php include __DIR__ . '/../includes/header.php'; ?>
-<div class="auth-page">
+<div id="main-content" tabindex="-1" class="auth-page">
     <div class="auth-card">
         <div class="auth-logo">
             <div class="logo-icon"><i class="fa-solid fa-lock"></i></div>
@@ -76,12 +76,12 @@ $page_title  = 'Set New Password';
                 <?= csrfField() ?>
                 <input type="hidden" name="token" value="<?= e($token) ?>">
                 <div class="form-group">
-                    <label>New Password</label>
-                    <input type="password" name="password" class="form-control" placeholder="12–72 characters" required>
+                    <?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">New Password</label>
+                    <input id="<?= e($fieldId) ?>" type="password" name="password" class="form-control" placeholder="12–72 characters" required>
                 </div>
                 <div class="form-group">
-                    <label>Confirm Password</label>
-                    <input type="password" name="confirm_password" class="form-control" placeholder="Repeat password" required>
+                    <?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Confirm Password</label>
+                    <input id="<?= e($fieldId) ?>" type="password" name="confirm_password" class="form-control" placeholder="Repeat password" required>
                 </div>
                 <button type="submit" class="btn-kd btn-kd-primary w-100 justify-content-center mt-2">
                     <i class="fa-solid fa-floppy-disk"></i> Reset Password

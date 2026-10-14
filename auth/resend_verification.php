@@ -12,7 +12,7 @@ if($_SERVER['REQUEST_METHOD']==='POST') {
 }
 $page_title='Resend verification'; include __DIR__.'/../includes/header.php';
 ?>
-<main class="auth-page"><div class="auth-card"><h1>Verify your email</h1>
+<main id="main-content" tabindex="-1" class="auth-page"><div class="auth-card"><h1>Verify your email</h1>
 <?php if($done): ?><p>If the account needs verification and email delivery is available, a link will be sent.</p><?php endif; ?>
 <form method="POST"><?= csrfField() ?><label for="email">Email</label><input id="email" class="form-control" type="email" name="email" required><button class="btn-kd btn-kd-primary">Send verification</button></form><a href="login.php">Login</a></div></main>
 <?php include __DIR__.'/../includes/footer.php'; ?>

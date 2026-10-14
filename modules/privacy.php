@@ -1,0 +1,5 @@
+<?php
+require_once __DIR__.'/../includes/auth_check.php';$page_title='Privacy';include __DIR__.'/../includes/header.php';
+?>
+<main class="container information-page" id="main-content" tabindex="-1"><?= breadcrumbs($page_title) ?><h1>Privacy</h1><p class="alert-kd alert-kd-warning" role="status">Owner review required. The final privacy policy has not been published.</p><article class="card-kd"><div class="card-body-kd"><h2 class="h4">Information used by the current application</h2><p>Accounts contain contact and role information. Transactions store order, booking, cash receipt and support records. Consultation messages are available to the participating accounts. A session cookie supports sign-in, form protection and language selection. The owner still needs to confirm retention periods, privacy request procedures and operational processors.</p><a class="btn-kd btn-kd-primary" href="contact.php">Contact the platform</a></div></article></main>
+<?php include __DIR__.'/../includes/footer.php'; ?>

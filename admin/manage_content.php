@@ -58,7 +58,7 @@ if ($tab === 'crops') {
         header('Location: manage_content.php?tab=crops&msg=deleted'); exit;
     }
     if (isset($_GET['msg']) && $_GET['msg'] === 'deleted') $msg = 'Crop deleted.';
-    $crops = $pdo->query("SELECT * FROM CROP ORDER BY name")->fetchAll();
+    $crops=pagedRows($pdo,"SELECT * FROM CROP ORDER BY name",[],'crops','Crop entries',['name', 'local_name'],false);
     $edit_crop = null;
     if (isset($_GET['edit'])) {
         $ec = $pdo->prepare("SELECT * FROM CROP WHERE id=?"); $ec->execute([(int)$_GET['edit']]); $edit_crop = $ec->fetch();
@@ -104,7 +104,7 @@ if ($tab === 'diseases') {
         header('Location: manage_content.php?tab=diseases&msg=deleted'); exit;
     }
     if (isset($_GET['msg']) && $_GET['msg'] === 'deleted') $msg = 'Disease deleted.';
-    $diseases = $pdo->query("SELECT d.*, GROUP_CONCAT(c.name SEPARATOR ', ') as crops FROM DISEASE d LEFT JOIN CROP_DISEASE cd ON d.id=cd.disease_id LEFT JOIN CROP c ON cd.crop_id=c.id GROUP BY d.id ORDER BY d.name")->fetchAll();
+    $diseases=pagedRows($pdo,"SELECT d.*, GROUP_CONCAT(c.name SEPARATOR ', ') as crops FROM DISEASE d LEFT JOIN CROP_DISEASE cd ON d.id=cd.disease_id LEFT JOIN CROP c ON cd.crop_id=c.id GROUP BY d.id ORDER BY d.name",[],'diseases','Disease entries',['name', 'crops'],false);
     $all_crops = $pdo->query("SELECT id,name FROM CROP ORDER BY name")->fetchAll();
     $edit_disease = null;
     if (isset($_GET['edit'])) {
@@ -137,7 +137,7 @@ if ($tab === 'tours') {
         header('Location: manage_content.php?tab=tours&msg=deleted'); exit;
     }
     if (isset($_GET['msg']) && $_GET['msg'] === 'deleted') $msg = 'Tour deleted.';
-    $tours    = $pdo->query("SELECT ft.*,u.name as farmer_name FROM FARM_TOUR ft JOIN FARMER f ON ft.farmer_id=f.id JOIN USER u ON f.user_id=u.id ORDER BY ft.created_at DESC")->fetchAll();
+    $tours=pagedRows($pdo,"SELECT ft.*,u.name as farmer_name FROM FARM_TOUR ft JOIN FARMER f ON ft.farmer_id=f.id JOIN USER u ON f.user_id=u.id ORDER BY ft.created_at DESC",[],'tours','Farm tours',['title', 'farmer_name'],true);
     $farmers  = $pdo->query("SELECT f.id, u.name FROM FARMER f JOIN USER u ON f.user_id=u.id ORDER BY u.name")->fetchAll();
     $edit_tour= null;
     if (isset($_GET['edit'])) {
@@ -166,7 +166,7 @@ if ($tab === 'marketplace') {
         header('Location: manage_content.php?tab=marketplace&msg=deleted'); exit;
     }
     if (isset($_GET['msg'])) { $mmap=['approved'=>'Product approved!','deleted'=>'Product deleted.']; $msg=$mmap[$_GET['msg']]??''; }
-    $products = $pdo->query("SELECT p.*,c.name as crop_name,c.category,u.name as farmer_name FROM PRODUCT p JOIN CROP c ON p.crop_id=c.id JOIN FARMER f ON p.farmer_id=f.id JOIN USER u ON f.user_id=u.id ORDER BY p.created_at DESC")->fetchAll();
+    $products=pagedRows($pdo,"SELECT p.*,c.name as crop_name,c.category,u.name as farmer_name FROM PRODUCT p JOIN CROP c ON p.crop_id=c.id JOIN FARMER f ON p.farmer_id=f.id JOIN USER u ON f.user_id=u.id ORDER BY p.created_at DESC",[],'products','Produce listings',['crop_name', 'farmer_name'],true);
     $edit_product=null;
     if (isset($_GET['edit'])) {
         $ep=$pdo->prepare("SELECT p.*,c.name as crop_name FROM PRODUCT p JOIN CROP c ON p.crop_id=c.id WHERE p.id=?"); $ep->execute([(int)$_GET['edit']]); $edit_product=$ep->fetch();
@@ -182,8 +182,8 @@ $page_title = 'Manage Content';
 
 <div class="topbar">
     <div class="d-flex align-items-center gap-3">
-        <button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none;font-size:20px;"><i class="fa-solid fa-bars"></i></button>
-        <div class="topbar-title"><i class="fa-solid fa-pen-to-square me-2" style="color:var(--primary);"></i>Manage Content</div>
+
+        <h1 class="topbar-title"><i class="fa-solid fa-pen-to-square me-2" style="color:var(--primary);"></i>Manage Content</h1>
     </div>
     <div class="topbar-actions">
         <a href="/KrishiDisha/admin/proposals.php" class="btn-kd btn-kd-outline" style="font-size:12px;padding:6px 14px;">
@@ -192,7 +192,7 @@ $page_title = 'Manage Content';
     </div>
 </div>
 
-<div class="page-body">
+<div class="page-body"><?php include __DIR__ . '/../includes/topbar.php'; ?>
 <?php if ($msg): ?><div class="alert-kd alert-kd-success" data-autohide="4000"><i class="fa-solid fa-check"></i> <?= htmlspecialchars($msg) ?></div><?php endif; ?>
 <?php if ($err): ?><div class="alert-kd alert-kd-error"><i class="fa-solid fa-circle-exclamation"></i> <?= htmlspecialchars($err) ?></div><?php endif; ?>
 
@@ -229,35 +229,35 @@ $page_title = 'Manage Content';
             <div class="card-body-kd">
                 <form method="POST" enctype="multipart/form-data" class="form-kd" data-validate><?= csrfField() ?><?= requestKeyField() ?>
                     <?php if ($edit_crop): ?><input type="hidden" name="crop_id" value="<?= e($edit_crop['id']) ?>"><?php endif; ?>
-                    <div class="form-group"><label>Crop Name <span style="color:red">*</span></label><input type="text" name="name" class="form-control" value="<?= htmlspecialchars($edit_crop['name']??'') ?>" required></div>
-                    <div class="form-group"><label>Scientific Name</label><input type="text" name="scientific_name" class="form-control" value="<?= htmlspecialchars($edit_crop['scientific_name']??'') ?>"></div>
-                    <div class="form-group"><label>Local Name (বাংলা)</label><input type="text" name="local_name" class="form-control" value="<?= htmlspecialchars($edit_crop['local_name']??'') ?>"></div>
-                    <div class="form-group"><label>Origin</label><input type="text" name="origin" class="form-control" value="<?= htmlspecialchars($edit_crop['origin']??'') ?>"></div>
-                    <div class="form-group"><label>Category <span style="color:red">*</span></label>
-                        <input type="text" name="category" class="form-control" list="catlist" value="<?= htmlspecialchars($edit_crop['category']??'') ?>" required>
+                    <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Crop Name <span style="color:red">*</span></label><input id="<?= e($fieldId) ?>" type="text" name="name" class="form-control" value="<?= htmlspecialchars($edit_crop['name']??'') ?>" required></div>
+                    <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Scientific Name</label><input id="<?= e($fieldId) ?>" type="text" name="scientific_name" class="form-control" value="<?= htmlspecialchars($edit_crop['scientific_name']??'') ?>"></div>
+                    <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Local Name (বাংলা)</label><input id="<?= e($fieldId) ?>" type="text" name="local_name" class="form-control" value="<?= htmlspecialchars($edit_crop['local_name']??'') ?>"></div>
+                    <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Origin</label><input id="<?= e($fieldId) ?>" type="text" name="origin" class="form-control" value="<?= htmlspecialchars($edit_crop['origin']??'') ?>"></div>
+                    <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Category <span style="color:red">*</span></label>
+                        <input id="<?= e($fieldId) ?>" type="text" name="category" class="form-control" list="catlist" value="<?= htmlspecialchars($edit_crop['category']??'') ?>" required>
                         <datalist id="catlist"><option value="Grain"><option value="Vegetable"><option value="Fruit"><option value="Legume"><option value="Oilseed"><option value="Fiber"><option value="Cash Crop"></datalist>
                     </div>
-                    <div class="form-group"><label>Season</label>
-                        <select name="season" class="form-control">
+                    <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Season</label>
+                        <select id="<?= e($fieldId) ?>" name="season" class="form-control">
                             <?php foreach (['summer','winter','rainy','all'] as $s): ?>
                             <option value="<?= $s ?>" <?= ($edit_crop['season']??'')===$s?'selected':'' ?>><?= e(ucfirst($s)) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="form-group"><label>Trade Status</label>
-                        <select name="trade_status" class="form-control">
+                    <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Trade Status</label>
+                        <select id="<?= e($fieldId) ?>" name="trade_status" class="form-control">
                             <?php foreach (['local','export','both'] as $t): ?>
                             <option value="<?= $t ?>" <?= ($edit_crop['trade_status']??'')===$t?'selected':'' ?>><?= e(ucfirst($t)) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="form-group"><label>History / Description</label><textarea name="history" class="form-control" rows="4"><?= htmlspecialchars($edit_crop['history']??'') ?></textarea></div>
+                    <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">History / Description</label><textarea id="<?= e($fieldId) ?>" name="history" class="form-control" rows="4"><?= htmlspecialchars($edit_crop['history']??'') ?></textarea></div>
                     <div class="form-group">
                         <label>Crop Photo</label>
                         <?php if (!empty($edit_crop['image']) && mediaAvailable($edit_crop['image'])): ?>
-                        <img alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($edit_crop['image']) ?>" style="width:100%;height:100px;object-fit:cover;border-radius:8px;margin-bottom:8px;">
+                        <img width="480" height="320" decoding="async" alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($edit_crop['image']) ?>" style="width:100%;height:100px;object-fit:cover;border-radius:8px;margin-bottom:8px;">
                         <?php endif; ?>
-                        <label>Reference source URL</label><input class="form-control" type="url" name="source_url" value="<?= e($edit_crop['source_url'] ?? '') ?>" required><label><input type="checkbox" name="review_ack" value="1" required> I reviewed this source and its agricultural accuracy.</label><input type="file" name="crop_image" class="form-control" accept="image/*">
+                        <?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Reference source URL</label><input id="<?= e($fieldId) ?>" class="form-control" type="url" name="source_url" value="<?= e($edit_crop['source_url'] ?? '') ?>" required><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>"><input type="checkbox" name="review_ack" value="1" required> I reviewed this source and its agricultural accuracy.</label><input id="<?= e($fieldId) ?>" type="file" name="crop_image" class="form-control" accept="image/*">
                         <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">JPG, PNG, WebP accepted</div>
                     </div>
                     <button type="submit" name="<?= $edit_crop ? 'edit_crop' : 'add_crop' ?>" class="btn-kd btn-kd-primary w-100 justify-content-center">
@@ -283,10 +283,10 @@ $page_title = 'Manage Content';
                     <tr>
                         <td>
                             <?php if (!empty($c['image']) && mediaAvailable($c['image'])): ?>
-                            <img alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($c['image']) ?>" style="width:48px;height:40px;object-fit:cover;border-radius:6px;">
+                            <img width="480" height="320" decoding="async" alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($c['image']) ?>" style="width:48px;height:40px;object-fit:cover;border-radius:6px;">
                             <?php else: ?>
                             <div style="width:48px;height:40px;background:var(--surface3);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px;">
-                                <?php $icons=['Grain'=>'🌾','Vegetable'=>'🥕','Fruit'=>'🍎','Fiber'=>'🪢','Oilseed'=>'🌻','Legume'=>'🫘','Cash Crop'=>'💰']; echo $icons[$c['category']]??'🌱'; ?>
+                                <?php $icons=['Grain'=>'<i aria-hidden="true" class="fa-solid fa-wheat-awn"></i>','Vegetable'=>'<i aria-hidden="true" class="fa-solid fa-carrot"></i>','Fruit'=>'<i aria-hidden="true" class="fa-solid fa-apple-whole"></i>','Fiber'=>'<i aria-hidden="true" class="fa-solid fa-seedling"></i>','Oilseed'=>'<i aria-hidden="true" class="fa-solid fa-seedling"></i>','Legume'=>'<i aria-hidden="true" class="fa-solid fa-seedling"></i>','Cash Crop'=>'<i aria-hidden="true" class="fa-solid fa-coins"></i>']; echo $icons[$c['category']]??'<i aria-hidden="true" class="fa-solid fa-seedling"></i>'; ?>
                             </div>
                             <?php endif; ?>
                         </td>
@@ -325,13 +325,13 @@ $page_title = 'Manage Content';
             <div class="card-body-kd">
                 <form method="POST" enctype="multipart/form-data" class="form-kd"><?= csrfField() ?><?= requestKeyField() ?>
                     <?php if ($edit_disease): ?><input type="hidden" name="disease_id" value="<?= e($edit_disease['id']) ?>"><?php endif; ?>
-                    <div class="form-group"><label>Disease Name <span style="color:red">*</span></label><input type="text" name="name" class="form-control" value="<?= htmlspecialchars($edit_disease['name']??'') ?>" required></div>
-                    <div class="form-group"><label>Affected Plant Part</label><input type="text" name="affected_part" class="form-control" value="<?= htmlspecialchars($edit_disease['affected_part']??'') ?>" placeholder="e.g. Leaves, Stems"></div>
-                    <div class="form-group"><label>Symptoms</label><textarea name="symptoms" class="form-control" rows="3"><?= htmlspecialchars($edit_disease['symptoms']??'') ?></textarea></div>
-                    <div class="form-group"><label>Solution / Treatment</label><textarea name="solution" class="form-control" rows="3"><?= htmlspecialchars($edit_disease['solution']??'') ?></textarea></div>
+                    <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Disease Name <span style="color:red">*</span></label><input id="<?= e($fieldId) ?>" type="text" name="name" class="form-control" value="<?= htmlspecialchars($edit_disease['name']??'') ?>" required></div>
+                    <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Affected Plant Part</label><input id="<?= e($fieldId) ?>" type="text" name="affected_part" class="form-control" value="<?= htmlspecialchars($edit_disease['affected_part']??'') ?>" placeholder="e.g. Leaves, Stems"></div>
+                    <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Symptoms</label><textarea id="<?= e($fieldId) ?>" name="symptoms" class="form-control" rows="3"><?= htmlspecialchars($edit_disease['symptoms']??'') ?></textarea></div>
+                    <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Solution / Treatment</label><textarea id="<?= e($fieldId) ?>" name="solution" class="form-control" rows="3"><?= htmlspecialchars($edit_disease['solution']??'') ?></textarea></div>
                     <div class="form-group">
-                        <label>Affects Crops (multi-select)</label>
-                        <select name="crop_ids[]" class="form-control" multiple size="5">
+                        <?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Affects Crops (multi-select)</label>
+                        <select id="<?= e($fieldId) ?>" name="crop_ids[]" class="form-control" multiple size="5">
                             <?php foreach ($all_crops as $c): ?>
                             <option value="<?= e($c['id']) ?>" <?= (isset($edit_disease['crop_ids']) && in_array($c['id'], $edit_disease['crop_ids']))?'selected':'' ?>><?= htmlspecialchars($c['name']) ?></option>
                             <?php endforeach; ?>
@@ -341,9 +341,9 @@ $page_title = 'Manage Content';
                     <div class="form-group">
                         <label>Disease Photo</label>
                         <?php if (!empty($edit_disease['image']) && mediaAvailable($edit_disease['image'])): ?>
-                        <img alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($edit_disease['image']) ?>" style="width:100%;height:90px;object-fit:cover;border-radius:8px;margin-bottom:8px;">
+                        <img width="480" height="320" decoding="async" alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($edit_disease['image']) ?>" style="width:100%;height:90px;object-fit:cover;border-radius:8px;margin-bottom:8px;">
                         <?php endif; ?>
-                        <label>Reference source URL</label><input class="form-control" type="url" name="source_url" value="<?= e($edit_disease['source_url'] ?? '') ?>" required><label><input type="checkbox" name="review_ack" value="1" required> I reviewed this treatment with a qualified local expert and current labels.</label><input type="file" name="disease_image" class="form-control" accept="image/*">
+                        <?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Reference source URL</label><input id="<?= e($fieldId) ?>" class="form-control" type="url" name="source_url" value="<?= e($edit_disease['source_url'] ?? '') ?>" required><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>"><input type="checkbox" name="review_ack" value="1" required> I reviewed this treatment with a qualified local expert and current labels.</label><input id="<?= e($fieldId) ?>" type="file" name="disease_image" class="form-control" accept="image/*">
                     </div>
                     <button type="submit" name="<?= $edit_disease ? 'edit_disease' : 'add_disease' ?>" class="btn-kd btn-kd-danger w-100 justify-content-center">
                         <i class="fa-solid <?= $edit_disease ? 'fa-save' : 'fa-plus' ?>"></i> <?= $edit_disease ? 'Save Changes' : 'Add Disease' ?>
@@ -363,9 +363,9 @@ $page_title = 'Manage Content';
                     <tr>
                         <td>
                             <?php if (!empty($d['image']) && mediaAvailable($d['image'])): ?>
-                            <img alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($d['image']) ?>" style="width:48px;height:40px;object-fit:cover;border-radius:6px;">
+                            <img width="480" height="320" decoding="async" alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($d['image']) ?>" style="width:48px;height:40px;object-fit:cover;border-radius:6px;">
                             <?php else: ?>
-                            <div style="width:48px;height:40px;background:#fee2e2;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px;">🦠</div>
+                            <div style="width:48px;height:40px;background:#fee2e2;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px;"><i aria-hidden="true" class="fa-solid fa-bug"></i></div>
                             <?php endif; ?>
                         </td>
                         <td style="font-weight:600;"><?= htmlspecialchars($d['name']) ?></td>
@@ -393,28 +393,28 @@ $page_title = 'Manage Content';
     <div class="col-lg-4">
         <div class="card-kd">
             <div class="card-header-kd">
-                <h5><i class="fa-solid <?= $edit_tour ? 'fa-pen' : 'fa-plus' ?> me-2" style="color:#0891b2;"></i><?= $edit_tour ? 'Edit Tour' : 'Add Farm Tour' ?></h5>
+                <h5><i class="fa-solid <?= $edit_tour ? 'fa-pen' : 'fa-plus' ?> me-2" style="color:#126078;"></i><?= $edit_tour ? 'Edit Tour' : 'Add Farm Tour' ?></h5>
                 <?php if ($edit_tour): ?><a href="?tab=tours" class="btn-kd btn-kd-outline" style="padding:4px 10px;font-size:11px;">Cancel</a><?php endif; ?>
             </div>
             <div class="card-body-kd">
                 <form method="POST" enctype="multipart/form-data" class="form-kd"><?= csrfField() ?><?= requestKeyField() ?>
                     <?php if ($edit_tour): ?><input type="hidden" name="tour_id" value="<?= e($edit_tour['id']) ?>"><?php endif; ?>
                     <?php if (!$edit_tour): ?>
-                    <div class="form-group"><label>Farmer <span style="color:red">*</span></label>
-                        <select name="farmer_id" class="form-control" required>
+                    <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Farmer <span style="color:red">*</span></label>
+                        <select id="<?= e($fieldId) ?>" name="farmer_id" class="form-control" required>
                             <option value="">Select farmer</option>
                             <?php foreach ($farmers as $fm): ?><option value="<?= e($fm['id']) ?>"><?= htmlspecialchars($fm['name']) ?></option><?php endforeach; ?>
                         </select>
                     </div>
                     <?php endif; ?>
-                    <div class="form-group"><label>Tour Title <span style="color:red">*</span></label><input type="text" name="title" class="form-control" value="<?= htmlspecialchars($edit_tour['title']??'') ?>" required></div>
-                    <div class="form-group"><label>Description</label><textarea name="description" class="form-control" rows="3"><?= htmlspecialchars($edit_tour['description']??'') ?></textarea></div>
-                    <div class="form-group"><label>Location</label><input type="text" name="location" class="form-control" value="<?= htmlspecialchars($edit_tour['location']??'') ?>"></div>
-                    <div class="form-group"><label>Max Capacity</label><input type="number" name="capacity" class="form-control" value="<?= $edit_tour['capacity']??10 ?>" min="1"></div>
-                    <div class="form-group"><label>Group price per day (৳)</label><input type="number" name="price_per_day" step="50" class="form-control" value="<?= $edit_tour['price_per_day']??'' ?>"></div>
+                    <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Tour Title <span style="color:red">*</span></label><input id="<?= e($fieldId) ?>" type="text" name="title" class="form-control" value="<?= htmlspecialchars($edit_tour['title']??'') ?>" required></div>
+                    <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Description</label><textarea id="<?= e($fieldId) ?>" name="description" class="form-control" rows="3"><?= htmlspecialchars($edit_tour['description']??'') ?></textarea></div>
+                    <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Location</label><input id="<?= e($fieldId) ?>" type="text" name="location" class="form-control" value="<?= htmlspecialchars($edit_tour['location']??'') ?>"></div>
+                    <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Max Capacity</label><input id="<?= e($fieldId) ?>" type="number" name="capacity" class="form-control" value="<?= $edit_tour['capacity']??10 ?>" min="1"></div>
+                    <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Group price per day (৳)</label><input id="<?= e($fieldId) ?>" type="number" name="price_per_day" step="50" class="form-control" value="<?= $edit_tour['price_per_day']??'' ?>"></div>
                     <?php if ($edit_tour): ?>
-                    <div class="form-group"><label>Status</label>
-                        <select name="status" class="form-control">
+                    <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Status</label>
+                        <select id="<?= e($fieldId) ?>" name="status" class="form-control">
                             <?php foreach (['active','inactive','pending'] as $st): ?>
                             <option value="<?= $st ?>" <?= ($edit_tour['status']??'')===$st?'selected':'' ?>><?= e(ucfirst($st)) ?></option>
                             <?php endforeach; ?>
@@ -424,11 +424,11 @@ $page_title = 'Manage Content';
                     <div class="form-group">
                         <label>Tour Photo</label>
                         <?php if (!empty($edit_tour['image']) && mediaAvailable($edit_tour['image'])): ?>
-                        <img alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($edit_tour['image']) ?>" style="width:100%;height:100px;object-fit:cover;border-radius:8px;margin-bottom:8px;">
+                        <img width="480" height="320" decoding="async" alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($edit_tour['image']) ?>" style="width:100%;height:100px;object-fit:cover;border-radius:8px;margin-bottom:8px;">
                         <?php endif; ?>
                         <input type="file" name="tour_image" class="form-control" accept="image/*">
                     </div>
-                    <button type="submit" name="<?= $edit_tour ? 'edit_tour' : 'add_tour' ?>" class="btn-kd btn-kd-primary w-100 justify-content-center" style="background:linear-gradient(135deg,#0c4a6e,#0891b2);">
+                    <button type="submit" name="<?= $edit_tour ? 'edit_tour' : 'add_tour' ?>" class="btn-kd btn-kd-primary w-100 justify-content-center" style="background:linear-gradient(135deg,#0c4a6e,#126078);">
                         <i class="fa-solid <?= $edit_tour ? 'fa-save' : 'fa-plus' ?>"></i> <?= $edit_tour ? 'Save Changes' : 'Add Tour' ?>
                     </button>
                 </form>
@@ -446,9 +446,9 @@ $page_title = 'Manage Content';
                     <tr>
                         <td>
                             <?php if (!empty($t['image']) && mediaAvailable($t['image'])): ?>
-                            <img alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($t['image']) ?>" style="width:56px;height:42px;object-fit:cover;border-radius:6px;">
+                            <img width="480" height="320" decoding="async" alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($t['image']) ?>" style="width:56px;height:42px;object-fit:cover;border-radius:6px;">
                             <?php else: ?>
-                            <div style="width:56px;height:42px;background:linear-gradient(135deg,#0c4a6e,#0891b2);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px;">🌿</div>
+                            <div style="width:56px;height:42px;background:linear-gradient(135deg,#0c4a6e,#126078);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px;"><i aria-hidden="true" class="fa-solid fa-leaf"></i></div>
                             <?php endif; ?>
                         </td>
                         <td style="font-weight:600;"><?= htmlspecialchars($t['title']) ?></td>
@@ -488,12 +488,12 @@ $page_title = 'Manage Content';
             <div class="card-body-kd">
                 <form method="POST" enctype="multipart/form-data" class="form-kd"><?= csrfField() ?><?= requestKeyField() ?>
                     <input type="hidden" name="product_id" value="<?= e($edit_product['id']) ?>">
-                    <div class="form-group"><label>Crop</label><input type="text" class="form-control" value="<?= htmlspecialchars($edit_product['crop_name']) ?>" readonly></div>
-                    <div class="form-group"><label>Quantity (kg)</label><input type="number" name="quantity_kg" step="0.01" class="form-control" value="<?= e($edit_product['quantity_kg']) ?>"></div>
-                    <div class="form-group"><label>Price per kg (৳)</label><input type="number" name="price_per_kg" step="0.01" class="form-control" value="<?= e($edit_product['price_per_kg']) ?>"></div>
-                    <div class="form-group"><label>Description</label><textarea name="description" class="form-control" rows="3"><?= htmlspecialchars($edit_product['description']??'') ?></textarea></div>
-                    <div class="form-group"><label>Status</label>
-                        <select name="status" class="form-control">
+                    <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Crop</label><input id="<?= e($fieldId) ?>" type="text" class="form-control" value="<?= htmlspecialchars($edit_product['crop_name']) ?>" readonly></div>
+                    <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Quantity (kg)</label><input id="<?= e($fieldId) ?>" type="number" name="quantity_kg" step="0.01" class="form-control" value="<?= e($edit_product['quantity_kg']) ?>"></div>
+                    <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Price per kg (৳)</label><input id="<?= e($fieldId) ?>" type="number" name="price_per_kg" step="0.01" class="form-control" value="<?= e($edit_product['price_per_kg']) ?>"></div>
+                    <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Description</label><textarea id="<?= e($fieldId) ?>" name="description" class="form-control" rows="3"><?= htmlspecialchars($edit_product['description']??'') ?></textarea></div>
+                    <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Status</label>
+                        <select id="<?= e($fieldId) ?>" name="status" class="form-control">
                             <?php foreach (['available','pending','sold'] as $st): ?>
                             <option value="<?= $st ?>" <?= ($edit_product['status']??'')===$st?'selected':'' ?>><?= e(ucfirst($st)) ?></option>
                             <?php endforeach; ?>
@@ -502,7 +502,7 @@ $page_title = 'Manage Content';
                     <div class="form-group">
                         <label>Product Photo</label>
                         <?php if (!empty($edit_product['image']) && mediaAvailable($edit_product['image'])): ?>
-                        <img alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($edit_product['image']) ?>" style="width:100%;height:90px;object-fit:cover;border-radius:8px;margin-bottom:8px;">
+                        <img width="480" height="320" decoding="async" alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($edit_product['image']) ?>" style="width:100%;height:90px;object-fit:cover;border-radius:8px;margin-bottom:8px;">
                         <?php endif; ?>
                         <input type="file" name="product_image" class="form-control" accept="image/*">
                     </div>
@@ -526,10 +526,10 @@ $page_title = 'Manage Content';
             <tr>
                 <td>
                     <?php if (!empty($p['image']) && mediaAvailable($p['image'])): ?>
-                    <img alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($p['image']) ?>" style="width:56px;height:42px;object-fit:cover;border-radius:6px;">
+                    <img width="480" height="320" decoding="async" alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($p['image']) ?>" style="width:56px;height:42px;object-fit:cover;border-radius:6px;">
                     <?php else: ?>
-                    <?php $icons=['Grain'=>'🌾','Vegetable'=>'🥕','Fruit'=>'🍎','Fiber'=>'🪢','Oilseed'=>'🌻','Legume'=>'🫘','Cash Crop'=>'💰']; ?>
-                    <div style="width:56px;height:42px;background:var(--surface3);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px;"><?= $icons[$p['category']]??'🌱' ?></div>
+                    <?php $icons=['Grain'=>'<i aria-hidden="true" class="fa-solid fa-wheat-awn"></i>','Vegetable'=>'<i aria-hidden="true" class="fa-solid fa-carrot"></i>','Fruit'=>'<i aria-hidden="true" class="fa-solid fa-apple-whole"></i>','Fiber'=>'<i aria-hidden="true" class="fa-solid fa-seedling"></i>','Oilseed'=>'<i aria-hidden="true" class="fa-solid fa-seedling"></i>','Legume'=>'<i aria-hidden="true" class="fa-solid fa-seedling"></i>','Cash Crop'=>'<i aria-hidden="true" class="fa-solid fa-coins"></i>']; ?>
+                    <div style="width:56px;height:42px;background:var(--surface3);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px;"><?= $icons[$p['category']]??'<i aria-hidden="true" class="fa-solid fa-seedling"></i>' ?></div>
                     <?php endif; ?>
                 </td>
                 <td style="font-weight:600;"><?= htmlspecialchars($p['crop_name']) ?></td>

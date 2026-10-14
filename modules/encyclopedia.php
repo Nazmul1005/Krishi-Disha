@@ -13,7 +13,7 @@ if ($season)   { $where[] = 'c.season=?';   $params[] = $season; }
 if ($category) { $where[] = 'c.category=?'; $params[] = $category; }
 
 $sql = 'SELECT c.*, COUNT(DISTINCT cd.disease_id) as disease_count FROM CROP c LEFT JOIN CROP_DISEASE cd ON c.id=cd.crop_id WHERE '.implode(' AND ',$where).' GROUP BY c.id ORDER BY c.name';
-$st = $pdo->prepare($sql); $st->execute($params); $crops = $st->fetchAll();
+$st = $pdo->prepare($sql); $crops=pagedRows($pdo,$st->queryString,$params,'crops','Reviewed crops',['name', 'local_name'],false);
 $categories = $pdo->query('SELECT DISTINCT category FROM CROP WHERE category IS NOT NULL ORDER BY category')->fetchAll(PDO::FETCH_COLUMN);
 
 $page_title = 'Crop Encyclopedia';
@@ -24,23 +24,14 @@ $page_title = 'Crop Encyclopedia';
 <?php include __DIR__ . '/../includes/sidebar.php'; ?>
 <div class="main-content" id="main-content" tabindex="-1">
 <?php else: ?>
-<nav class="kd-navbar">
-    <div class="container">
-        <div class="d-flex align-items-center justify-content-between">
-            <a href="/KrishiDisha/index.php" class="navbar-brand" style="display:flex;align-items:center;gap:10px;font-family:'Nunito',sans-serif;font-size:20px;font-weight:800;color:#fff;">
-                <div style="width:34px;height:34px;background:linear-gradient(135deg,#52b788,#2d6a4f);border-radius:8px;display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-leaf" style="color:#fff;font-size:15px;"></i></div>KrishiDisha
-            </a>
-            <a href="/KrishiDisha/auth/login.php" class="btn-kd btn-kd-primary" style="padding:8px 18px; font-size:13px;">Login</a>
-        </div>
-    </div>
-</nav>
-<div style="padding-top:70px;">
+
+<div style="">
 <?php endif; ?>
 
 <div class="topbar">
     <div class="d-flex align-items-center gap-3">
-        <?php if (isLoggedIn()): ?><button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button><?php endif; ?>
-        <div class="topbar-title"><i class="fa-solid fa-book-atlas me-2" style="color:var(--primary);"></i>Crop Encyclopedia</div>
+        <?php if (isLoggedIn()): ?><?php endif; ?>
+        <h1 class="topbar-title"><i class="fa-solid fa-book-atlas me-2" style="color:var(--primary);"></i>Crop Encyclopedia</h1>
     </div>
     <div class="topbar-actions">
         <a href="/KrishiDisha/modules/photo_library.php?type=crop" class="btn-kd btn-kd-outline" style="padding:6px 14px;font-size:12px;"><i class="fa-solid fa-images"></i> Crop photos</a>
@@ -62,7 +53,7 @@ $page_title = 'Crop Encyclopedia';
     <input type="text" name="q" placeholder="Search crops by name, local name, description..." value="<?= htmlspecialchars($search) ?>" style="flex:3;">
     <select name="category" class="form-control" style="flex:1;max-width:160px;">
         <option value="">All Categories</option>
-        <?php foreach ($categories as $cat): ?><option value="<?= $cat ?>" <?= $category===$cat?'selected':'' ?>><?= $cat ?></option><?php endforeach; ?>
+        <?php foreach ($categories as $cat): ?><option value="<?= e($cat) ?>" <?= $category===$cat?'selected':'' ?>><?= e($cat) ?></option><?php endforeach; ?>
     </select>
     <select name="season" class="form-control" style="flex:1;max-width:130px;">
         <option value="">All Seasons</option>
@@ -72,10 +63,10 @@ $page_title = 'Crop Encyclopedia';
     <a href="encyclopedia.php" class="btn-kd btn-kd-outline">Reset</a>
 </form>
 
-<div class="page-body">
+<div class="page-body"><?php include __DIR__ . '/../includes/topbar.php'; ?>
     <!-- Crop Grid -->
     <?php if (empty($crops)): ?>
-    <div class="card-kd"><div class="card-body-kd text-center py-5"><div style="font-size:64px;">🌾</div><h4 style="color:var(--text-muted);">No crops found</h4><p style="color:var(--text-muted);">Try adjusting your search or filters.</p></div></div>
+    <div class="card-kd"><div class="card-body-kd text-center py-5"><div style="font-size:64px;"><i aria-hidden="true" class="fa-solid fa-wheat-awn"></i></div><h4 style="color:var(--text-muted);">No crops found</h4><p style="color:var(--text-muted);">Try adjusting your search or filters.</p><a class="btn-kd btn-kd-outline" href="encyclopedia.php">Clear filters</a></div></div>
     <?php else: ?>
     <div class="row g-4">
         <?php foreach ($crops as $crop): ?>
@@ -91,9 +82,9 @@ $page_title = 'Crop Encyclopedia';
                 <a href="encyclopedia.php?detail=<?= e($crop['id']) ?>" style="display:block; text-decoration:none;color:inherit;">
                     <div style="height:180px; overflow:hidden; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--surface3),var(--accent3));">
                         <?php if ($hasUploadedImage || $photo): ?>
-                        <img loading="lazy" src="/KrishiDisha/<?= e($hasUploadedImage ? $crop['image'] : $photo['image']) ?>" alt="<?= e($hasUploadedImage ? $crop['name'] : $photo['caption']) ?>" style="width:100%;height:180px;object-fit:cover;">
+                        <img width="480" height="320" decoding="async" loading="lazy" src="/KrishiDisha/<?= e($hasUploadedImage ? $crop['image'] : $photo['image']) ?>" alt="<?= e($hasUploadedImage ? $crop['name'] : $photo['caption']) ?>" style="width:100%;height:180px;object-fit:cover;">
                         <?php else: ?>
-                        <div style="font-size:72px;"><?php $icons=['Grain'=>'🌾','Vegetable'=>'🥕','Fruit'=>'🍎','Fiber'=>'🪢','Oilseed'=>'🌻','Legume'=>'🫘','Cash Crop'=>'💰']; echo $icons[$crop['category']]??'🌱'; ?></div>
+                        <div style="font-size:72px;"><?php $icons=['Grain'=>'<i aria-hidden="true" class="fa-solid fa-wheat-awn"></i>','Vegetable'=>'<i aria-hidden="true" class="fa-solid fa-carrot"></i>','Fruit'=>'<i aria-hidden="true" class="fa-solid fa-apple-whole"></i>','Fiber'=>'<i aria-hidden="true" class="fa-solid fa-seedling"></i>','Oilseed'=>'<i aria-hidden="true" class="fa-solid fa-seedling"></i>','Legume'=>'<i aria-hidden="true" class="fa-solid fa-seedling"></i>','Cash Crop'=>'<i aria-hidden="true" class="fa-solid fa-coins"></i>']; echo $icons[$crop['category']]??'<i aria-hidden="true" class="fa-solid fa-seedling"></i>'; ?></div>
                         <?php endif; ?>
                     </div>
                     <div class="crop-card-body">
@@ -104,7 +95,7 @@ $page_title = 'Crop Encyclopedia';
                             <span class="badge-kd badge-info" style="font-size:10px;"><?= e($crop['category']) ?></span>
                             <span class="badge-kd badge-muted" style="font-size:10px;"><?= e(ucfirst($crop['trade_status'])) ?></span>
                         </div>
-                        <p><?= mb_substr(strip_tags($crop['history'] ?? ''), 0, 90) ?>...</p>
+                        <p><?= e(mb_substr(strip_tags($crop['history'] ?? ''), 0, 90)) ?>...</p>
                     </div>
                 </a>
                 <?php if (!$hasUploadedImage && $photo): ?><div class="photo-inline-credit">Photo: <?= e($photo['credit']) ?> · <a href="/KrishiDisha/modules/photo_library.php?type=crop#<?= e($photo['slug']) ?>">source & license</a></div><?php endif; ?>
@@ -131,12 +122,12 @@ $page_title = 'Crop Encyclopedia';
             $regions->execute([$detail['id']]); $regions = $regions->fetchAll();
     ?>
     <!-- Modal-style detail panel -->
-    <div id="cropDetailModal" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:30px 16px;overflow-y:auto;">
+    <dialog open id="cropDetailModal" class="kd-dialog crop-detail-dialog" aria-labelledby="cropDetailHeading">
         <div style="background:#fff;border-radius:20px;width:100%;max-width:800px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.4);">
             <div style="background:linear-gradient(135deg,var(--primary-dark),var(--primary));padding:32px 36px;color:#fff;">
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;">
                     <div>
-                        <h2 style="color:#fff;margin-bottom:6px;"><?= htmlspecialchars($detail['name']) ?></h2>
+                        <h2 id="cropDetailHeading" style="color:#fff;margin-bottom:6px;"><?= htmlspecialchars($detail['name']) ?></h2>
                         <div style="font-style:italic;color:rgba(255,255,255,0.75);font-size:14px;"><?= htmlspecialchars($detail['scientific_name'] ?? '') ?></div>
                         <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
                             <span class="badge-kd" style="background:rgba(255,255,255,0.2);color:#fff;"><?= e($detail['category']) ?></span>
@@ -144,7 +135,7 @@ $page_title = 'Crop Encyclopedia';
                             <span class="badge-kd" style="background:rgba(255,255,255,0.2);color:#fff;"><?= e(ucfirst($detail['trade_status'])) ?> trade</span>
                         </div>
                     </div>
-                    <a href="encyclopedia.php" style="color:rgba(255,255,255,0.8);font-size:24px;text-decoration:none;">&times;</a>
+                    <button type="button" data-close-detail class="modal-close" aria-label="Close crop detail">&times;</button>
                 </div>
             </div>
             <div style="padding:30px 36px;">
@@ -208,14 +199,14 @@ $page_title = 'Crop Encyclopedia';
                         <strong>Symptoms:</strong> <?= htmlspecialchars($dis['symptoms']) ?>
                     </div>
                     <div style="font-size:13px;color:var(--text);margin-top:4px;">
-                        <strong>Solution:</strong> <?= htmlspecialchars($dis['solution']) ?>
+                        <strong>Reviewed reference:</strong> <?= htmlspecialchars($dis['solution']) ?>
                     </div>
                 </div>
                 <?php endforeach; ?>
                 <?php endif; ?>
             </div>
         </div>
-    </div>
+    </dialog>
     <?php }} ?>
 </div>
 

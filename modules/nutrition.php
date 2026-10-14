@@ -22,40 +22,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$recipes = $pdo->query("SELECT r.*, u.name as cook_name FROM RECIPE r JOIN COOK c ON r.cook_id=c.id JOIN USER u ON c.user_id=u.id ORDER BY r.is_authentic DESC, r.created_at DESC LIMIT 6")->fetchAll();
+$recipes = $pdo->query("SELECT r.*, u.name as cook_name FROM RECIPE r JOIN COOK c ON r.cook_id=c.id JOIN USER u ON c.user_id=u.id WHERE u.status='approved' AND u.email_verified=1 ORDER BY r.is_authentic DESC, r.created_at DESC LIMIT 6")->fetchAll();
 
 $page_title = 'Nutrition & Cooking';
 $isAuth = isLoggedIn();
 ?>
 <?php include __DIR__ . '/../includes/header.php'; ?>
 <?php if ($isAuth): ?><div class="layout-wrapper"><?php include __DIR__ . '/../includes/sidebar.php'; ?><div class="main-content" id="main-content" tabindex="-1">
-<?php else: ?><nav class="kd-navbar"><div class="container"><div class="d-flex align-items-center justify-content-between"><a href="/KrishiDisha/index.php" class="navbar-brand" style="display:flex;align-items:center;gap:10px;font-family:'Nunito',sans-serif;font-size:20px;font-weight:800;color:#fff;"><div style="width:34px;height:34px;background:linear-gradient(135deg,#52b788,#2d6a4f);border-radius:8px;display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-leaf" style="color:#fff;font-size:15px;"></i></div>KrishiDisha</a><a href="/KrishiDisha/auth/login.php" class="btn-kd btn-kd-primary" style="padding:8px 18px;font-size:13px;">Login</a></div></div></nav><div style="padding-top:70px;"><?php endif; ?>
+<?php else: ?><div style=""><?php endif; ?>
 
 <div class="topbar">
     <div class="d-flex align-items-center gap-3">
-        <?php if ($isAuth): ?><button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button><?php endif; ?>
-        <div class="topbar-title"><i class="fa-solid fa-apple-whole me-2" style="color:#ea580c;"></i>Nutrition & Authentic Food</div>
+        <?php if ($isAuth): ?><?php endif; ?>
+        <h1 class="topbar-title"><i class="fa-solid fa-apple-whole me-2" style="color:#a4420d;"></i>Nutrition & Authentic Food</h1>
     </div>
 </div>
 
-<div class="page-body"><aside class="alert-kd alert-kd-info">Only reviewed nutrition references are shown. Values depend on edible portion, raw/cooked basis, cooking time, water and variety. Missing data is not zero. These are not individualized dietary recommendations.</aside>
+<div class="page-body"><?php include __DIR__ . '/../includes/topbar.php'; ?><aside class="alert-kd alert-kd-info">Only reviewed nutrition references are shown. Values depend on edible portion, raw/cooked basis, cooking time, water and variety. Missing data is not zero. These are not individualized dietary recommendations.</aside>
     <div class="row g-4">
         <div class="col-lg-5">
             <div class="card-kd">
-                <div class="card-header-kd"><h5><i class="fa-solid fa-flask me-2" style="color:#ea580c;"></i>Nutrient Retention Checker</h5></div>
+                <div class="card-header-kd"><h5><i class="fa-solid fa-flask me-2" style="color:#a4420d;"></i>Nutrient Retention Checker</h5></div>
                 <div class="card-body-kd">
                     <p style="font-size:13px;color:var(--text-muted);margin-bottom:18px;">See how different cooking methods affect vitamin content in crops.</p>
                     <form method="POST" class="form-kd"><?= csrfField() ?><?= requestKeyField() ?>
                         <div class="form-group">
-                            <label>Select Crop <span style="color:red">*</span></label>
-                            <select name="crop_id" class="form-control" required>
+                            <?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Select Crop <span style="color:red">*</span></label>
+                            <select id="<?= e($fieldId) ?>" name="crop_id" class="form-control" required>
                                 <option value="">Choose a crop</option>
                                 <?php foreach ($crops as $c): ?><option value="<?= e($c['id']) ?>" <?= ($_POST['crop_id']??'')==$c['id']?'selected':'' ?>><?= htmlspecialchars($c['name']) ?></option><?php endforeach; ?>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Cooking Method (optional)</label>
-                            <select name="method_id" class="form-control">
+                            <?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Cooking Method (optional)</label>
+                            <select id="<?= e($fieldId) ?>" name="method_id" class="form-control">
                                 <option value="">All Methods</option>
                                 <?php foreach ($methods as $m): ?><option value="<?= e($m['id']) ?>" <?= ($_POST['method_id']??'')==$m['id']?'selected':'' ?>><?= htmlspecialchars($m['name']) ?></option><?php endforeach; ?>
                             </select>
@@ -103,7 +103,7 @@ $isAuth = isLoggedIn();
         <div class="col-lg-7">
             <div class="card-kd">
                 <div class="card-header-kd">
-                    <h5><i class="fa-solid fa-utensils me-2" style="color:#ea580c;"></i>Authentic Recipes</h5>
+                    <h5><i class="fa-solid fa-utensils me-2" style="color:#a4420d;"></i>Authentic Recipes</h5>
                 </div>
                 <div class="card-body-kd">
                     <div class="row g-3">

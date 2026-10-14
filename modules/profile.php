@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/../config/db.php';
-requireAuth(); // any authenticated, approved user (admin bypasses approval)
+requireAuth(); // any currently authenticated, approved user
 
 $uid  = $_SESSION['user_id'];
 $role = $_SESSION['role'];
@@ -138,15 +138,15 @@ $page_title = 'My Profile';
 <div class="main-content" id="main-content" tabindex="-1">
     <div class="topbar">
         <div class="d-flex align-items-center gap-3">
-            <button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
-            <div class="topbar-title"><i class="fa-solid fa-id-card me-2" style="color:var(--primary);"></i>My Profile</div>
+
+            <h1 class="topbar-title"><i class="fa-solid fa-id-card me-2" style="color:var(--primary);"></i>My Profile</h1>
         </div>
         <div class="topbar-actions">
             <span class="badge-kd badge-info"><?= e(ucfirst($role)) ?></span>
         </div>
     </div>
 
-    <div class="page-body">
+    <div class="page-body"><?php include __DIR__ . '/../includes/topbar.php'; ?>
         <?= renderFlash() ?>
 
         <section class="card-kd mb-3"><div class="card-body-kd"><h2 class="h5">Change password / পাসওয়ার্ড পরিবর্তন</h2><form method="POST"><?= csrfField() ?><label for="current_password">Current password</label><input class="form-control" id="current_password" name="current_password" type="password" autocomplete="current-password" required><label for="new_password">New password (12–72 characters)</label><input class="form-control" id="new_password" name="new_password" type="password" minlength="12" maxlength="72" autocomplete="new-password" required><label for="confirm_password">Confirm new password</label><input class="form-control" id="confirm_password" name="confirm_password" type="password" autocomplete="new-password" required><button class="btn-kd btn-kd-primary" name="change_password" value="1">Change and sign out all sessions</button></form></div></section>
@@ -181,12 +181,12 @@ $page_title = 'My Profile';
 
                             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
                                 <div class="form-group">
-                                    <label>Full Name <span style="color:var(--danger)">*</span></label>
-                                    <input type="text" name="name" class="form-control" required value="<?= e($user['name']) ?>">
+                                    <?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Full Name <span style="color:var(--danger)">*</span></label>
+                                    <input id="<?= e($fieldId) ?>" type="text" name="name" class="form-control" required value="<?= e($user['name']) ?>">
                                 </div>
                                 <div class="form-group">
-                                    <label>Phone</label>
-                                    <input type="text" name="phone" class="form-control" value="<?= e($user['phone']) ?>" placeholder="01XXXXXXXXX">
+                                    <?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Phone</label>
+                                    <input id="<?= e($fieldId) ?>" type="text" name="phone" class="form-control" value="<?= e($user['phone']) ?>" placeholder="01XXXXXXXXX">
                                 </div>
                             </div>
 
@@ -205,8 +205,8 @@ $page_title = 'My Profile';
                             ?>
                             <?php if ($isWide): ?>
                             <div class="form-group">
-                                <label><?= e($meta['label']) ?></label>
-                                <textarea name="<?= e($col) ?>" class="form-control" rows="3"><?= e($val) ?></textarea>
+                                <?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>"><?= e($meta['label']) ?></label>
+                                <textarea id="<?= e($fieldId) ?>" name="<?= e($col) ?>" class="form-control" rows="3"><?= e($val) ?></textarea>
                             </div>
                             <?php $i++; ?>
                             <?php else: ?>

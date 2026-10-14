@@ -2,34 +2,34 @@
 require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/../config/db.php';
 
-$experts = $pdo->query("
+$experts=pagedRows($pdo,"
     SELECT e.*, u.name, u.email, u.phone,
            (SELECT COUNT(*) FROM CONSULTATION c WHERE c.provider_id=u.id AND c.status='completed') as completed_sessions
     FROM EXPERT e
     JOIN USER u ON e.user_id=u.id
     WHERE u.status='approved'
     ORDER BY e.hourly_rate ASC
-")->fetchAll();
+",[],'experts','Expert providers',['name', 'specialization'],false);
 
 $page_title = 'Expert Consultation';
 $isAuth = isLoggedIn();
 ?>
 <?php include __DIR__ . '/../includes/header.php'; ?>
 <?php if ($isAuth): ?><div class="layout-wrapper"><?php include __DIR__ . '/../includes/sidebar.php'; ?><div class="main-content" id="main-content" tabindex="-1">
-<?php else: ?><nav class="kd-navbar"><div class="container"><div class="d-flex align-items-center justify-content-between"><a href="/KrishiDisha/index.php" class="navbar-brand" style="display:flex;align-items:center;gap:10px;font-family:'Nunito',sans-serif;font-size:20px;font-weight:800;color:#fff;"><div style="width:34px;height:34px;background:linear-gradient(135deg,#52b788,#2d6a4f);border-radius:8px;display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-leaf" style="color:#fff;font-size:15px;"></i></div>KrishiDisha</a><a href="/KrishiDisha/auth/login.php" class="btn-kd btn-kd-primary" style="padding:8px 18px;font-size:13px;">Login</a></div></div></nav><div style="padding-top:70px;"><?php endif; ?>
+<?php else: ?><div style=""><?php endif; ?>
 
 <div class="topbar">
     <div class="d-flex align-items-center gap-3">
-        <?php if ($isAuth): ?><button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button><?php endif; ?>
-        <div class="topbar-title"><i class="fa-solid fa-user-doctor me-2" style="color:#7c3aed;"></i>Expert Consultation</div>
+        <?php if ($isAuth): ?><?php endif; ?>
+        <h1 class="topbar-title"><i class="fa-solid fa-user-doctor me-2" style="color:#7c3aed;"></i>Expert Consultation</h1>
     </div>
 </div>
 
-<div class="page-body">
+<div class="page-body"><?php include __DIR__ . '/../includes/topbar.php'; ?>
     <!-- Hero -->
     <div style="background:linear-gradient(135deg,#4c1d95,#7c3aed);border-radius:var(--radius);padding:36px;color:#fff;margin-bottom:28px;">
         <h3 style="color:#fff;margin-bottom:8px;">Connect with Agricultural Experts</h3>
-        <p style="color:rgba(255,255,255,0.8);font-size:15px;">Get personalized advice on soil health, pest management, crop diseases, and farm productivity from certified experts.</p>
+        <p style="color:rgba(255,255,255,0.8);font-size:15px;">Get personalized advice on soil health, pest management, crop diseases, and farm productivity from approved providers. Check qualifications with the platform before booking.</p>
     </div>
 
     <div class="row g-4">
@@ -38,7 +38,7 @@ $isAuth = isLoggedIn();
             <div class="card-kd">
                 <div class="card-body-kd">
                     <div class="d-flex align-items-start gap-3 mb-3">
-                        <div style="width:56px;height:56px;background:linear-gradient(135deg,#4c1d95,#7c3aed);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;flex-shrink:0;">👨‍🔬</div>
+                        <div style="width:56px;height:56px;background:linear-gradient(135deg,#4c1d95,#7c3aed);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;flex-shrink:0;"><i aria-hidden="true" class="fa-solid fa-user-doctor"></i></div>
                         <div>
                             <div style="font-weight:800;font-family:'Nunito',sans-serif;font-size:16px;"><?= htmlspecialchars($ex['name']) ?></div>
                             <div style="font-size:12px;color:var(--text-muted);"><?= htmlspecialchars($ex['specialization'] ?? '') ?></div>
@@ -69,7 +69,7 @@ $isAuth = isLoggedIn();
             </div>
         </div>
         <?php endforeach; ?>
-        <?php if (empty($experts)): ?><div class="col-12"><div class="card-kd"><div class="card-body-kd text-center py-5"><div style="font-size:64px;">👨‍🔬</div><p style="color:var(--text-muted);">No experts available yet.</p></div></div></div><?php endif; ?>
+        <?php if (empty($experts)): ?><div class="col-12"><div class="card-kd"><div class="card-body-kd text-center py-5"><div style="font-size:64px;"><i aria-hidden="true" class="fa-solid fa-user-doctor"></i></div><p style="color:var(--text-muted);">No experts available yet.</p></div></div></div><?php endif; ?>
     </div>
 </div>
 

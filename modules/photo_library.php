@@ -17,14 +17,14 @@ include __DIR__ . '/../includes/header.php';
 <?php include __DIR__ . '/../includes/sidebar.php'; ?>
 <main class="main-content" id="main-content" tabindex="-1">
 <?php else: ?>
-<nav class="kd-navbar"><div class="container"><div class="d-flex align-items-center justify-content-between"><a href="/KrishiDisha/index.php" class="navbar-brand" style="color:#fff;">KrishiDisha</a><a href="/KrishiDisha/auth/login.php" class="btn-kd btn-kd-primary">Login</a></div></div></nav>
+
 <main id="main-content" class="photo-public-main" tabindex="-1">
 <?php endif; ?>
 <div class="topbar"><div class="d-flex align-items-center gap-3">
-<?php if (isLoggedIn()): ?><button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none"><i class="fa-solid fa-bars"></i></button><?php endif; ?>
-<div class="topbar-title"><i class="fa-solid fa-images me-2" style="color:var(--primary);"></i>Crop & Disease Photo Library</div>
+<?php if (isLoggedIn()): ?><?php endif; ?>
+<h1 class="topbar-title"><i class="fa-solid fa-images me-2" style="color:var(--primary);"></i>Crop & Disease Photo Library</h1>
 </div><div class="topbar-actions"><span class="badge-kd badge-success"><?= count($photos) ?> photos</span></div></div>
-<div class="page-body">
+<div class="page-body"><?php include __DIR__ . '/../includes/topbar.php'; ?>
 <div class="photo-intro"><h1>Real photographs, with sources</h1><p>Browse crop plants, harvested produce, and example disease or pest symptoms. Images were taken in different places and conditions, so appearance may differ on your farm. A photo alone cannot diagnose a crop problem or determine a treatment. Consult a qualified local expert before acting.</p><p class="photo-intro-links"><a href="/KrishiDisha/modules/encyclopedia.php">Reviewed crop information</a> · <a href="/KrishiDisha/modules/disease.php">Reviewed disease information</a></p></div>
 <form class="filter-bar photo-filter" method="get" action="photo_library.php">
 <label class="visually-hidden" for="photo-search">Search photographs</label><input id="photo-search" type="search" name="q" maxlength="80" placeholder="Search crop, condition or host" value="<?= e($search) ?>">
@@ -34,7 +34,7 @@ include __DIR__ . '/../includes/header.php';
 <div class="photo-grid">
 <?php foreach ($photos as $photo): ?>
 <article class="photo-card" id="<?= e($photo['slug']) ?>">
-<img loading="lazy" decoding="async" src="/KrishiDisha/<?= e($photo['image']) ?>" alt="<?= e($photo['caption']) ?>" width="640" height="420">
+<img width="480" height="320" decoding="async" loading="lazy" decoding="async" src="/KrishiDisha/<?= e($photo['image']) ?>" alt="<?= e($photo['caption']) ?>" width="640" height="420">
 <div class="photo-card-body"><span class="photo-type"><?= $photo['type'] === 'crop' ? 'Crop' : 'Disease / pest example' ?></span><h2><?= e($photo['name']) ?></h2><p class="photo-context"><?= e($photo['context']) ?></p><p><?= e($photo['caption']) ?></p>
 <p class="photo-credit">Photo: <?= e($photo['credit']) ?> · <a href="<?= e($photo['license_url']) ?>" target="_blank" rel="noopener noreferrer"><?= e($photo['license']) ?></a> · <a href="<?= e($photo['source']) ?>" target="_blank" rel="noopener noreferrer">Original file</a></p></div>
 </article>

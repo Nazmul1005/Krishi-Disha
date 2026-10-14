@@ -3,14 +3,14 @@ require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/../config/db.php';
 requireAuth(['admin']);
 
-$commissions = $pdo->query("
+$commissions=pagedRows($pdo,"
     SELECT ac.*, p.amount, p.ref_type, p.ref_id, p.status as pay_status, u.name as payer
     FROM ADMIN_COMMISSION ac
     JOIN PAYMENT p ON ac.payment_id = p.id
     JOIN USER u ON p.payer_id = u.id
     WHERE p.verified_at IS NOT NULL AND p.status='completed' AND p.refund_requested_at IS NULL AND ac.reversed=0
     ORDER BY ac.id DESC
-")->fetchAll();
+",[],'commissions','Commission records',['payer', 'ref_type'],false);
 
 $total_earned  = $pdo->query("SELECT COALESCE(SUM(commission_amount),0) FROM ADMIN_COMMISSION ac JOIN PAYMENT p ON p.id=ac.payment_id WHERE p.verified_at IS NOT NULL AND p.status='completed' AND p.refund_requested_at IS NULL AND ac.reversed=0")->fetchColumn();
 $total_settled = $pdo->query("SELECT COALESCE(SUM(commission_amount),0) FROM ADMIN_COMMISSION ac JOIN PAYMENT p ON p.id=ac.payment_id WHERE ac.settled=1 AND p.verified_at IS NOT NULL AND p.status='completed' AND p.refund_requested_at IS NULL AND ac.reversed=0")->fetchColumn();
@@ -24,11 +24,11 @@ $page_title = 'Commission Tracker';
 <div class="main-content" id="main-content" tabindex="-1">
     <div class="topbar">
         <div class="d-flex align-items-center gap-3">
-            <button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
-            <div class="topbar-title">Commission Tracker</div>
+
+            <h1 class="topbar-title">Commission Tracker</h1>
         </div>
     </div>
-    <div class="page-body">
+    <div class="page-body"><?php include __DIR__ . '/../includes/topbar.php'; ?>
         <?php if (isset($_GET['msg'])): ?>
         <div class="alert-kd alert-kd-success" data-autohide="3000"><i class="fa-solid fa-check"></i> Commission marked as settled.</div>
         <?php endif; ?>

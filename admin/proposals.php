@@ -81,8 +81,7 @@ $proposals = $pdo->prepare("
     WHERE (:filter='all' OR dp.status=:filter2)
     ORDER BY dp.created_at DESC
 ");
-$proposals->execute([':filter'=>$filter, ':filter2'=>$filter]);
-$proposals = $proposals->fetchAll();
+$proposals=pagedRows($pdo,$proposals->queryString,[':filter'=>$filter, ':filter2'=>$filter],'proposals','Content proposals',['title', 'user_name'],true);
 
 $counts = $pdo->query("SELECT status, COUNT(*) as cnt FROM DATA_PROPOSAL GROUP BY status")->fetchAll(PDO::FETCH_KEY_PAIR);
 $total  = array_sum($counts);
@@ -96,15 +95,15 @@ $page_title = 'Content Proposals';
 
 <div class="topbar">
     <div class="d-flex align-items-center gap-3">
-        <button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none;font-size:20px;"><i class="fa-solid fa-bars"></i></button>
-        <div class="topbar-title"><i class="fa-solid fa-inbox me-2" style="color:var(--primary);"></i>Content Proposals</div>
+
+        <h1 class="topbar-title"><i class="fa-solid fa-inbox me-2" style="color:var(--primary);"></i>Content Proposals</h1>
     </div>
     <div class="topbar-actions">
         <a href="manage_content.php" class="btn-kd btn-kd-outline" style="padding:6px 14px;font-size:12px;"><i class="fa-solid fa-pen-to-square"></i> Manage Content</a>
     </div>
 </div>
 
-<div class="page-body">
+<div class="page-body"><?php include __DIR__ . '/../includes/topbar.php'; ?>
 <?= renderFlash() ?>
 
 <!-- Stats & Filter -->
@@ -128,7 +127,7 @@ $page_title = 'Content Proposals';
 <!-- Proposal List -->
 <?php if (!$proposals): ?>
 <div style="text-align:center;padding:60px;color:var(--text-muted);">
-    <div style="font-size:60px;margin-bottom:16px;">📭</div>
+    <div style="font-size:60px;margin-bottom:16px;"><i aria-hidden="true" class="fa-solid fa-inbox"></i></div>
     <div style="font-size:16px;font-weight:600;">No <?= $filter ?> proposals found</div>
 </div>
 <?php endif; ?>
@@ -144,15 +143,15 @@ $page_title = 'Content Proposals';
                     <?php $imgKey = $p['section']==='crop' ? 'image' : ($p['section']==='disease' ? 'image' : null); ?>
                     <?php if ($imgKey && !empty($data[$imgKey]) && mediaAvailable($data[$imgKey])): ?>
                     <div style="flex-shrink:0;">
-                        <img alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($data[$imgKey]) ?>" style="width:90px;height:70px;object-fit:cover;border-radius:10px;">
+                        <img width="480" height="320" decoding="async" alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($data[$imgKey]) ?>" style="width:90px;height:70px;object-fit:cover;border-radius:10px;">
                     </div>
                     <?php endif; ?>
 
                     <!-- Info -->
                     <div style="flex:1;min-width:200px;">
                         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">
-                            <?php $secIcons = ['crop'=>'🌱','disease'=>'🦠','recommender'=>'📍','nutrition'=>'🧪']; ?>
-                            <span style="font-size:20px;"><?= $secIcons[$p['section']]??'📝' ?></span>
+                            <?php $secIcons = ['crop'=>'<i aria-hidden="true" class="fa-solid fa-seedling"></i>','disease'=>'<i aria-hidden="true" class="fa-solid fa-bug"></i>','recommender'=>'<i aria-hidden="true" class="fa-solid fa-location-dot"></i>','nutrition'=>'<i aria-hidden="true" class="fa-solid fa-flask"></i>']; ?>
+                            <span style="font-size:20px;"><?= $secIcons[$p['section']]??'<i aria-hidden="true" class="fa-solid fa-pen"></i>' ?></span>
                             <div style="font-weight:700;font-size:15px;"><?= htmlspecialchars($p['title']) ?></div>
                             <span class="badge-kd badge-info" style="font-size:10px;text-transform:capitalize;"><?= e(ucfirst($p['section'])) ?></span>
                             <?php
@@ -209,21 +208,21 @@ $page_title = 'Content Proposals';
 </div><!-- layout-wrapper -->
 
 <!-- Reject Modal -->
-<div id="rejectModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+<dialog id="rejectModal" class="kd-dialog " aria-labelledby="rejectHeading">
     <form method="POST" action="proposals.php?filter=<?= e($filter) ?>" style="background:var(--surface2);border-radius:16px;padding:28px;max-width:420px;width:90%;box-shadow:0 24px 48px rgba(0,0,0,0.3);"><?= csrfField() ?><?= requestKeyField() ?>
         <?= csrfField() ?>
         <input type="hidden" name="reject" id="rejectId" value="">
-        <h5 style="margin-bottom:16px;"><i class="fa-solid fa-times-circle me-2" style="color:var(--danger);"></i>Reject Proposal</h5>
+        <h2 id="rejectHeading" style="margin-bottom:16px;"><i class="fa-solid fa-times-circle me-2" style="color:var(--danger);"></i>Reject Proposal</h2>
         <div class="form-group">
-            <label>Reason (optional)</label>
-            <textarea name="reason" class="form-control" rows="3" placeholder="Explain why this was rejected..."></textarea>
+            <?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Reason (optional)</label>
+            <textarea id="<?= e($fieldId) ?>" name="reason" class="form-control" rows="3" placeholder="Explain why this was rejected..."></textarea>
         </div>
         <div style="display:flex;gap:10px;margin-top:16px;">
             <button type="submit" class="btn-kd btn-kd-danger" style="flex:1;justify-content:center;"><i class="fa-solid fa-times"></i> Reject</button>
             <button type="button" data-close-reject class="btn-kd btn-kd-outline" style="flex:1;justify-content:center;">Cancel</button>
         </div>
     </form>
-</div>
+</dialog>
 
 
 

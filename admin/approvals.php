@@ -22,7 +22,7 @@ if($_SERVER['REQUEST_METHOD']==='POST') {
     } catch(Throwable $e) { flash('error',$e instanceof InvalidArgumentException ? $e->getMessage() : 'Account could not be updated.'); }
     header('Location: approvals.php');exit;
 }
-$pending = $pdo->query("SELECT * FROM USER WHERE status='pending' ORDER BY created_at ASC")->fetchAll();
+$pending=pagedRows($pdo,"SELECT * FROM USER WHERE status='pending' ORDER BY created_at ASC",[],'applications','Provider applications',['name', 'email'],false);
 $msg     = $_GET['msg'] ?? '';
 $page_title = 'Pending Approvals';
 ?>
@@ -32,14 +32,14 @@ $page_title = 'Pending Approvals';
 <div class="main-content" id="main-content" tabindex="-1">
     <div class="topbar">
         <div class="d-flex align-items-center gap-3">
-            <button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
-            <div class="topbar-title">Pending Approvals</div>
+
+            <h1 class="topbar-title">Pending Approvals</h1>
         </div>
         <div class="topbar-actions">
             <span class="badge-kd badge-warning"><i class="fa-solid fa-clock"></i> <?= count($pending) ?> pending</span>
         </div>
     </div>
-    <div class="page-body"><?= renderFlash() ?>
+    <div class="page-body"><?php include __DIR__ . '/../includes/topbar.php'; ?><?= renderFlash() ?>
         <?php if ($msg === 'approved'): ?>
         <div class="alert-kd alert-kd-success" data-autohide="3000"><i class="fa-solid fa-check"></i> User approved successfully.</div>
         <?php elseif ($msg === 'rejected'): ?>
@@ -49,7 +49,7 @@ $page_title = 'Pending Approvals';
         <?php if (empty($pending)): ?>
         <div class="card-kd">
             <div class="card-body-kd text-center py-5">
-                <div style="font-size:64px; margin-bottom:16px;">✅</div>
+                <div style="font-size:64px; margin-bottom:16px;"><i aria-hidden="true" class="fa-solid fa-circle-check"></i></div>
                 <h4 style="color:var(--primary-dark);">All Clear!</h4>
                 <p style="color:var(--text-muted);">No pending registrations at this time.</p>
             </div>
@@ -78,7 +78,7 @@ $page_title = 'Pending Approvals';
                             <i class="fa-solid fa-calendar me-1 mt-1"></i>Registered <?= date('d M Y, g:i A', strtotime($u['created_at'])) ?>
                         </div>
                         <p><?= nl2br(e($u['application_details'] ?? 'No application details supplied. Contact applicant before approval.')) ?></p><div class="d-flex gap-2">
-                            <form method="POST" action="" style="display:inline"><?= csrfField() ?><?= requestKeyField() ?><input type="hidden" name="approve" value="<?= e($u['id']) ?>"><label>Review notes</label><input class="form-control" name="review_notes" maxlength="3000" required><label><input type="checkbox" name="review_ack" value="1" required> Identity/qualification checked</label><button type="submit" class="btn-kd btn-kd-primary flex-fill justify-content-center" data-confirm="Approve <?= htmlspecialchars($u['name']) ?>?">
+                            <form method="POST" action="" style="display:inline"><?= csrfField() ?><?= requestKeyField() ?><input type="hidden" name="approve" value="<?= e($u['id']) ?>"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Review notes</label><input id="<?= e($fieldId) ?>" class="form-control" name="review_notes" maxlength="3000" required><label><input type="checkbox" name="review_ack" value="1" required> Identity/qualification checked</label><button type="submit" class="btn-kd btn-kd-primary flex-fill justify-content-center" data-confirm="Approve <?= htmlspecialchars($u['name']) ?>?">
                                 <i class="fa-solid fa-check"></i> Approve
                             </button></form>
                             <form method="POST" action="" style="display:inline"><?= csrfField() ?><?= requestKeyField() ?><input type="hidden" name="reject" value="<?= e($u['id']) ?>"><button type="submit" class="btn-kd btn-kd-danger flex-fill justify-content-center" data-confirm="Suspend this registration?">

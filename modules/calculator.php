@@ -5,7 +5,7 @@ $prices=$pdo->query("SELECT c.name,p.pickup_location,AVG(p.price_per_kg) AS pric
 include __DIR__.'/../includes/header.php';
 ?>
 <?php if($isAuth): ?><div class="layout-wrapper"><?php include __DIR__.'/../includes/sidebar.php'; ?><?php endif; ?>
-<main class="<?= $isAuth?'main-content':'container' ?>" id="main-content" tabindex="-1"><div class="page-body"><h1><?= t('Farm profit estimate','খামারের সম্ভাব্য লাভ') ?></h1><p>Use your farm's actual costs and expected harvested yield. These are scenarios, not guaranteed returns. / নিজের খামারের খরচ ও ফলন ব্যবহার করুন।</p>
+<main class="<?= $isAuth?'main-content':'container' ?>" id="main-content" tabindex="-1"><div class="page-body"><?php include __DIR__ . '/../includes/topbar.php'; ?><h1><?= t('Farm profit estimate','খামারের সম্ভাব্য লাভ') ?></h1><p>Use your farm's actual costs and expected harvested yield. These are scenarios, not guaranteed returns. / নিজের খামারের খরচ ও ফলন ব্যবহার করুন।</p>
 <form id="farmEstimate" class="form-kd card-kd"><div class="card-body-kd row g-3">
 <?php foreach(['area'=>['Land area / জমির পরিমাণ',0.01,0.01],'yieldKg'=>['Harvested yield (kg) / ফলন',0,0.01],'price'=>['Farm-gate sale price/kg (৳) / বিক্রয়মূল্য',0,0.01],'loss'=>['Spoilage/unsold (%) / নষ্ট বা অবিক্রীত',0,0.1],'commission'=>['Commission (%) / কমিশন',0,0.1]] as $name=>[$label,$min,$step]): ?>
 <div class="col-md-6"><label for="<?= e($name) ?>"><?= e($label) ?></label><input class="form-control" id="<?= e($name) ?>" name="<?= e($name) ?>" type="number" min="<?= $min ?>" step="<?= $step ?>" <?= $name==='loss'?'max="100"':'' ?> <?= $name==='commission'?'max="99.99"':'' ?> value="<?= $name==='commission'?5:($name==='loss'?10:'') ?>" required></div><?php endforeach; ?>

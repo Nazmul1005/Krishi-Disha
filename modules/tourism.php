@@ -9,28 +9,27 @@ $tours = $pdo->prepare("
     FROM FARM_TOUR ft
     JOIN FARMER f ON ft.farmer_id=f.id
     JOIN USER u ON f.user_id=u.id
-    WHERE (ft.status='active' OR (ft.status='pending' AND " . (isLoggedIn() && currentRole()==='admin' ? '1=1' : '0=1') . "))
+    WHERE u.status='approved' AND u.email_verified=1 AND (ft.status='active' OR (ft.status='pending' AND " . (isLoggedIn() && currentRole()==='admin' ? '1=1' : '0=1') . "))
     " . ($search ? "AND (ft.title LIKE ? OR ft.location LIKE ?)" : "") . "
     ORDER BY ft.id DESC
 ");
 $tour_params = [];
 if ($search) { $tour_params[] = "%$search%"; $tour_params[] = "%$search%"; }
-$tours->execute($tour_params);
-$tours = $tours->fetchAll();
+$tours=pagedRows($pdo,$tours->queryString,$tour_params,'tours','Farm visits',['title', 'location', 'farmer_name'],true);
 
-$guides = $pdo->query("SELECT g.*, u.name FROM GUIDE g JOIN USER u ON g.user_id=u.id WHERE g.availability='available'")->fetchAll();
+$guides = $pdo->query("SELECT g.*, u.name FROM GUIDE g JOIN USER u ON g.user_id=u.id WHERE g.availability='available' AND u.status='approved' AND u.email_verified=1")->fetchAll();
 
 $page_title = 'Agri-Tourism';
 $isAuth = isLoggedIn();
 ?>
 <?php include __DIR__ . '/../includes/header.php'; ?>
 <?php if ($isAuth): ?><div class="layout-wrapper"><?php include __DIR__ . '/../includes/sidebar.php'; ?><div class="main-content" id="main-content" tabindex="-1">
-<?php else: ?><nav class="kd-navbar"><div class="container"><div class="d-flex align-items-center justify-content-between"><a href="/KrishiDisha/index.php" class="navbar-brand" style="display:flex;align-items:center;gap:10px;font-family:'Nunito',sans-serif;font-size:20px;font-weight:800;color:#fff;"><div style="width:34px;height:34px;background:linear-gradient(135deg,#52b788,#2d6a4f);border-radius:8px;display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-leaf" style="color:#fff;font-size:15px;"></i></div>KrishiDisha</a><a href="/KrishiDisha/auth/login.php" class="btn-kd btn-kd-primary" style="padding:8px 18px;font-size:13px;">Login</a></div></div></nav><div style="padding-top:70px;"><?php endif; ?>
+<?php else: ?><div style=""><?php endif; ?>
 
 <div class="topbar">
     <div class="d-flex align-items-center gap-3">
-        <?php if ($isAuth): ?><button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button><?php endif; ?>
-        <div class="topbar-title"><i class="fa-solid fa-umbrella-beach me-2" style="color:#0891b2;"></i>Agri-Tourism</div>
+        <?php if ($isAuth): ?><?php endif; ?>
+        <h1 class="topbar-title"><i class="fa-solid fa-umbrella-beach me-2" style="color:#126078;"></i>Agri-Tourism</h1>
     </div>
     <div class="topbar-actions">
         <span class="badge-kd badge-info"><?= count($tours) ?> farms available</span>
@@ -42,7 +41,7 @@ $isAuth = isLoggedIn();
     </div>
 </div>
 
-<div class="page-body">
+<div class="page-body"><?php include __DIR__ . '/../includes/topbar.php'; ?>
     <!-- Search Bar -->
     <form class="filter-bar" method="GET" style="margin-bottom:20px;">
         <input type="text" name="q" placeholder="Search tours by title or location..." value="<?= htmlspecialchars($search) ?>" style="flex:2;">
@@ -50,8 +49,8 @@ $isAuth = isLoggedIn();
         <a href="tourism.php" class="btn-kd btn-kd-outline">Reset</a>
     </form>
     <!-- Hero banner -->
-    <div style="background:linear-gradient(135deg,#0c4a6e,#0891b2);border-radius:var(--radius);padding:36px;color:#fff;margin-bottom:28px;position:relative;overflow:hidden;">
-        <div style="position:absolute;right:-20px;bottom:-20px;font-size:120px;opacity:0.1;">🚜</div>
+    <div style="background:linear-gradient(135deg,#0c4a6e,#126078);border-radius:var(--radius);padding:36px;color:#fff;margin-bottom:28px;position:relative;overflow:hidden;">
+        <div style="position:absolute;right:-20px;bottom:-20px;font-size:120px;opacity:0.1;"><i aria-hidden="true" class="fa-solid fa-tractor"></i></div>
         <h3 style="color:#fff;margin-bottom:8px;">Discover Bangladesh's Rural Beauty</h3>
         <p style="color:rgba(255,255,255,0.8);margin-bottom:20px;font-size:15px;">Book an immersive farm tour, hire a local guide, and taste authentic farm-to-table food.</p>
         <?php if (!$isAuth): ?>
@@ -60,16 +59,16 @@ $isAuth = isLoggedIn();
     </div>
 
     <!-- Farm Tours -->
-    <h5 style="font-family:'Nunito',sans-serif;font-weight:800;color:var(--primary-dark);margin-bottom:16px;">🌾 Available Farm Tours</h5>
+    <h5 style="font-family:'Nunito',sans-serif;font-weight:800;color:var(--primary-dark);margin-bottom:16px;"><i aria-hidden="true" class="fa-solid fa-wheat-awn"></i> Available Farm Tours</h5>
     <div class="row g-4 mb-5">
         <?php foreach ($tours as $t): ?>
         <div class="col-md-6 col-lg-4">
             <div class="card-kd">
                 <div style="height:180px;overflow:hidden;position:relative;">
                     <?php if (!empty($t['image']) && mediaAvailable($t['image'])): ?>
-                    <img alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($t['image']) ?>" style="width:100%;height:180px;object-fit:cover;">
+                    <img width="480" height="320" decoding="async" alt="<?= e($t['title']) ?>" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($t['image']) ?>" style="width:100%;height:180px;object-fit:cover;">
                     <?php else: ?>
-                    <div style="height:180px;background:linear-gradient(135deg,var(--primary-dark),var(--primary));display:flex;align-items:center;justify-content:center;font-size:72px;">🌿</div>
+                    <div style="height:180px;background:linear-gradient(135deg,var(--primary-dark),var(--primary));display:flex;align-items:center;justify-content:center;font-size:72px;"><i aria-hidden="true" class="fa-solid fa-leaf"></i></div>
                     <?php endif; ?>
                     <?php if ($isAuth && currentRole() === 'admin'): ?>
                     <div style="position:absolute;top:8px;right:8px;display:flex;gap:4px;">
@@ -106,18 +105,18 @@ $isAuth = isLoggedIn();
             </div>
         </div>
         <?php endforeach; ?>
-        <?php if (empty($tours)): ?><div class="col-12"><div class="card-kd"><div class="card-body-kd text-center py-5"><div style="font-size:64px;">🚜</div><p style="color:var(--text-muted);">No farm tours available yet.</p></div></div></div><?php endif; ?>
+        <?php if (empty($tours)): ?><div class="col-12"><div class="card-kd"><div class="card-body-kd text-center py-5"><div style="font-size:64px;"><i aria-hidden="true" class="fa-solid fa-tractor"></i></div><p style="color:var(--text-muted);">No farm tours available yet.</p></div></div></div><?php endif; ?>
     </div>
 
     <!-- Available Guides -->
     <?php if (!empty($guides)): ?>
-    <h5 style="font-family:'Nunito',sans-serif;font-weight:800;color:var(--primary-dark);margin-bottom:16px;">🗺️ Available Tour Guides</h5>
+    <h5 style="font-family:'Nunito',sans-serif;font-weight:800;color:var(--primary-dark);margin-bottom:16px;"><i aria-hidden="true" class="fa-solid fa-map"></i> Available Tour Guides</h5>
     <div class="row g-3">
         <?php foreach ($guides as $g): ?>
         <div class="col-md-6 col-lg-3">
             <div class="card-kd">
                 <div class="card-body-kd text-center">
-                    <div style="font-size:48px;margin-bottom:10px;">👨‍🦺</div>
+                    <div style="font-size:48px;margin-bottom:10px;"><i aria-hidden="true" class="fa-solid fa-person-walking"></i></div>
                     <div style="font-weight:700;font-size:15px;margin-bottom:4px;"><?= htmlspecialchars($g['name']) ?></div>
                     <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;"><?= htmlspecialchars($g['languages'] ?? '') ?></div>
                     <div style="display:flex;justify-content:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">

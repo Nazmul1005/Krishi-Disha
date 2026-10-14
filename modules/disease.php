@@ -17,8 +17,7 @@ $stmt = $pdo->prepare("
     GROUP BY d.id
     ORDER BY d.name ASC
 ");
-$stmt->execute($params);
-$diseases = $stmt->fetchAll();
+$diseases=pagedRows($pdo,$stmt->queryString,$params,'diseases','Reviewed diseases',['name', 'symptoms', 'affected_crops'],false);
 
 $page_title = 'Disease Reference';
 ?>
@@ -29,14 +28,14 @@ $page_title = 'Disease Reference';
 <?php include __DIR__ . '/../includes/sidebar.php'; ?>
 <div class="main-content" id="main-content" tabindex="-1">
 <?php else: ?>
-<nav class="kd-navbar"><div class="container"><div class="d-flex align-items-center justify-content-between"><a href="/KrishiDisha/index.php" class="navbar-brand" style="display:flex;align-items:center;gap:10px;font-family:'Nunito',sans-serif;font-size:20px;font-weight:800;color:#fff;"><div style="width:34px;height:34px;background:linear-gradient(135deg,#52b788,#2d6a4f);border-radius:8px;display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-leaf" style="color:#fff;font-size:15px;"></i></div>KrishiDisha</a><a href="/KrishiDisha/auth/login.php" class="btn-kd btn-kd-primary" style="padding:8px 18px;font-size:13px;">Login</a></div></div></nav>
-<div style="padding-top:70px;">
+
+<div style="">
 <?php endif; ?>
 
 <div class="topbar">
     <div class="d-flex align-items-center gap-3">
-        <?php if ($isAuth): ?><button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button><?php endif; ?>
-        <div class="topbar-title"><i class="fa-solid fa-bug me-2" style="color:var(--danger);"></i>Crop disease reference</div>
+        <?php if ($isAuth): ?><?php endif; ?>
+        <h1 class="topbar-title"><i class="fa-solid fa-bug me-2" style="color:var(--danger);"></i>Crop disease reference</h1>
     </div>
     <div class="topbar-actions">
         <a href="/KrishiDisha/modules/photo_library.php?type=disease" class="btn-kd btn-kd-outline" style="padding:6px 14px;font-size:12px;"><i class="fa-solid fa-images"></i> Symptom photos</a>
@@ -53,7 +52,7 @@ $page_title = 'Disease Reference';
     </div>
 </div>
 
-<div class="page-body"><?= knowledgeNotice() ?><p>This catalog is not a diagnosis. For suspected disease, contact an approved expert. Chemical treatment needs current local product labels, dose, protective equipment and harvest intervals. <a href="https://prism.dae.gov.bd/pesticide-list" rel="noopener" target="_blank">DAE pesticide information</a></p>
+<div class="page-body"><?php include __DIR__ . '/../includes/topbar.php'; ?><?= knowledgeNotice() ?><p>This catalog is not a diagnosis. For suspected disease, contact an approved expert. Chemical treatment needs current local product labels, dose, protective equipment and harvest intervals. <a href="https://prism.dae.gov.bd/pesticide-list" rel="noopener" target="_blank">DAE pesticide information</a></p>
     <form class="filter-bar" method="GET">
         <input type="text" name="q" placeholder="Search disease name, symptoms, affected part..." value="<?= htmlspecialchars($search) ?>" style="flex:2;">
         <button type="submit" class="btn-kd btn-kd-primary"><i class="fa-solid fa-search"></i> Search</button>
@@ -69,13 +68,13 @@ $page_title = 'Disease Reference';
                     <p class="small">Source: <a href="<?= e($d['source_url']) ?>" target="_blank" rel="noopener">Reference</a> · Reviewed <?= e($d['reviewed_at']) ?></p><!-- Disease photo or emoji -->
                     <?php if ($hasUploadedImage || $photo): ?>
                     <div style="height:150px;overflow:hidden;border-radius:10px;margin-bottom:16px;">
-                        <img loading="lazy" src="/KrishiDisha/<?= e($hasUploadedImage ? $d['image'] : $photo['image']) ?>" alt="<?= e($hasUploadedImage ? $d['name'] : $photo['caption']) ?>" style="width:100%;height:150px;object-fit:cover;">
+                        <img width="480" height="320" decoding="async" loading="lazy" src="/KrishiDisha/<?= e($hasUploadedImage ? $d['image'] : $photo['image']) ?>" alt="<?= e($hasUploadedImage ? $d['name'] : $photo['caption']) ?>" style="width:100%;height:150px;object-fit:cover;">
                     </div>
                     <?php if (!$hasUploadedImage && $photo): ?><p class="photo-inline-credit">Photo: <?= e($photo['credit']) ?> · <a href="/KrishiDisha/modules/photo_library.php?type=disease#<?= e($photo['slug']) ?>">source & license</a></p><?php endif; ?>
                     <?php endif; ?>
                     <div class="d-flex align-items-start gap-3 mb-3">
                         <?php if (!$hasUploadedImage && !$photo): ?>
-                        <div style="width:48px;height:48px;background:#fee2e2;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🦠</div>
+                        <div style="width:48px;height:48px;background:#fee2e2;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;"><i aria-hidden="true" class="fa-solid fa-bug"></i></div>
                         <?php endif; ?>
                         <div style="flex:1;">
                             <h5 style="font-size:15px;margin-bottom:4px;"><?= htmlspecialchars($d['name']) ?></h5>
@@ -106,7 +105,7 @@ $page_title = 'Disease Reference';
                     </div>
 
                     <div style="background:#f0fdf4;border-radius:8px;padding:12px;border-left:3px solid var(--primary-light);">
-                        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--primary);margin-bottom:4px;"><i class="fa-solid fa-shield-halved me-1"></i>Solution</div>
+                        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--primary);margin-bottom:4px;"><i class="fa-solid fa-shield-halved me-1"></i>Reviewed treatment reference</div>
                         <p style="font-size:13px;color:var(--text);line-height:1.5;margin:0;"><?= htmlspecialchars($d['solution'] ?? 'N/A') ?></p>
                     </div>
                 </div>
@@ -114,7 +113,7 @@ $page_title = 'Disease Reference';
         </div>
         <?php endforeach; ?>
         <?php if (empty($diseases)): ?>
-        <div class="col-12"><div class="card-kd"><div class="card-body-kd text-center py-5"><div style="font-size:64px;">🔍</div><h4 style="color:var(--text-muted);">No diseases found</h4></div></div></div>
+        <div class="col-12"><div class="card-kd"><div class="card-body-kd text-center py-5"><div style="font-size:64px;"><i aria-hidden="true" class="fa-solid fa-magnifying-glass"></i></div><h4 style="color:var(--text-muted);">No diseases found</h4><p>Published references appear after source review.</p><a class="btn-kd btn-kd-outline" href="disease.php">Clear search</a></div></div></div>
         <?php endif; ?>
     </div>
 </div>

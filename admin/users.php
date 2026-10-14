@@ -34,8 +34,7 @@ if ($search)        { $where[] = "(name LIKE ? OR email LIKE ?)"; $params[] = "%
 
 $sql   = "SELECT * FROM USER WHERE " . implode(' AND ', $where) . " ORDER BY created_at DESC";
 $stmt  = $pdo->prepare($sql);
-$stmt->execute($params);
-$users = $stmt->fetchAll();
+$users=pagedRows($pdo,$stmt->queryString,$params,'users','Platform accounts',['name', 'email'],true);
 
 $messages = ['approved'=>'User approved.','suspended'=>'User suspended.','deleted'=>'User deleted.'];
 $msg = $messages[$_GET['msg'] ?? ''] ?? '';
@@ -47,11 +46,11 @@ $page_title = 'Manage Users';
 <div class="main-content" id="main-content" tabindex="-1">
     <div class="topbar">
         <div class="d-flex align-items-center gap-3">
-            <button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
-            <div class="topbar-title">Manage Users</div>
+
+            <h1 class="topbar-title">Manage Users</h1>
         </div>
     </div>
-    <div class="page-body"><?= renderFlash() ?>
+    <div class="page-body"><?php include __DIR__ . '/../includes/topbar.php'; ?><?= renderFlash() ?>
         <?php if ($msg): ?>
         <div class="alert-kd alert-kd-success" data-autohide="3000"><i class="fa-solid fa-check"></i> <?= $msg ?></div>
         <?php endif; ?>
@@ -100,7 +99,7 @@ $page_title = 'Manage Users';
                         <td>
                             <div style="display:flex; gap:6px; flex-wrap:wrap;">
                                 <?php if ($u['status'] !== 'approved'): ?>
-                                <form method="POST" action="" style="display:inline"><?= csrfField() ?><?= requestKeyField() ?><input type="hidden" name="approve" value="<?= e($u['id']) ?>"><label>Review notes</label><input class="form-control" name="review_notes" maxlength="3000" required><label><input type="checkbox" name="review_ack" value="1" required> Identity/qualification checked</label><button type="submit" class="btn-kd btn-kd-primary" style="padding:4px 10px; font-size:11px;" data-confirm="Approve this user?"><i class="fa-solid fa-check"></i></button></form>
+                                <form method="POST" action="" style="display:inline"><?= csrfField() ?><?= requestKeyField() ?><input type="hidden" name="approve" value="<?= e($u['id']) ?>"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Review notes</label><input id="<?= e($fieldId) ?>" class="form-control" name="review_notes" maxlength="3000" required><label><input type="checkbox" name="review_ack" value="1" required> Identity/qualification checked</label><button type="submit" class="btn-kd btn-kd-primary" style="padding:4px 10px; font-size:11px;" data-confirm="Approve this user?"><i class="fa-solid fa-check"></i></button></form>
                                 <?php endif; ?>
                                 <?php if ($u['status'] !== 'suspended' && $u['role'] !== 'admin'): ?>
                                 <form method="POST" action="" style="display:inline"><?= csrfField() ?><?= requestKeyField() ?><input type="hidden" name="suspend" value="<?= e($u['id']) ?>"><button type="submit" class="btn-kd btn-kd-gold" style="padding:4px 10px; font-size:11px; color:#fff;" data-confirm="Suspend this user?"><i class="fa-solid fa-ban"></i></button></form>

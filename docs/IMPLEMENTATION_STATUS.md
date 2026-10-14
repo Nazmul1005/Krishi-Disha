@@ -1,3 +1,13 @@
+# Phase 1 interface upgrade — 14 October 2026
+
+Phase 1 is complete: shared mobile layout and local fonts, database-backed landing page, role attention/trends, bounded filtered lists, accessible interaction components and credited WebP assets. See [delivery notes](PHASE1_DELIVERY.md), [design system](DESIGN_SYSTEM.md), [screenshots](screenshots/README.md) and [migration rollback notes](MIGRATIONS.md).
+
+Fresh checks passed: 68 service/database checks; 26 desktop/mobile browser checks including axe coverage for all role dashboards and representative public/forms/marketplace screens; calculator scenarios; PHP/JavaScript syntax; original/derivative/vendor/font checksums; and whitespace checks. The local app image was rebuilt and migration 006 applied. Runtime checks confirmed limited database grants, six applied migrations, a healthy database endpoint and HTTP 200 for the home page. The earlier dependency/image security scan results below remain dated historical results; they were not rerun as part of this UI phase.
+
+Full translation and external integrations are not complete. Registration still requires configured SMTP; Terms/Privacy await owner review. Phase 2 has not started.
+
+---
+
 # Implementation status — 13 October 2026
 
 The current codebase addresses the source audit of commit b16a855. Production rollout requires the deployment and upgrade instructions.

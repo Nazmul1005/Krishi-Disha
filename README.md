@@ -26,6 +26,8 @@
 
 ---
 
+> Phase 1 adds a shared mobile interface, database-backed landing page, dashboard attention/trends and paginated operational lists. See the [design system](docs/DESIGN_SYSTEM.md) and [test screenshot guide](docs/screenshots/README.md). Later integration and workflow phases remain separate.
+
 ## 🌍 What is KrishiDisha?
 
 > **কৃষিদিশা** *(Krishi = Agriculture | Disha = Direction/Path)*
@@ -245,7 +247,7 @@ Farmer submits listing ──► Admin reviews ──► Buyer places order
 
 - Search across crop name, local (Bangla) name and available reference fields
 - Filter by **Season** (Summer, Winter, Rainy, All Year) and **Category** (Grain, Vegetable, Fruit…)
-- Each crop card displays its **uploaded photo** (falls back to category emoji)
+- Each crop card displays its **uploaded photo** (falls back to a local icon)
 - Users can suggest a crop for administrator review
 - Only sourced, reviewed crop content appears as public guidance
 

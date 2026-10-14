@@ -6,6 +6,14 @@ Fresh checks passed: 68 service/database checks; 26 desktop/mobile browser check
 
 Full translation and external integrations are not complete. Registration still requires configured SMTP; Terms/Privacy await owner review. Phase 2 has not started.
 
+## CI container fix — 14 October 2026
+
+[Actions run 38557717082](https://github.com/Nazmul1005/Krishi-Disha/actions/runs/38557717082) passed the application checks before failing the image scan on CVE-2026-8286 and CVE-2026-8927 in inherited `curl`/`libcurl4t64` packages. The Docker build now explicitly upgrades both packages from Debian's repositories; the rebuilt image installed `8.14.1-2+deb13u7`. The existing high/critical scan policy is unchanged. Fresh local Trivy 0.75.0 scans reported zero fixable high/critical findings in both the application and database images, and npm/Composer audits passed.
+
+Validation also uncovered an asset packaging problem when an ignored local `public/assets` directory exists: copying the source directory could produce `public/assets/assets`. The build now copies directory contents into an explicit destination and excludes generated public assets from its context. The JavaScript served by the rebuilt application matches the source at the expected URL.
+
+Post-fix local validation passed all 68 integration checks, all 26 desktop/mobile browser checks against the built image, calculator checks, PHP lint and runtime database-permission checks. Browser data was isolated and removed after validation. Local image checks used ARM64; GitHub's AMD64 runner still needs a new run of the fix commit.
+
 ---
 
 # Implementation status — 13 October 2026

@@ -5,6 +5,7 @@
 storage
 vendor
 node_modules
+public/assets
 assets/images/uploads
 *.log
 database/demo_seed.sql

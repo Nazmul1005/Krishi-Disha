@@ -27,8 +27,7 @@ if($_SERVER['REQUEST_METHOD']==='POST') {
 }
 
 $products = $pdo->prepare("SELECT p.*, c.name as crop_name FROM PRODUCT p JOIN CROP c ON p.crop_id=c.id WHERE p.farmer_id=? ORDER BY p.created_at DESC");
-$products->execute([$fid]);
-$products = $products->fetchAll();
+$products=pagedRows($pdo,$products->queryString,[$fid],'produce','Your produce',['crop_name', 'variety', 'pickup_location'],true);
 
 $crops = $pdo->query("SELECT id,name FROM CROP ORDER BY name")->fetchAll();
 $page_title = 'My Produce';
@@ -39,11 +38,11 @@ $page_title = 'My Produce';
 <div class="main-content" id="main-content" tabindex="-1">
     <div class="topbar">
         <div class="d-flex align-items-center gap-3">
-            <button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
-            <div class="topbar-title"><i class="fa-solid fa-basket-shopping me-2" style="color:var(--primary);"></i>My Produce</div>
+
+            <h1 class="topbar-title"><i class="fa-solid fa-basket-shopping me-2" style="color:var(--primary);"></i>My Produce</h1>
         </div>
     </div>
-    <div class="page-body"><?= renderFlash() ?>
+    <div class="page-body"><?php include __DIR__ . '/../includes/topbar.php'; ?><?= renderFlash() ?>
         <?php if ($msg): ?><div class="alert-kd alert-kd-success" data-autohide="3000"><i class="fa-solid fa-check"></i> <?= $msg ?></div><?php endif; ?>
         <?php if ($err): ?><div class="alert-kd alert-kd-error" data-autohide="4000"><i class="fa-solid fa-exclamation-circle"></i> <?= $err ?></div><?php endif; ?>
 
@@ -53,27 +52,27 @@ $page_title = 'My Produce';
                 <div class="card-kd">
                     <div class="card-header-kd"><h5><i class="fa-solid fa-plus me-2" style="color:var(--primary);"></i>List New Produce</h5></div>
                     <div class="card-body-kd">
-                        <form method="POST" class="form-kd" data-validate><?= csrfField() ?><?= requestKeyField() ?>
+                        <form id="produce-form" method="POST" class="form-kd" data-validate><?= csrfField() ?><?= requestKeyField() ?>
                             <div class="form-group">
-                                <label>Crop <span style="color:red">*</span></label>
-                                <select name="crop_id" class="form-control" required>
+                                <?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Crop <span style="color:red">*</span></label>
+                                <select id="<?= e($fieldId) ?>" name="crop_id" class="form-control" required>
                                     <option value="">Select crop</option>
                                     <?php foreach ($crops as $c): ?><option value="<?= e($c['id']) ?>"><?= htmlspecialchars($c['name']) ?></option><?php endforeach; ?>
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>Quantity (kg) <span style="color:red">*</span></label>
-                                <input type="number" name="quantity_kg" step="0.01" min="0.01" class="form-control" required>
+                                <?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Quantity (kg) <span style="color:red">*</span></label>
+                                <input id="<?= e($fieldId) ?>" type="number" name="quantity_kg" step="0.01" min="0.01" class="form-control" required>
                             </div>
                             <div class="form-group">
-                                <label>Price per kg (৳) <span style="color:red">*</span></label>
-                                <input type="number" name="price_per_kg" step="0.01" min="0.01" class="form-control" required>
+                                <?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Price per kg (৳) <span style="color:red">*</span></label>
+                                <input id="<?= e($fieldId) ?>" type="number" name="price_per_kg" step="0.01" min="0.01" class="form-control" required>
                             </div>
                             <div class="form-group">
-                                <label>Description</label>
-                                <textarea name="description" class="form-control" rows="3" placeholder="Quality notes, harvest date..."></textarea>
+                                <?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Description</label>
+                                <textarea id="<?= e($fieldId) ?>" name="description" class="form-control" rows="3" placeholder="Quality notes, harvest date..."></textarea>
                             </div>
-                            <label>Variety</label><input class="form-control" name="variety" maxlength="150" required><label>Grade / quality</label><input class="form-control" name="grade" maxlength="100" required><label>Harvest date</label><input class="form-control" type="date" name="harvest_date" max="<?= date('Y-m-d') ?>" required><label>Pickup location</label><input class="form-control" name="pickup_location" maxlength="255" required><label>Minimum order (kg)</label><input class="form-control" name="minimum_order_kg" type="number" min="0.01" step="0.01" value="0.50" required><button type="submit" name="add_product" class="btn-kd btn-kd-primary w-100 justify-content-center">
+                            <?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Variety</label><input id="<?= e($fieldId) ?>" class="form-control" name="variety" maxlength="150" required><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Grade / quality</label><input id="<?= e($fieldId) ?>" class="form-control" name="grade" maxlength="100" required><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Harvest date</label><input id="<?= e($fieldId) ?>" class="form-control" type="date" name="harvest_date" max="<?= date('Y-m-d') ?>" required><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Pickup location</label><input id="<?= e($fieldId) ?>" class="form-control" name="pickup_location" maxlength="255" required><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Minimum order (kg)</label><input id="<?= e($fieldId) ?>" class="form-control" name="minimum_order_kg" type="number" min="0.01" step="0.01" value="0.50" required><button type="submit" name="add_product" class="btn-kd btn-kd-primary w-100 justify-content-center">
                                 <i class="fa-solid fa-plus"></i> List Produce
                             </button>
                         </form>
@@ -110,7 +109,7 @@ $page_title = 'My Produce';
                                 </td>
                             </tr>
                             <?php endforeach; ?>
-                            <?php if (empty($products)): ?><tr><td colspan="6" class="text-center py-4" style="color:var(--text-muted);">No products listed yet.</td></tr><?php endif; ?>
+                            <?php if (empty($products)): ?><tr><td colspan="6" class="text-center py-4" style="color:var(--text-muted);">No products listed yet. <a href="#produce-form">List your first produce</a></td></tr><?php endif; ?>
                             </tbody>
                         </table>
                     </div>

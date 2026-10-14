@@ -17,15 +17,14 @@ $orders = $pdo->prepare("SELECT o.*, u.name as buyer, c.name as crop_name
     JOIN PRODUCT p ON o.product_id=p.id
     JOIN CROP c ON p.crop_id=c.id
     ORDER BY o.created_at DESC");
-$orders->execute([$did]);
-$orders = $orders->fetchAll();
+$orders=pagedRows($pdo,$orders->queryString,[$did],'sales','Sales orders',['buyer', 'crop_name'],true);
 $page_title = 'Sales';
 ?>
 <?php include __DIR__ . '/../includes/header.php'; ?>
 <div class="layout-wrapper"><?php include __DIR__ . '/../includes/sidebar.php'; ?>
 <div class="main-content" id="main-content" tabindex="-1">
-    <div class="topbar"><div class="d-flex align-items-center gap-3"><button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none;font-size:20px;"><i class="fa-solid fa-bars"></i></button><div class="topbar-title"><i class="fa-solid fa-chart-line me-2" style="color:var(--primary);"></i>Sales Management</div></div></div>
-    <div class="page-body"><?= renderFlash() ?>
+    <div class="topbar"><div class="d-flex align-items-center gap-3"><h1 class="topbar-title"><i class="fa-solid fa-chart-line me-2" style="color:var(--primary);"></i>Sales Management</h1></div></div>
+    <div class="page-body"><?php include __DIR__ . '/../includes/topbar.php'; ?><?= renderFlash() ?>
         <div class="card-kd">
             <div class="card-header-kd"><h5>All Sales Orders (<?= count($orders) ?>)</h5></div>
             <div class="card-body-kd p-0">

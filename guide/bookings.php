@@ -10,14 +10,14 @@ if($_SERVER['REQUEST_METHOD']==='POST') {
     catch(Throwable $e) { flash('error',$e instanceof InvalidArgumentException ? $e->getMessage() : 'Status could not be updated.'); }
     header('Location: bookings.php');exit;
 }
-$bookings = $pdo->prepare("SELECT tb.*, ft.title, ft.location, u.name as tourist_name FROM TOUR_BOOKING tb JOIN FARM_TOUR ft ON tb.tour_id=ft.id JOIN TOURIST t ON tb.tourist_id=t.id JOIN USER u ON t.user_id=u.id WHERE tb.guide_id=? ORDER BY tb.start_date DESC"); $bookings->execute([$gid]); $bookings = $bookings->fetchAll();
+$bookings = $pdo->prepare("SELECT tb.*, ft.title, ft.location, u.name as tourist_name FROM TOUR_BOOKING tb JOIN FARM_TOUR ft ON tb.tour_id=ft.id JOIN TOURIST t ON tb.tourist_id=t.id JOIN USER u ON t.user_id=u.id WHERE tb.guide_id=? ORDER BY tb.start_date DESC"); $bookings=pagedRows($pdo,$bookings->queryString,[$gid],'bookings','Tour bookings',['title', 'tourist_name'],true);
 $page_title = 'My Bookings';
 ?>
 <?php include __DIR__ . '/../includes/header.php'; ?>
 <div class="layout-wrapper"><?php include __DIR__ . '/../includes/sidebar.php'; ?>
 <div class="main-content" id="main-content" tabindex="-1">
-    <div class="topbar"><div class="d-flex align-items-center gap-3"><button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none;font-size:20px;"><i class="fa-solid fa-bars"></i></button><div class="topbar-title"><i class="fa-solid fa-route me-2" style="color:#0891b2;"></i>My Tour Bookings</div></div></div>
-    <div class="page-body"><?= renderFlash() ?>
+    <div class="topbar"><div class="d-flex align-items-center gap-3"><h1 class="topbar-title"><i class="fa-solid fa-route me-2" style="color:#126078;"></i>My Tour Bookings</h1></div></div>
+    <div class="page-body"><?php include __DIR__ . '/../includes/topbar.php'; ?><?= renderFlash() ?>
         <div class="card-kd">
             <div class="card-header-kd"><h5>All Bookings (<?= count($bookings) ?>)</h5></div>
             <div class="card-body-kd p-0">

@@ -31,8 +31,7 @@ $stmt = $pdo->prepare("
     WHERE " . implode(' AND ', $where) . "
     ORDER BY c.name ASC
 ");
-$stmt->execute($params);
-$items = $stmt->fetchAll();
+$items=pagedRows($pdo,$stmt->queryString,$params,'farmer_listings','Farmer produce',['crop_name', 'farmer_name', 'pickup_location'],false);
 
 // ── Fetch dealer inventory (resale listings) ──────────────────
 $dwhere = ['di.stock_remaining > 0 AND u.status="approved"']; $dparams = [];
@@ -50,8 +49,7 @@ $dstmt = $pdo->prepare("
     WHERE " . implode(' AND ', $dwhere) . "
     ORDER BY c.name ASC
 ");
-$dstmt->execute($dparams);
-$dealer_items = $dstmt->fetchAll();
+$dealer_items=pagedRows($pdo,$dstmt->queryString,$dparams,'dealer_listings','Dealer produce',['crop_name', 'dealer_name'],false);
 
 $categories = $pdo->query("SELECT DISTINCT c.category FROM CROP c
     WHERE c.id IN (SELECT crop_id FROM PRODUCT WHERE status='available' AND quantity_kg > 0)
@@ -68,8 +66,8 @@ $page_title = 'Marketplace';
 <div class="main-content" id="main-content" tabindex="-1">
     <div class="topbar">
         <div class="d-flex align-items-center gap-3">
-            <button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
-            <div class="topbar-title"><i class="fa-solid fa-store me-2" style="color:var(--primary);"></i>Marketplace</div>
+
+            <h1 class="topbar-title"><i class="fa-solid fa-store me-2" style="color:var(--primary);"></i>Marketplace</h1>
         </div>
         <div class="topbar-actions">
             <span class="badge-kd badge-success"><?= $total_listings ?> listings available</span>
@@ -80,21 +78,21 @@ $page_title = 'Marketplace';
             <?php endif; ?>
         </div>
     </div>
-    <div class="page-body">
+    <div class="page-body"><?php include __DIR__ . '/../includes/topbar.php'; ?>
         <?= renderFlash() ?>
 
         <form class="filter-bar" method="GET">
             <input type="text" name="q" placeholder="Search crops..." value="<?= htmlspecialchars($search) ?>" style="flex:2;">
             <select name="category">
                 <option value="">All Categories</option>
-                <?php foreach ($categories as $cat): ?><option value="<?= $cat ?>" <?= $category===$cat?'selected':'' ?>><?= $cat ?></option><?php endforeach; ?>
+                <?php foreach ($categories as $cat): ?><option value="<?= e($cat) ?>" <?= $category===$cat?'selected':'' ?>><?= e($cat) ?></option><?php endforeach; ?>
             </select>
             <button type="submit" class="btn-kd btn-kd-primary"><i class="fa-solid fa-search"></i> Search</button>
             <a href="marketplace.php" class="btn-kd btn-kd-outline">Reset</a>
         </form>
 
         <?php if ($total_listings === 0): ?>
-        <div class="card-kd"><div class="card-body-kd text-center py-5"><div style="font-size:64px;">🛒</div><h4 style="color:var(--text-muted);">No listings available</h4></div></div>
+        <div class="card-kd"><div class="card-body-kd text-center py-5"><div style="font-size:64px;"><i aria-hidden="true" class="fa-solid fa-basket-shopping"></i></div><h4 style="color:var(--text-muted);">No listings available</h4></div></div>
         <?php endif; ?>
 
         <?php if ($items): ?>
@@ -104,11 +102,11 @@ $page_title = 'Marketplace';
             <div class="col-md-6 col-lg-4">
                 <div class="card-kd">
                     <div style="height:140px;overflow:hidden;">
-                        <?php $icons=['Grain'=>'🌾','Vegetable'=>'🥕','Fruit'=>'🍎','Fiber'=>'🪢','Oilseed'=>'🌻','Legume'=>'🫘','Cash Crop'=>'💰']; ?>
+                        <?php $icons=['Grain'=>'<i aria-hidden="true" class="fa-solid fa-wheat-awn"></i>','Vegetable'=>'<i aria-hidden="true" class="fa-solid fa-carrot"></i>','Fruit'=>'<i aria-hidden="true" class="fa-solid fa-apple-whole"></i>','Fiber'=>'<i aria-hidden="true" class="fa-solid fa-seedling"></i>','Oilseed'=>'<i aria-hidden="true" class="fa-solid fa-seedling"></i>','Legume'=>'<i aria-hidden="true" class="fa-solid fa-seedling"></i>','Cash Crop'=>'<i aria-hidden="true" class="fa-solid fa-coins"></i>']; ?>
                         <?php if (!empty($item['image']) && mediaAvailable($item['image'])): ?>
-                        <img alt="" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($item['image']) ?>" style="width:100%;height:140px;object-fit:cover;">
+                        <img width="480" height="320" decoding="async" alt="<?= e($item['crop_name']) ?>" loading="lazy" src="/KrishiDisha/<?= htmlspecialchars($item['image']) ?>" style="width:100%;height:140px;object-fit:cover;">
                         <?php else: ?>
-                        <div style="height:140px;background:linear-gradient(135deg,var(--surface3),var(--accent3));display:flex;align-items:center;justify-content:center;font-size:64px;"><?= $icons[$item['category']]??'🌱' ?></div>
+                        <div style="height:140px;background:linear-gradient(135deg,var(--surface3),var(--accent3));display:flex;align-items:center;justify-content:center;font-size:64px;"><?= $icons[$item['category']]??'<i aria-hidden="true" class="fa-solid fa-seedling"></i>' ?></div>
                         <?php endif; ?>
                     </div>
                     <div class="card-body-kd">
@@ -125,7 +123,7 @@ $page_title = 'Marketplace';
                         </div>
                         <form method="POST"><?= csrfField() ?><?= requestKeyField() ?>
                             <?= csrfField() ?>
-                            <label>Pickup or delivery</label><select name="fulfillment" class="form-control"><option value="pickup">Pickup / সংগ্রহ</option><option value="delivery">Delivery / সরবরাহ</option></select><label>Pickup arrangement or delivery address</label><input name="delivery_address" class="form-control" maxlength="500" required><label>Contact phone</label><input name="contact_phone" class="form-control" maxlength="20" required><p class="small">Arrange availability and delivery charges with the seller before ordering.</p><input type="hidden" name="product_id" value="<?= e($item['id']) ?>">
+                            <?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Pickup or delivery</label><select id="<?= e($fieldId) ?>" name="fulfillment" class="form-control"><option value="pickup">Pickup / সংগ্রহ</option><option value="delivery">Delivery / সরবরাহ</option></select><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Pickup arrangement or delivery address</label><input id="<?= e($fieldId) ?>" name="delivery_address" class="form-control" maxlength="500" required><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Contact phone</label><input id="<?= e($fieldId) ?>" name="contact_phone" class="form-control" maxlength="20" required><p class="small">Arrange availability and delivery charges with the seller before ordering.</p><input type="hidden" name="product_id" value="<?= e($item['id']) ?>">
                             <div style="display:flex;gap:8px;align-items:center;">
                                 <input type="number" name="quantity_kg" step="0.01" min="<?= e($item['minimum_order_kg']) ?>" max="<?= e($item['quantity_kg']) ?>" placeholder="kg" class="form-control" style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;outline:none;" required>
                                 <button type="submit" name="order_farmer" class="btn-kd btn-kd-primary" style="flex:1;justify-content:center;" data-confirm="Place this order?">
@@ -147,8 +145,8 @@ $page_title = 'Marketplace';
             <div class="col-md-6 col-lg-4">
                 <div class="card-kd">
                     <div style="height:140px;overflow:hidden;">
-                        <?php $icons=['Grain'=>'🌾','Vegetable'=>'🥕','Fruit'=>'🍎','Fiber'=>'🪢','Oilseed'=>'🌻','Legume'=>'🫘','Cash Crop'=>'💰']; ?>
-                        <div style="height:140px;background:linear-gradient(135deg,#dbeafe,#eff6ff);display:flex;align-items:center;justify-content:center;font-size:64px;"><?= $icons[$d['category']]??'🌱' ?></div>
+                        <?php $icons=['Grain'=>'<i aria-hidden="true" class="fa-solid fa-wheat-awn"></i>','Vegetable'=>'<i aria-hidden="true" class="fa-solid fa-carrot"></i>','Fruit'=>'<i aria-hidden="true" class="fa-solid fa-apple-whole"></i>','Fiber'=>'<i aria-hidden="true" class="fa-solid fa-seedling"></i>','Oilseed'=>'<i aria-hidden="true" class="fa-solid fa-seedling"></i>','Legume'=>'<i aria-hidden="true" class="fa-solid fa-seedling"></i>','Cash Crop'=>'<i aria-hidden="true" class="fa-solid fa-coins"></i>']; ?>
+                        <div style="height:140px;background:linear-gradient(135deg,#dbeafe,#eff6ff);display:flex;align-items:center;justify-content:center;font-size:64px;"><?= $icons[$d['category']]??'<i aria-hidden="true" class="fa-solid fa-seedling"></i>' ?></div>
                     </div>
                     <div class="card-body-kd">
                         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
@@ -164,10 +162,10 @@ $page_title = 'Marketplace';
                         </div>
                         <form method="POST"><?= csrfField() ?><?= requestKeyField() ?>
                             <?= csrfField() ?>
-                            <label>Pickup or delivery</label><select name="fulfillment" class="form-control"><option value="pickup">Pickup / সংগ্রহ</option><option value="delivery">Delivery / সরবরাহ</option></select><label>Pickup arrangement or delivery address</label><input name="delivery_address" class="form-control" maxlength="500" required><label>Contact phone</label><input name="contact_phone" class="form-control" maxlength="20" required><p class="small">Arrange availability and delivery charges with the seller before ordering.</p><input type="hidden" name="dealer_inventory_id" value="<?= e($d['inventory_id']) ?>">
+                            <?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Pickup or delivery</label><select id="<?= e($fieldId) ?>" name="fulfillment" class="form-control"><option value="pickup">Pickup / সংগ্রহ</option><option value="delivery">Delivery / সরবরাহ</option></select><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Pickup arrangement or delivery address</label><input id="<?= e($fieldId) ?>" name="delivery_address" class="form-control" maxlength="500" required><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Contact phone</label><input id="<?= e($fieldId) ?>" name="contact_phone" class="form-control" maxlength="20" required><p class="small">Arrange availability and delivery charges with the seller before ordering.</p><input type="hidden" name="dealer_inventory_id" value="<?= e($d['inventory_id']) ?>">
                             <div style="display:flex;gap:8px;align-items:center;">
                                 <input type="number" name="quantity_kg" step="0.01" min="<?= e($d['minimum_order_kg']) ?>" max="<?= e($d['stock_remaining']) ?>" placeholder="kg" class="form-control" style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;outline:none;" required>
-                                <button type="submit" name="order_dealer" class="btn-kd btn-kd-primary" style="flex:1;justify-content:center;background:linear-gradient(135deg,#2563eb,#60a5fa);" data-confirm="Place this order?">
+                                <button type="submit" name="order_dealer" class="btn-kd btn-kd-primary" style="flex:1;justify-content:center;background:linear-gradient(135deg,#2563eb,#2563eb);" data-confirm="Place this order?">
                                     <i class="fa-solid fa-cart-shopping"></i> Order
                                 </button>
                             </div>

@@ -10,36 +10,36 @@ if($_SERVER['REQUEST_METHOD']==='POST') {
     catch(Throwable $e) { error_log('Booking rejected: '.$e->getMessage());flash('error',$e instanceof InvalidArgumentException ? $e->getMessage() : 'Could not book. Please try again.'); }
     header('Location: tours.php');exit;
 }
-$tours  = $pdo->query("SELECT ft.*, u.name as farmer FROM FARM_TOUR ft JOIN FARMER f ON ft.farmer_id=f.id JOIN USER u ON f.user_id=u.id WHERE ft.status='active'")->fetchAll();
+$tours  = $pdo->query("SELECT ft.*, u.name as farmer FROM FARM_TOUR ft JOIN FARMER f ON ft.farmer_id=f.id JOIN USER u ON f.user_id=u.id WHERE ft.status='active' AND u.status='approved' AND u.email_verified=1")->fetchAll();
 $guides = $pdo->query("SELECT g.*, u.name FROM GUIDE g JOIN USER u ON g.user_id=u.id WHERE g.availability='available' AND u.status='approved'")->fetchAll();
-$my_bookings = $pdo->prepare("SELECT tb.*, ft.title, ft.location, ug.name as guide_name FROM TOUR_BOOKING tb JOIN FARM_TOUR ft ON tb.tour_id=ft.id LEFT JOIN GUIDE g ON tb.guide_id=g.id LEFT JOIN USER ug ON g.user_id=ug.id WHERE tb.tourist_id=? ORDER BY tb.created_at DESC"); $my_bookings->execute([$tid]); $my_bookings = $my_bookings->fetchAll();
+$my_bookings = $pdo->prepare("SELECT tb.*, ft.title, ft.location, ug.name as guide_name FROM TOUR_BOOKING tb JOIN FARM_TOUR ft ON tb.tour_id=ft.id LEFT JOIN GUIDE g ON tb.guide_id=g.id LEFT JOIN USER ug ON g.user_id=ug.id WHERE tb.tourist_id=? ORDER BY tb.created_at DESC"); $my_bookings=pagedRows($pdo,$my_bookings->queryString,[$tid],'bookings','Your bookings',['title', 'location'],true);
 $pre_tour = isset($_GET['book']) ? (int)$_GET['book'] : 0;
 $page_title = 'Farm Tours';
 ?>
 <?php include __DIR__ . '/../includes/header.php'; ?>
 <div class="layout-wrapper"><?php include __DIR__ . '/../includes/sidebar.php'; ?>
 <div class="main-content" id="main-content" tabindex="-1">
-    <div class="topbar"><div class="d-flex align-items-center gap-3"><button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none;font-size:20px;"><i class="fa-solid fa-bars"></i></button><div class="topbar-title"><i class="fa-solid fa-map me-2" style="color:#0891b2;"></i>Farm Tours</div></div></div>
-    <div class="page-body"><?= renderFlash() ?>
+    <div class="topbar"><div class="d-flex align-items-center gap-3"><h1 class="topbar-title"><i class="fa-solid fa-map me-2" style="color:#126078;"></i>Farm Tours</h1></div></div>
+    <div class="page-body"><?php include __DIR__ . '/../includes/topbar.php'; ?><?= renderFlash() ?>
         <?= renderFlash() ?>
         <div class="row g-4">
             <div class="col-lg-4">
                 <div class="card-kd">
-                    <div class="card-header-kd"><h5><i class="fa-solid fa-calendar-plus me-2" style="color:#0891b2;"></i>Book a Tour</h5></div>
+                    <div class="card-header-kd"><h5><i class="fa-solid fa-calendar-plus me-2" style="color:#126078;"></i>Book a Tour</h5></div>
                     <div class="card-body-kd">
                         <form method="POST" class="form-kd" data-validate><?= csrfField() ?><?= requestKeyField() ?>
                             <?= csrfField() ?>
-                            <div class="form-group"><label>Farm Tour <span style="color:red">*</span></label>
-                            <select name="tour_id" class="form-control" required><option value="">Select farm tour</option>
+                            <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Farm Tour <span style="color:red">*</span></label>
+                            <select id="<?= e($fieldId) ?>" name="tour_id" class="form-control" required><option value="">Select farm tour</option>
                             <?php foreach ($tours as $to): ?><option value="<?= e($to['id']) ?>" <?= $pre_tour===$to['id']?'selected':'' ?>><?= htmlspecialchars($to['title']) ?> — ৳<?= number_format($to['price_per_day']) ?>/group/day</option><?php endforeach; ?></select></div>
-                            <div class="form-group"><label>Hire a Guide (optional)</label>
-                            <select name="guide_id" class="form-control"><option value="">No guide</option>
+                            <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Hire a Guide (optional)</label>
+                            <select id="<?= e($fieldId) ?>" name="guide_id" class="form-control"><option value="">No guide</option>
                             <?php foreach ($guides as $g): ?><option value="<?= e($g['id']) ?>"><?= htmlspecialchars($g['name']) ?> — ৳<?= number_format($g['daily_rate']) ?>/group/day</option><?php endforeach; ?></select></div>
                             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                                <div class="form-group"><label>Start Date <span style="color:red">*</span></label><input type="date" name="start_date" min="<?= date('Y-m-d') ?>" class="form-control" required></div>
-                                <div class="form-group"><label>End Date <span style="color:red">*</span></label><input type="date" name="end_date" min="<?= date('Y-m-d') ?>" class="form-control" required></div>
+                                <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Start Date <span style="color:red">*</span></label><input id="<?= e($fieldId) ?>" type="date" name="start_date" min="<?= date('Y-m-d') ?>" class="form-control" required></div>
+                                <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">End Date <span style="color:red">*</span></label><input id="<?= e($fieldId) ?>" type="date" name="end_date" min="<?= date('Y-m-d') ?>" class="form-control" required></div>
                             </div>
-                            <div class="form-group"><label>Number of Visitors</label><input type="number" name="num_visitors" min="1" max="20" value="1" class="form-control"></div>
+                            <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Number of Visitors</label><input id="<?= e($fieldId) ?>" type="number" name="num_visitors" min="1" max="20" value="1" class="form-control"></div>
                             <button type="submit" class="btn-kd btn-kd-primary w-100 justify-content-center"><i class="fa-solid fa-calendar-check"></i> Book Tour</button>
                         </form>
                     </div>

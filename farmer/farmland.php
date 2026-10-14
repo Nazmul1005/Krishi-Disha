@@ -36,8 +36,7 @@ if (isset($_POST['toggle'])) {
 }
 
 $tours = $pdo->prepare("SELECT ft.*, (SELECT COUNT(*) FROM TOUR_BOOKING tb WHERE tb.tour_id=ft.id) as total_bookings FROM FARM_TOUR ft WHERE ft.farmer_id=? ORDER BY ft.created_at DESC");
-$tours->execute([$fid]);
-$tours = $tours->fetchAll();
+$tours=pagedRows($pdo,$tours->queryString,[$fid],'farms','Your farm tours',['title', 'location'],true);
 
 $page_title = 'My Farm Lands';
 ?>
@@ -47,11 +46,11 @@ $page_title = 'My Farm Lands';
 <div class="main-content" id="main-content" tabindex="-1">
     <div class="topbar">
         <div class="d-flex align-items-center gap-3">
-            <button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none; font-size:20px;"><i class="fa-solid fa-bars"></i></button>
-            <div class="topbar-title"><i class="fa-solid fa-tractor me-2" style="color:var(--primary);"></i>My Farm Lands & Tours</div>
+
+            <h1 class="topbar-title"><i class="fa-solid fa-tractor me-2" style="color:var(--primary);"></i>My Farm Lands & Tours</h1>
         </div>
     </div>
-    <div class="page-body">
+    <div class="page-body"><?php include __DIR__ . '/../includes/topbar.php'; ?>
         <?php if ($msg): ?><div class="alert-kd alert-kd-success" data-autohide="3000"><i class="fa-solid fa-check"></i> <?= $msg ?></div><?php endif; ?>
         <?php if ($err): ?><div class="alert-kd alert-kd-error"><i class="fa-solid fa-exclamation-circle"></i> <?= $err ?></div><?php endif; ?>
 
@@ -61,11 +60,11 @@ $page_title = 'My Farm Lands';
                     <div class="card-header-kd"><h5><i class="fa-solid fa-plus me-2" style="color:var(--primary);"></i>List Farm for Tourism</h5></div>
                     <div class="card-body-kd">
                         <form method="POST" class="form-kd" data-validate><?= csrfField() ?><?= requestKeyField() ?>
-                            <div class="form-group"><label>Tour Title <span style="color:red">*</span></label><input type="text" name="title" class="form-control" placeholder="e.g. Green Valley Eco-Tour" required></div>
-                            <div class="form-group"><label>Description</label><textarea name="description" class="form-control" rows="3" placeholder="What will tourists experience?"></textarea></div>
-                            <div class="form-group"><label>Location <span style="color:red">*</span></label><input type="text" name="location" class="form-control" placeholder="District, Bangladesh" required></div>
-                            <div class="form-group"><label>Max Capacity</label><input type="number" name="capacity" class="form-control" value="10" min="1"></div>
-                            <div class="form-group"><label>Group price per day (৳) <span style="color:red">*</span></label><input type="number" name="price_per_day" step="50" min="500" class="form-control" required></div>
+                            <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Tour Title <span style="color:red">*</span></label><input id="<?= e($fieldId) ?>" type="text" name="title" class="form-control" placeholder="e.g. Green Valley Eco-Tour" required></div>
+                            <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Description</label><textarea id="<?= e($fieldId) ?>" name="description" class="form-control" rows="3" placeholder="What will tourists experience?"></textarea></div>
+                            <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Location <span style="color:red">*</span></label><input id="<?= e($fieldId) ?>" type="text" name="location" class="form-control" placeholder="District, Bangladesh" required></div>
+                            <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Max Capacity</label><input id="<?= e($fieldId) ?>" type="number" name="capacity" class="form-control" value="10" min="1"></div>
+                            <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Group price per day (৳) <span style="color:red">*</span></label><input id="<?= e($fieldId) ?>" type="number" name="price_per_day" step="50" min="500" class="form-control" required></div>
                             <button type="submit" class="btn-kd btn-kd-primary w-100 justify-content-center"><i class="fa-solid fa-plus"></i> Add Tour</button>
                         </form>
                     </div>

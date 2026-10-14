@@ -10,14 +10,14 @@ if($_SERVER['REQUEST_METHOD']==='POST') {
     catch(Throwable $e) { flash('error',$e instanceof InvalidArgumentException ? $e->getMessage() : 'Status could not be updated.'); }
     header('Location: sessions.php');exit;
 }
-$sessions = $pdo->prepare("SELECT c.*, u.name as client_name, u.role as client_role FROM CONSULTATION c JOIN USER u ON c.client_id=u.id WHERE c.provider_id=? ORDER BY c.scheduled_date DESC"); $sessions->execute([$_SESSION['user_id']]); $sessions = $sessions->fetchAll();
+$sessions = $pdo->prepare("SELECT c.*, u.name as client_name, u.role as client_role FROM CONSULTATION c JOIN USER u ON c.client_id=u.id WHERE c.provider_id=? ORDER BY c.scheduled_date DESC"); $sessions=pagedRows($pdo,$sessions->queryString,[$_SESSION['user_id']],'sessions','Consultations',['client_name', 'topic'],true);
 $page_title = 'My Sessions';
 ?>
 <?php include __DIR__ . '/../includes/header.php'; ?>
 <div class="layout-wrapper"><?php include __DIR__ . '/../includes/sidebar.php'; ?>
 <div class="main-content" id="main-content" tabindex="-1">
-    <div class="topbar"><div class="d-flex align-items-center gap-3"><button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none;font-size:20px;"><i class="fa-solid fa-bars"></i></button><div class="topbar-title"><i class="fa-solid fa-calendar-check me-2" style="color:#7c3aed;"></i>My Consultation Sessions</div></div></div>
-    <div class="page-body"><?= renderFlash() ?>
+    <div class="topbar"><div class="d-flex align-items-center gap-3"><h1 class="topbar-title"><i class="fa-solid fa-calendar-check me-2" style="color:#7c3aed;"></i>My Consultation Sessions</h1></div></div>
+    <div class="page-body"><?php include __DIR__ . '/../includes/topbar.php'; ?><?= renderFlash() ?>
         <div class="card-kd">
             <div class="card-header-kd"><h5>All Sessions (<?= count($sessions) ?>)</h5></div>
             <div class="card-body-kd p-0">

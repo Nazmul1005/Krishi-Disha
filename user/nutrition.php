@@ -32,19 +32,19 @@ $page_title = 'Nutrition Guide';
 <?php include __DIR__ . '/../includes/header.php'; ?>
 <div class="layout-wrapper"><?php include __DIR__ . '/../includes/sidebar.php'; ?>
 <div class="main-content" id="main-content" tabindex="-1">
-    <div class="topbar"><div class="d-flex align-items-center gap-3"><button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none;font-size:20px;"><i class="fa-solid fa-bars"></i></button><div class="topbar-title"><i class="fa-solid fa-apple-whole me-2" style="color:#ea580c;"></i>Nutrition Guide</div></div></div>
-    <div class="page-body"><aside class="alert-kd alert-kd-info">Only reviewed nutrition references are shown. Values depend on edible portion, raw/cooked basis, cooking time, water and variety. Missing data is not zero. These are not individualized dietary recommendations.</aside>
+    <div class="topbar"><div class="d-flex align-items-center gap-3"><h1 class="topbar-title"><i class="fa-solid fa-apple-whole me-2" style="color:#a4420d;"></i>Nutrition Guide</h1></div></div>
+    <div class="page-body"><?php include __DIR__ . '/../includes/topbar.php'; ?><aside class="alert-kd alert-kd-info">Only reviewed nutrition references are shown. Values depend on edible portion, raw/cooked basis, cooking time, water and variety. Missing data is not zero. These are not individualized dietary recommendations.</aside>
         <div class="row g-4">
             <div class="col-lg-4">
                 <div class="card-kd">
-                    <div class="card-header-kd"><h5><i class="fa-solid fa-flask me-2" style="color:#ea580c;"></i>Check Nutritional Retention</h5></div>
+                    <div class="card-header-kd"><h5><i class="fa-solid fa-flask me-2" style="color:#a4420d;"></i>Check Nutritional Retention</h5></div>
                     <div class="card-body-kd">
                         <form method="POST" class="form-kd"><?= csrfField() ?><?= requestKeyField() ?>
-                            <div class="form-group"><label>Crop <span style="color:red">*</span></label>
-                            <select name="crop_id" class="form-control"><option value="">Select crop</option>
+                            <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Crop <span style="color:red">*</span></label>
+                            <select id="<?= e($fieldId) ?>" name="crop_id" class="form-control"><option value="">Select crop</option>
                             <?php foreach ($crops as $c): ?><option value="<?= e($c['id']) ?>" <?= ($_POST['crop_id']??'')==$c['id']?'selected':'' ?>><?= htmlspecialchars($c['name']) ?></option><?php endforeach; ?></select></div>
-                            <div class="form-group"><label>Cooking Method</label>
-                            <select name="method_id" class="form-control"><option value="">All Methods</option>
+                            <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Cooking Method</label>
+                            <select id="<?= e($fieldId) ?>" name="method_id" class="form-control"><option value="">All Methods</option>
                             <?php foreach ($methods as $m): ?><option value="<?= e($m['id']) ?>" <?= ($_POST['method_id']??'')==$m['id']?'selected':'' ?>><?= htmlspecialchars($m['name']) ?></option><?php endforeach; ?></select></div>
                             <button type="submit" class="btn-kd btn-kd-primary w-100 justify-content-center"><i class="fa-solid fa-chart-bar"></i> Analyze</button>
                         </form>
@@ -92,9 +92,9 @@ $page_title = 'Nutrition Guide';
                     </div>
                 </div>
                 <?php elseif ($searched): ?>
-                <div class="card-kd"><div class="card-body-kd text-center py-5"><div style="font-size:64px;">🥗</div><h4>Select a crop above to see its nutrition data.</h4></div></div>
+                <div class="card-kd"><div class="card-body-kd text-center py-5"><div style="font-size:64px;"><i aria-hidden="true" class="fa-solid fa-leaf"></i></div><h4>Select a crop above to see its nutrition data.</h4></div></div>
                 <?php else: ?>
-                <div class="card-kd"><div class="card-body-kd text-center py-5"><div style="font-size:72px;">🥦</div><h4 style="color:var(--primary-dark);">Your Nutrition Intelligence Tool</h4><p style="color:var(--text-muted);">Select a crop to see vitamin content and how different cooking methods affect nutrient retention.</p></div></div>
+                <div class="card-kd"><div class="card-body-kd text-center py-5"><div style="font-size:72px;"><i aria-hidden="true" class="fa-solid fa-leaf"></i></div><h4 style="color:var(--primary-dark);">Your Nutrition Intelligence Tool</h4><p style="color:var(--text-muted);">Select a crop to see vitamin content and how different cooking methods affect nutrient retention.</p></div></div>
                 <?php endif; ?>
             </div>
         </div>

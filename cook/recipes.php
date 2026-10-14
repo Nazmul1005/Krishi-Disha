@@ -17,37 +17,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else { $err = 'Recipe name and a price greater than zero are required.'; }
 }
 
-$recipes = $pdo->prepare("SELECT * FROM RECIPE WHERE cook_id=? ORDER BY created_at DESC"); $recipes->execute([$cid]); $recipes = $recipes->fetchAll();
+$recipes = $pdo->prepare("SELECT * FROM RECIPE WHERE cook_id=? ORDER BY created_at DESC"); $recipes=pagedRows($pdo,$recipes->queryString,[$cid],'recipes','Your recipes',['name', 'description'],false);
 $page_title = 'My Recipes';
 ?>
 <?php include __DIR__ . '/../includes/header.php'; ?>
 <div class="layout-wrapper"><?php include __DIR__ . '/../includes/sidebar.php'; ?>
 <div class="main-content" id="main-content" tabindex="-1">
-    <div class="topbar"><div class="d-flex align-items-center gap-3"><button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none;font-size:20px;"><i class="fa-solid fa-bars"></i></button><div class="topbar-title"><i class="fa-solid fa-book-open me-2" style="color:#ea580c;"></i>My Recipes</div></div></div>
-    <div class="page-body">
+    <div class="topbar"><div class="d-flex align-items-center gap-3"><h1 class="topbar-title"><i class="fa-solid fa-book-open me-2" style="color:#a4420d;"></i>My Recipes</h1></div></div>
+    <div class="page-body"><?php include __DIR__ . '/../includes/topbar.php'; ?>
         <?php if ($msg): ?><div class="alert-kd alert-kd-success" data-autohide="3000"><i class="fa-solid fa-check"></i> <?= $msg ?></div><?php endif; ?>
         <?php if ($err): ?><div class="alert-kd alert-kd-error"><i class="fa-solid fa-exclamation-circle"></i> <?= $err ?></div><?php endif; ?>
         <div class="row g-4">
             <div class="col-lg-4">
                 <div class="card-kd">
-                    <div class="card-header-kd"><h5><i class="fa-solid fa-plus me-2" style="color:#ea580c;"></i>Add Recipe</h5></div>
+                    <div class="card-header-kd"><h5><i class="fa-solid fa-plus me-2" style="color:#a4420d;"></i>Add Recipe</h5></div>
                     <div class="card-body-kd">
                         <form method="POST" class="form-kd" data-validate><?= csrfField() ?><?= requestKeyField() ?>
                             <?= csrfField() ?>
-                            <div class="form-group"><label>Recipe Name <span style="color:red">*</span></label><input type="text" name="name" class="form-control" required placeholder="e.g. Shorshe Ilish"></div>
-                            <div class="form-group"><label>Description</label><textarea name="description" class="form-control" rows="3" placeholder="Describe the dish..."></textarea></div>
-                            <div class="form-group"><label>Price per order (৳) <span style="color:red">*</span></label><input type="number" name="price" class="form-control" value="300" min="1" step="0.01" required></div>
+                            <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Recipe Name <span style="color:red">*</span></label><input id="<?= e($fieldId) ?>" type="text" name="name" class="form-control" required placeholder="e.g. Shorshe Ilish"></div>
+                            <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Description</label><textarea id="<?= e($fieldId) ?>" name="description" class="form-control" rows="3" placeholder="Describe the dish..."></textarea></div>
+                            <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Price per order (৳) <span style="color:red">*</span></label><input id="<?= e($fieldId) ?>" type="number" name="price" class="form-control" value="300" min="1" step="0.01" required></div>
                             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
-                                <div class="form-group"><label>Prep (min)</label><input type="number" name="prep_time_min" class="form-control" value="15" min="0"></div>
-                                <div class="form-group"><label>Cook (min)</label><input type="number" name="cook_time_min" class="form-control" value="30" min="0"></div>
-                                <div class="form-group"><label>Serves</label><input type="number" name="servings" class="form-control" value="2" min="1"></div>
+                                <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Prep (min)</label><input id="<?= e($fieldId) ?>" type="number" name="prep_time_min" class="form-control" value="15" min="0"></div>
+                                <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Cook (min)</label><input id="<?= e($fieldId) ?>" type="number" name="cook_time_min" class="form-control" value="30" min="0"></div>
+                                <div class="form-group"><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Serves</label><input id="<?= e($fieldId) ?>" type="number" name="servings" class="form-control" value="2" min="1"></div>
                             </div>
                             <div class="form-group">
                                 <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;">
                                     <input type="checkbox" name="is_authentic" style="width:16px;height:16px;"> Mark as Authentic
                                 </label>
                             </div>
-                            <label>Ingredients</label><textarea class="form-control" name="ingredients" maxlength="5000" required></textarea><label>Allergens (or state none known)</label><input class="form-control" name="allergens" maxlength="255" required><button type="submit" class="btn-kd w-100 justify-content-center" style="background:linear-gradient(135deg,#ea580c,#f97316);color:#fff;padding:12px;"><i class="fa-solid fa-plus"></i> Add Recipe</button>
+                            <?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Ingredients</label><textarea id="<?= e($fieldId) ?>" class="form-control" name="ingredients" maxlength="5000" required></textarea><?php $fieldId=uiFieldId(); ?><label for="<?= e($fieldId) ?>">Allergens (or state none known)</label><input id="<?= e($fieldId) ?>" class="form-control" name="allergens" maxlength="255" required><button type="submit" class="btn-kd w-100 justify-content-center" style="background:linear-gradient(135deg,#a4420d,#a4420d);color:#fff;padding:12px;"><i class="fa-solid fa-plus"></i> Add Recipe</button>
                         </form>
                     </div>
                 </div>
@@ -60,13 +60,13 @@ $page_title = 'My Recipes';
                             <div class="card-body-kd">
                                 <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
                                     <h5 style="margin:0;font-size:15px;"><?= htmlspecialchars($r['name']) ?></h5>
-                                    <?php if ($r['is_authentic']): ?><span class="badge-kd badge-success" style="font-size:10px;">⭐ Authentic</span><?php endif; ?>
+                                    <?php if ($r['is_authentic']): ?><span class="badge-kd badge-success" style="font-size:10px;"><i aria-hidden="true" class="fa-solid fa-star"></i> Authentic</span><?php endif; ?>
                                 </div>
                                 <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;line-height:1.5;"><?= mb_substr(htmlspecialchars($r['description']),0,100) ?>...</p>
                                 <div style="display:flex;gap:10px;font-size:11px;color:var(--text-muted);align-items:center;">
                                     <span><i class="fa-solid fa-clock"></i> <?= e($r['prep_time_min']) ?>+<?= e($r['cook_time_min']) ?>m</span>
                                     <span><i class="fa-solid fa-users"></i> Serves <?= e($r['servings']) ?></span>
-                                    <span style="color:#ea580c;font-weight:700;">৳<?= number_format($r['price'] ?? 0) ?></span>
+                                    <span style="color:#a4420d;font-weight:700;">৳<?= number_format($r['price'] ?? 0) ?></span>
                                 </div>
                             </div>
                         </div>

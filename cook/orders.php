@@ -10,14 +10,14 @@ if($_SERVER['REQUEST_METHOD']==='POST') {
     catch(Throwable $e) { flash('error',$e instanceof InvalidArgumentException ? $e->getMessage() : 'Status could not be updated.'); }
     header('Location: orders.php');exit;
 }
-$orders = $pdo->prepare("SELECT fo.*, r.name as recipe_name, u.name as tourist_name FROM FOOD_ORDER fo JOIN RECIPE r ON fo.recipe_id=r.id JOIN TOURIST t ON fo.tourist_id=t.id JOIN USER u ON t.user_id=u.id WHERE fo.cook_id=? ORDER BY fo.created_at DESC"); $orders->execute([$cid]); $orders = $orders->fetchAll();
+$orders = $pdo->prepare("SELECT fo.*, r.name as recipe_name, u.name as tourist_name FROM FOOD_ORDER fo JOIN RECIPE r ON fo.recipe_id=r.id JOIN TOURIST t ON fo.tourist_id=t.id JOIN USER u ON t.user_id=u.id WHERE fo.cook_id=? ORDER BY fo.created_at DESC"); $orders=pagedRows($pdo,$orders->queryString,[$cid],'food','Food orders',['recipe_name', 'tourist_name'],true);
 $page_title = 'Food Orders';
 ?>
 <?php include __DIR__ . '/../includes/header.php'; ?>
 <div class="layout-wrapper"><?php include __DIR__ . '/../includes/sidebar.php'; ?>
 <div class="main-content" id="main-content" tabindex="-1">
-    <div class="topbar"><div class="d-flex align-items-center gap-3"><button id="sidebarToggle" aria-label="Open navigation" class="btn btn-sm d-lg-none" style="border:none;font-size:20px;"><i class="fa-solid fa-bars"></i></button><div class="topbar-title"><i class="fa-solid fa-receipt me-2" style="color:#ea580c;"></i>Food Orders</div></div></div>
-    <div class="page-body"><?= renderFlash() ?>
+    <div class="topbar"><div class="d-flex align-items-center gap-3"><h1 class="topbar-title"><i class="fa-solid fa-receipt me-2" style="color:#a4420d;"></i>Food Orders</h1></div></div>
+    <div class="page-body"><?php include __DIR__ . '/../includes/topbar.php'; ?><?= renderFlash() ?>
         <div class="card-kd">
             <div class="card-header-kd"><h5>My Food Orders (<?= count($orders) ?>)</h5></div>
             <div class="card-body-kd p-0">
@@ -29,7 +29,7 @@ $page_title = 'Food Orders';
                         <td style="font-weight:600;"><?= htmlspecialchars($o['tourist_name']) ?></td>
                         <td><?= htmlspecialchars($o['recipe_name']) ?></td>
                         <td><?= e($o['quantity']) ?></td>
-                        <td style="color:#ea580c;font-weight:700;">৳<?= number_format($o['total_price']) ?></td>
+                        <td style="color:#a4420d;font-weight:700;">৳<?= number_format($o['total_price']) ?></td>
                         <td style="font-size:12px;"><?= e($o['delivery_date']) ?></td>
                         <td><?php $sc=['pending'=>'badge-warning','preparing'=>'badge-info','delivered'=>'badge-success','cancelled'=>'badge-danger']; ?><span class="badge-kd <?= $sc[$o['status']]??'badge-muted' ?>"><?= e(ucfirst($o['status'])) ?></span></td>
                         <td>
